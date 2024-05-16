@@ -1,4 +1,4 @@
-rootProject.name = "service-template"
+rootProject.name = "expense-manager"
 
 dependencyResolutionManagement {
     versionCatalogs {
