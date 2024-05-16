@@ -1,0 +1,7 @@
+spring:
+  data:
+    mongodb:
+      database: service_template_db
+      password: admin
+      username: admin
+      authentication-database: admin
