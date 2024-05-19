@@ -1,7 +1,7 @@
 spring:
   data:
     mongodb:
-      database: group_manager_db
+      database: expense_manager_db
       password: admin
       username: admin
       authentication-database: admin
