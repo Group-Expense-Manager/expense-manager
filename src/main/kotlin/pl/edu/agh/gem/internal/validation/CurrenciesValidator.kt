@@ -9,10 +9,10 @@ import pl.edu.agh.gem.validator.Check
 
 class CurrenciesValidator : BaseValidator<ExpenseDataWrapper>() {
     override val checks: List<Check<ExpenseDataWrapper>> = listOf(
-        Check(BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES) { this.validateBaseCurrencyInGroupCurrencies(it) },
-        Check(BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY) { this.validateBaseCurrencyNotEqualTargetCurrency(it) },
-        Check(TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES) { this.validateTargetCurrencyInGroupCurrencies(it) },
-        Check(BASE_CURRENCY_NOT_AVAILABLE) { this.validateBaseCurrencyAvailable(it) },
+        Check(BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES) { validateBaseCurrencyInGroupCurrencies(it) },
+        Check(BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY) { validateBaseCurrencyNotEqualTargetCurrency(it) },
+        Check(TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES) { validateTargetCurrencyInGroupCurrencies(it) },
+        Check(BASE_CURRENCY_NOT_AVAILABLE) { validateBaseCurrencyAvailable(it) },
     )
 
     private fun validateBaseCurrencyInGroupCurrencies(expenseDataWrapper: ExpenseDataWrapper): Boolean {
