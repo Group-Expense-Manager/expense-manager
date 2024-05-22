@@ -22,8 +22,8 @@ class ParticipantValidator : BaseValidator<ExpenseDataWrapper>() {
     }
 
     private fun validateIfParticipantsAreUnique(expenseDataWrapper: ExpenseDataWrapper): Boolean {
-        return expenseDataWrapper.expense.expenseParticipants.distinctBy { it.participantId }.size == 
-                expenseDataWrapper.expense.expenseParticipants.size
+        return expenseDataWrapper.expense.expenseParticipants.distinctBy { it.participantId }.size ==
+            expenseDataWrapper.expense.expenseParticipants.size
     }
 
     private fun validateParticipantsSize(expenseDataWrapper: ExpenseDataWrapper): Boolean {
