@@ -57,4 +57,11 @@ class ExpenseService(
             currencyManagerClient.getAvailableCurrencies(),
         )
     }
+
+    fun getExpense(expenseId: String, groupId: String): Expense {
+        return expenseRepository.findByExpenseIdAndGroupId(expenseId, groupId) ?: throw MissingExpenseException(expenseId, groupId)
+    }
 }
+
+class MissingExpenseException(expenseId: String, groupId: String) :
+    RuntimeException("Failed to find expense with id: $expenseId and groupId: $groupId")

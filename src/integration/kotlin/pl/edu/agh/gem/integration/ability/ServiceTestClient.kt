@@ -5,10 +5,12 @@ import org.springframework.stereotype.Component
 import org.springframework.test.web.reactive.server.WebTestClient.ResponseSpec
 import org.springframework.test.web.servlet.client.MockMvcWebTestClient.bindToApplicationContext
 import org.springframework.web.context.WebApplicationContext
+import pl.edu.agh.gem.headers.HeadersUtils.withAppAcceptType
 import pl.edu.agh.gem.headers.HeadersUtils.withAppContentType
 import pl.edu.agh.gem.headers.HeadersUtils.withValidatedUser
 import pl.edu.agh.gem.paths.Paths.EXTERNAL
 import pl.edu.agh.gem.security.GemUser
+import java.net.URI
 
 @Component
 @Lazy
@@ -25,6 +27,13 @@ class ServiceTestClient(applicationContext: WebApplicationContext) {
                 it.withAppContentType()
             }
             .bodyValue(body)
+            .exchange()
+    }
+
+    fun getExpense(user: GemUser, expenseId: String, groupId: String): ResponseSpec {
+        return webClient.get()
+            .uri(URI("$EXTERNAL/expenses/$expenseId/groups/$groupId"))
+            .headers { it.withValidatedUser(user).withAppAcceptType() }
             .exchange()
     }
 }
