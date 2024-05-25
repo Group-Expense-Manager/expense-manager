@@ -2,6 +2,7 @@ package pl.edu.agh.gem.external.controller
 
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus.CREATED
+import org.springframework.http.HttpStatus.OK
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -42,6 +43,7 @@ class ExpenseController(
     }
 
     @GetMapping("{expenseId}/groups/{groupId}", produces = [APPLICATION_JSON_INTERNAL_VER_1])
+    @ResponseStatus(OK)
     fun getExpense(
         @GemUserId userId: String,
         @PathVariable expenseId: String,
