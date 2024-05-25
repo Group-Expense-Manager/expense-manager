@@ -154,6 +154,19 @@ class ExpenseServiceTest : ShouldSpec({
         shouldThrowExactly<MissingExpenseException> { expenseService.getExpense(EXPENSE_ID, GROUP_ID) }
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
     }
+
+    should("get expenses") {
+        // given
+        val expenses = listOf(createExpense())
+        whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(expenses)
+
+        // when
+        val result = expenseService.getGroupExpenses(GROUP_ID)
+
+        // then
+        result shouldBe expenses
+        verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
+    }
 },)
 
 data class Quadruple<A, B, C, D>(

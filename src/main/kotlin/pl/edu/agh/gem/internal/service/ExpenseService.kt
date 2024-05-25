@@ -61,6 +61,10 @@ class ExpenseService(
     fun getExpense(expenseId: String, groupId: String): Expense {
         return expenseRepository.findByExpenseIdAndGroupId(expenseId, groupId) ?: throw MissingExpenseException(expenseId, groupId)
     }
+
+    fun getGroupExpenses(groupId: String): List<Expense> {
+        return expenseRepository.findByGroupId(groupId)
+    }
 }
 
 class MissingExpenseException(expenseId: String, groupId: String) :

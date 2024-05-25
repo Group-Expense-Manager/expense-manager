@@ -23,6 +23,11 @@ class MongoExpenseRepository(
         return mongo.findOne(query, ExpenseEntity::class.java)?.toDomain()
     }
 
+    override fun findByGroupId(groupId: String): List<Expense> {
+        val query = Query(where(ExpenseEntity::groupId).isEqualTo(groupId))
+        return mongo.find(query, ExpenseEntity::class.java).map(ExpenseEntity::toDomain)
+    }
+
     private fun Expense.toEntity() =
         ExpenseEntity(
             id = id,

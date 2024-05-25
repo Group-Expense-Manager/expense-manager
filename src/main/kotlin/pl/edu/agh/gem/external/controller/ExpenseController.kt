@@ -15,6 +15,8 @@ import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
 import pl.edu.agh.gem.external.dto.expense.ExpenseCreationRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseCreationResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
+import pl.edu.agh.gem.external.dto.expense.GroupExpensesResponse
+import pl.edu.agh.gem.external.dto.expense.toGroupExpensesResponse
 import pl.edu.agh.gem.internal.service.ExpenseService
 import pl.edu.agh.gem.media.InternalApiMediaType.APPLICATION_JSON_INTERNAL_VER_1
 import pl.edu.agh.gem.model.GroupMembers
@@ -51,6 +53,15 @@ class ExpenseController(
     ): ExpenseResponse {
         userId.checkIfUserHaveAccess(expenseService.getMembers(groupId))
         return ExpenseResponse.fromExpense(expenseService.getExpense(expenseId, groupId))
+    }
+
+    @GetMapping(produces = [APPLICATION_JSON_INTERNAL_VER_1])
+    fun getGroupExpenses(
+        @GemUserId userId: String,
+        @RequestParam groupId: String,
+    ): GroupExpensesResponse {
+        userId.checkIfUserHaveAccess(expenseService.getMembers(groupId))
+        return expenseService.getGroupExpenses(groupId).toGroupExpensesResponse()
     }
 
     private fun String.checkIfUserHaveAccess(groupMembers: GroupMembers) {

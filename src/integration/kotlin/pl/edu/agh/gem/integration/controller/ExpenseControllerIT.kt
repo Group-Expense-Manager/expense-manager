@@ -17,6 +17,7 @@ import pl.edu.agh.gem.dto.GroupMemberResponse
 import pl.edu.agh.gem.dto.GroupMembersResponse
 import pl.edu.agh.gem.external.dto.currency.ExchangeRateResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
+import pl.edu.agh.gem.external.dto.expense.GroupExpensesResponse
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
@@ -321,7 +322,47 @@ class ExpenseControllerIT(
         // when
         val response = service.getExpense(createGemUser(USER_ID), EXPENSE_ID, GROUP_ID)
 
-        // then
-        response shouldHaveHttpStatus NOT_FOUND
-    }
-},)
+            // then
+            response shouldHaveHttpStatus NOT_FOUND
+        }
+
+        should("get expenses") {
+            // given
+            val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(USER_ID)))
+            stubGroupManagerMembers(groupMembers, GROUP_ID)
+            val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant()))
+            repository.create(expense)
+
+            // when
+            val response = service.getGroupExpenses(createGemUser(USER_ID), GROUP_ID)
+
+            // then
+            response shouldHaveHttpStatus OK
+            response.shouldBody<GroupExpensesResponse> {
+                expenses shouldHaveSize 1
+                expenses.first().also {
+                    it.expenseId shouldBe expense.id
+                    it.creatorId shouldBe expense.creatorId
+                    it.title shouldBe expense.title
+                    it.cost shouldBe expense.cost
+                    it.baseCurrency shouldBe expense.baseCurrency
+                    it.status shouldBe expense.status.name
+                    it.participantIds.shouldHaveSize(1)
+                    it.participantIds.first() shouldBe expense.expenseParticipants.first().participantId
+                    it.expenseDate shouldBe expense.expenseDate
+                }
+            }
+        }
+
+        should("return forbidden if user is not a group member") {
+            // given
+            val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(OTHER_USER_ID)))
+            stubGroupManagerMembers(groupMembers, GROUP_ID)
+            // when
+            val response = service.getGroupExpenses(createGemUser(USER_ID), GROUP_ID)
+
+            // then
+            response shouldHaveHttpStatus FORBIDDEN
+        }
+    },
+)
