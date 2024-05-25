@@ -56,6 +56,7 @@ class ExpenseController(
     }
 
     @GetMapping(produces = [APPLICATION_JSON_INTERNAL_VER_1])
+    @ResponseStatus(OK)
     fun getGroupExpenses(
         @GemUserId userId: String,
         @RequestParam groupId: String,
