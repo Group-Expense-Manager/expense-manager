@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
@@ -20,10 +21,11 @@ import pl.edu.agh.gem.paths.Paths.EXTERNAL
 import pl.edu.agh.gem.security.GemUserId
 
 @RestController
+@RequestMapping("$EXTERNAL/expenses")
 class ExpenseController(
     private val expenseService: ExpenseService,
 ) {
-    @PostMapping("$EXTERNAL/expenses", consumes = [APPLICATION_JSON_INTERNAL_VER_1], produces = [APPLICATION_JSON_INTERNAL_VER_1])
+    @PostMapping("", consumes = [APPLICATION_JSON_INTERNAL_VER_1], produces = [APPLICATION_JSON_INTERNAL_VER_1])
     @ResponseStatus(CREATED)
     fun createExpense(
         @GemUserId userId: String,
@@ -39,7 +41,7 @@ class ExpenseController(
         )
     }
 
-    @GetMapping("$EXTERNAL/expenses/{expenseId}/groups/{groupId}", produces = [APPLICATION_JSON_INTERNAL_VER_1])
+    @GetMapping("{expenseId}/groups/{groupId}", produces = [APPLICATION_JSON_INTERNAL_VER_1])
     fun getExpense(
         @GemUserId userId: String,
         @PathVariable expenseId: String,
