@@ -63,9 +63,12 @@ class ExpenseService(
     }
 
     fun getGroupExpenses(groupId: String): List<Expense> {
-        return expenseRepository.findByGroupId(groupId)
+        return expenseRepository.findByGroupId(groupId).also { if (it.isEmpty()) throw GroupWithoutExpenseException(groupId) }
     }
 }
 
 class MissingExpenseException(expenseId: String, groupId: String) :
     RuntimeException("Failed to find expense with id: $expenseId and groupId: $groupId")
+
+class GroupWithoutExpenseException(groupId: String) :
+    RuntimeException("Group with id: $groupId does not have any expenses")

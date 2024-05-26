@@ -17,6 +17,7 @@ import pl.edu.agh.gem.error.withCode
 import pl.edu.agh.gem.error.withDetails
 import pl.edu.agh.gem.error.withMessage
 import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
+import pl.edu.agh.gem.internal.service.GroupWithoutExpenseException
 import pl.edu.agh.gem.internal.service.MissingExpenseException
 import pl.edu.agh.gem.validator.ValidatorsException
 
@@ -45,6 +46,11 @@ class ApiExceptionHandler {
 
     @ExceptionHandler(MissingExpenseException::class)
     fun handleMissingExpenseException(exception: MissingExpenseException): ResponseEntity<SimpleErrorsHolder> {
+        return ResponseEntity(handleError(exception), NOT_FOUND)
+    }
+
+    @ExceptionHandler(GroupWithoutExpenseException::class)
+    fun handleGroupWithoutExpenseException(exception: GroupWithoutExpenseException): ResponseEntity<SimpleErrorsHolder> {
         return ResponseEntity(handleError(exception), NOT_FOUND)
     }
 

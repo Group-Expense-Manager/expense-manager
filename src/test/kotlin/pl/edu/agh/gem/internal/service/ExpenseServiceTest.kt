@@ -167,6 +167,15 @@ class ExpenseServiceTest : ShouldSpec({
         result shouldBe expenses
         verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
     }
+
+    should("throw GroupWithoutExpenseException when group has no expenses") {
+        // given
+        whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(listOf())
+
+        // when & then
+        shouldThrowExactly<GroupWithoutExpenseException> { expenseService.getGroupExpenses(GROUP_ID) }
+        verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
+    }
 },)
 
 data class Quadruple<A, B, C, D>(
