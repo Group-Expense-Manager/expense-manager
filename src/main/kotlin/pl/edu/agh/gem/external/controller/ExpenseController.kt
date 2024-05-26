@@ -26,7 +26,7 @@ import pl.edu.agh.gem.security.GemUserId
 class ExpenseController(
     private val expenseService: ExpenseService,
 ) {
-    @PostMapping("", consumes = [APPLICATION_JSON_INTERNAL_VER_1], produces = [APPLICATION_JSON_INTERNAL_VER_1])
+    @PostMapping(consumes = [APPLICATION_JSON_INTERNAL_VER_1], produces = [APPLICATION_JSON_INTERNAL_VER_1])
     @ResponseStatus(CREATED)
     fun createExpense(
         @GemUserId userId: String,
