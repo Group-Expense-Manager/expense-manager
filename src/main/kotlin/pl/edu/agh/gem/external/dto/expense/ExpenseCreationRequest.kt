@@ -13,6 +13,7 @@ import pl.edu.agh.gem.external.dto.expense.nullorpattern.NullOrPattern
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction
 import pl.edu.agh.gem.internal.model.expense.ExpenseParticipant
+import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NOT_NULL_AND_BLANK
@@ -63,7 +64,7 @@ data class ExpenseCreationRequest(
             updatedAt = now(),
             expenseDate = expenseDate,
             attachmentId = attachmentId,
-            expenseParticipants = expenseParticipants.map { it.toDomain() },
+            expenseParticipants = expenseParticipants.map { it.toDomain(it.participantId == userId) },
             status = PENDING,
             statusHistory = arrayListOf(StatusHistoryEntry(userId, ExpenseAction.CREATED)),
         )
@@ -75,10 +76,10 @@ data class ExpenseParticipantRequestData(
     @field:Positive(message = POSITIVE_PARTICIPANT_COST)
     val participantCost: BigDecimal,
 ) {
-    fun toDomain() =
+    fun toDomain(isCreator: Boolean = false) =
         ExpenseParticipant(
             participantId = participantId,
             participantCost = participantCost,
-            participantStatus = PENDING,
+            participantStatus = if (isCreator) ACCEPTED else PENDING,
         )
 }

@@ -103,7 +103,6 @@ class ExpenseControllerIT(
         val createExpenseRequest = createExpenseCreationRequest()
         stubGroupManagerGroup(createGroupResponse(members = listOf(OTHER_USER_ID)), GROUP_ID)
 
-
         // when
         val response = service.createExpense(createExpenseRequest, user, groupId)
 

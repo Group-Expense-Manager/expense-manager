@@ -8,6 +8,7 @@ import io.kotest.matchers.shouldBe
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.CREATED
+import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.util.createExpenseCreationRequest
 import pl.edu.agh.gem.util.createExpenseParticipantDto
@@ -40,7 +41,7 @@ class ExpenseCreationRequestTest : ShouldSpec({
             it.expenseParticipants.first().also { participant ->
                 participant.participantId shouldBe expenseParticipants.first().participantId
                 participant.participantCost shouldBe expenseParticipants.first().participantCost
-                participant.participantStatus shouldBe PENDING
+                participant.participantStatus shouldBe ACCEPTED
             }
             it.status shouldBe PENDING
             it.statusHistory shouldHaveSize 1
