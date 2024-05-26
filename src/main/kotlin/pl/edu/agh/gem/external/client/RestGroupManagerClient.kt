@@ -13,13 +13,13 @@ import org.springframework.web.client.RestTemplate
 import pl.edu.agh.gem.config.GroupManagerProperties
 import pl.edu.agh.gem.dto.GroupMembersResponse
 import pl.edu.agh.gem.dto.toDomain
-import pl.edu.agh.gem.external.dto.group.GroupOptionsResponse
+import pl.edu.agh.gem.external.dto.group.GroupResponse
 import pl.edu.agh.gem.headers.HeadersUtils.withAppAcceptType
 import pl.edu.agh.gem.headers.HeadersUtils.withAppContentType
 import pl.edu.agh.gem.internal.client.GroupManagerClient
 import pl.edu.agh.gem.internal.client.GroupManagerClientException
 import pl.edu.agh.gem.internal.client.RetryableGroupManagerClientException
-import pl.edu.agh.gem.internal.model.group.GroupOptions
+import pl.edu.agh.gem.internal.model.group.Group
 import pl.edu.agh.gem.model.GroupMembers
 import pl.edu.agh.gem.paths.Paths.INTERNAL
 
@@ -30,10 +30,10 @@ class RestGroupManagerClient(
 ) : GroupManagerClient {
 
     @Retry(name = "groupManagerClient")
-    override fun getGroupMembers(groupId: String): GroupMembers {
+    override fun getMembers(groupId: String): GroupMembers {
         return try {
             restTemplate.exchange(
-                resolveGroupMembersAddress(groupId),
+                resolveMembersAddress(groupId),
                 GET,
                 HttpEntity<Any>(HttpHeaders().withAppAcceptType().withAppContentType()),
                 GroupMembersResponse::class.java,
@@ -53,33 +53,33 @@ class RestGroupManagerClient(
     }
 
     @Retry(name = "groupManagerClient")
-    override fun getGroupOptions(groupId: String): GroupOptions {
+    override fun getGroup(groupId: String): Group {
         return try {
             restTemplate.exchange(
-                resolveBaseCurrenciesAddress(groupId),
+                resolveGroupAddress(groupId),
                 GET,
                 HttpEntity<Any>(HttpHeaders().withAppAcceptType().withAppContentType()),
-                GroupOptionsResponse::class.java,
+                GroupResponse::class.java,
             ).body?.toDomain() ?: throw GroupManagerClientException(
-                "While retrieving base currencies of group using GroupManagerClient we receive empty body",
+                "While retrieving group using GroupManagerClient we receive empty body",
             )
         } catch (ex: HttpClientErrorException) {
-            logger.warn(ex) { "Client side exception while trying to get base currencies of group: $groupId" }
+            logger.warn(ex) { "Client side exception while trying to get group: $groupId" }
             throw GroupManagerClientException(ex.message)
         } catch (ex: HttpServerErrorException) {
-            logger.warn(ex) { "Server side exception while trying to get base currencies of group: $groupId" }
+            logger.warn(ex) { "Server side exception while trying to get group: $groupId" }
             throw RetryableGroupManagerClientException(ex.message)
         } catch (ex: Exception) {
-            logger.warn(ex) { "Unexpected exception while trying to get base currencies of group: $groupId" }
+            logger.warn(ex) { "Unexpected exception while trying to get group: $groupId" }
             throw GroupManagerClientException(ex.message)
         }
     }
 
-    private fun resolveGroupMembersAddress(groupId: String) =
+    private fun resolveMembersAddress(groupId: String) =
         "${groupManagerProperties.url}$INTERNAL/members/$groupId"
 
-    private fun resolveBaseCurrenciesAddress(groupId: String) =
-        "${groupManagerProperties.url}$INTERNAL/options/$groupId"
+    private fun resolveGroupAddress(groupId: String) =
+        "${groupManagerProperties.url}$INTERNAL/groups/$groupId"
 
     companion object {
         private val logger = KotlinLogging.logger {}

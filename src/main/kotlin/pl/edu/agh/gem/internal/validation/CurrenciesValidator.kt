@@ -16,22 +16,26 @@ class CurrenciesValidator : BaseValidator<ExpenseDataWrapper>() {
     )
 
     private fun validateBaseCurrencyInGroupCurrencies(expenseDataWrapper: ExpenseDataWrapper): Boolean {
-        return expenseDataWrapper.expense.targetCurrency != null ||
-            expenseDataWrapper.groupCurrencies.currencies.any { it.code == expenseDataWrapper.expense.baseCurrency }
+        return expenseDataWrapper.hasTargetCurrency() || expenseDataWrapper.groupCurrenciesContains(expenseDataWrapper.expense.baseCurrency)
     }
 
     private fun validateBaseCurrencyNotEqualTargetCurrency(expenseDataWrapper: ExpenseDataWrapper): Boolean {
-        return expenseDataWrapper.expense.targetCurrency == null ||
-            expenseDataWrapper.expense.baseCurrency != expenseDataWrapper.expense.targetCurrency
+        return !expenseDataWrapper.hasTargetCurrency() || expenseDataWrapper.expense.baseCurrency != expenseDataWrapper.expense.targetCurrency
     }
 
     private fun validateTargetCurrencyInGroupCurrencies(expenseDataWrapper: ExpenseDataWrapper): Boolean {
-        return expenseDataWrapper.expense.targetCurrency == null ||
-            expenseDataWrapper.groupCurrencies.currencies.any { it.code == expenseDataWrapper.expense.targetCurrency }
+        return !expenseDataWrapper.hasTargetCurrency() || expenseDataWrapper.groupCurrenciesContains(expenseDataWrapper.expense.targetCurrency)
     }
 
     private fun validateBaseCurrencyAvailable(expenseDataWrapper: ExpenseDataWrapper): Boolean {
-        return expenseDataWrapper.expense.targetCurrency == null ||
-            expenseDataWrapper.availableCurrencies.currencies.any { it.code == expenseDataWrapper.expense.baseCurrency }
+        return !expenseDataWrapper.hasTargetCurrency() || expenseDataWrapper.availableCurrenciesContains(expenseDataWrapper.expense.baseCurrency)
     }
+
+    private fun ExpenseDataWrapper.hasTargetCurrency() = expense.targetCurrency != null
+    private fun ExpenseDataWrapper.groupCurrenciesContains(
+        currency: String?,
+    ) = group.currencies.any { it.code == currency }
+    private fun ExpenseDataWrapper.availableCurrenciesContains(
+        currency: String?,
+    ) = availableCurrencies.any { it.code == currency }
 }

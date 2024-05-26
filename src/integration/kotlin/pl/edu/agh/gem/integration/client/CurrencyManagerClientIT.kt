@@ -4,14 +4,12 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_ACCEPTABLE
-import pl.edu.agh.gem.external.dto.currency.CurrenciesResponse
 import pl.edu.agh.gem.integration.BaseIntegrationSpec
 import pl.edu.agh.gem.integration.ability.stubCurrencyManagerAvailableCurrencies
 import pl.edu.agh.gem.integration.ability.stubCurrencyManagerExchangeRate
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.CurrencyManagerClientException
 import pl.edu.agh.gem.internal.client.RetryableCurrencyManagerClientException
-import pl.edu.agh.gem.internal.model.currency.Currency
 import pl.edu.agh.gem.util.DummyData.CURRENCY_1
 import pl.edu.agh.gem.util.DummyData.CURRENCY_2
 import pl.edu.agh.gem.util.DummyData.EXCHANGE_RATE_VALUE
@@ -24,15 +22,15 @@ class CurrencyManagerClientIT(
 ) : BaseIntegrationSpec({
     should("get currencies") {
         // given
-        val listOfCurrencies = listOf("PLN", "USD", "EUR")
-        val currenciesResponse = CurrenciesResponse(listOfCurrencies.map { Currency(it) })
+        val listOfCurrencies = arrayOf("PLN", "USD", "EUR")
+        val currenciesResponse = createCurrenciesResponse(*listOfCurrencies)
         stubCurrencyManagerAvailableCurrencies(currenciesResponse)
 
         // when
         val result = currencyManagerClient.getAvailableCurrencies()
 
         // then
-        result.currencies.all {
+        result.all {
             it.code in listOfCurrencies
         }
     }
@@ -61,8 +59,9 @@ class CurrencyManagerClientIT(
 
     should("get exchange rate") {
         // given
+        val date = Instant.ofEpochMilli(0L)
         val exchangeRateResponse = createExchangeRateResponse(EXCHANGE_RATE_VALUE)
-        stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))
+        stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, date)
 
         // when
         val result = currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))
@@ -73,8 +72,9 @@ class CurrencyManagerClientIT(
 
     should("throw CurrencyManagerClientException when we send bad request") {
         // given
+        val date = Instant.ofEpochMilli(0L)
         val exchangeRateResponse = createExchangeRateResponse()
-        stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L), NOT_ACCEPTABLE)
+        stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, date, NOT_ACCEPTABLE)
 
         // when & then
         shouldThrow<CurrencyManagerClientException> {
@@ -84,8 +84,9 @@ class CurrencyManagerClientIT(
 
     should("throw RetryableCurrencyManagerClientException when client has internal error") {
         // given
+        val date = Instant.ofEpochMilli(0L)
         val exchangeRateResponse = createExchangeRateResponse()
-        stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L), INTERNAL_SERVER_ERROR)
+        stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, date, INTERNAL_SERVER_ERROR)
 
         // when & then
         shouldThrow<RetryableCurrencyManagerClientException> {

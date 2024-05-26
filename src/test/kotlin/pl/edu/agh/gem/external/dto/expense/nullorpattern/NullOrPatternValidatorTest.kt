@@ -21,12 +21,12 @@ class NullOrPatternValidatorTest : ShouldSpec({
 
     should("accept string with pattern") {
         // given
-        val nullString = "ABC"
+        val string = "ABC"
         val validator = NullOrPatternValidator()
         val constraintValidatorContext = mock<ConstraintValidatorContext>()
 
         // given
-        val result = validator.isValid(nullString, constraintValidatorContext)
+        val result = validator.isValid(string, constraintValidatorContext)
 
         // then
         result shouldBe true

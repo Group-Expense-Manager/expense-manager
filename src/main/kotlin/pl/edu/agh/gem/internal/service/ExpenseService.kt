@@ -3,8 +3,8 @@ package pl.edu.agh.gem.internal.service
 import org.springframework.stereotype.Service
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
-import pl.edu.agh.gem.internal.model.currency.ExchangeRate
 import pl.edu.agh.gem.internal.model.expense.Expense
+import pl.edu.agh.gem.internal.model.group.Group
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.internal.validation.CostValidator
 import pl.edu.agh.gem.internal.validation.CurrenciesValidator
@@ -27,28 +27,33 @@ class ExpenseService(
         CurrenciesValidator(),
     )
 
-    fun getGroupMembers(groupId: String): GroupMembers {
-        return groupManagerClient.getGroupMembers(groupId)
+    fun getMembers(groupId: String): GroupMembers {
+        return groupManagerClient.getMembers(groupId)
     }
 
-    fun create(groupMembers: GroupMembers, expense: Expense): Expense {
+    fun getGroup(groupId: String): Group {
+        return groupManagerClient.getGroup(groupId)
+    }
+
+    fun create(group: Group, expense: Expense): Expense {
         expenseValidators
-            .getFailedValidations(createExpenseDataWrapper(groupMembers, expense))
+            .getFailedValidations(createExpenseDataWrapper(group, expense))
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
-        val exchangeRate = getExchangeRate(expense.baseCurrency, expense.targetCurrency, expense.expenseDate)
-        return expenseRepository.create(expense.copy(exchangeRate = exchangeRate))
+        return expenseRepository.create(
+            expense.copy(
+                exchangeRate = getExchangeRate(expense.baseCurrency, expense.targetCurrency, expense.expenseDate),
+            ),
+        )
     }
 
-    private fun getExchangeRate(baseCurrency: String, targetCurrency: String?, date: Instant): ExchangeRate? {
-        targetCurrency?.let { return currencyManagerClient.getExchangeRate(baseCurrency, targetCurrency, date) } ?: return null
-    }
+    private fun getExchangeRate(baseCurrency: String, targetCurrency: String?, date: Instant) =
+        targetCurrency?.let { currencyManagerClient.getExchangeRate(baseCurrency, targetCurrency, date) }
 
-    private fun createExpenseDataWrapper(groupMembers: GroupMembers, expense: Expense): ExpenseDataWrapper {
+    private fun createExpenseDataWrapper(group: Group, expense: Expense): ExpenseDataWrapper {
         return ExpenseDataWrapper(
-            groupMembers,
+            group,
             expense,
-            groupManagerClient.getGroupOptions(expense.groupId).currencies,
             currencyManagerClient.getAvailableCurrencies(),
         )
     }

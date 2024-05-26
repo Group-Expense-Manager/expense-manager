@@ -4,11 +4,11 @@ import pl.edu.agh.gem.external.dto.currency.CurrenciesResponse
 import pl.edu.agh.gem.external.dto.currency.ExchangeRateResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseCreationRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseParticipantRequestData
-import pl.edu.agh.gem.external.dto.group.GroupOptionsResponse
+import pl.edu.agh.gem.external.dto.group.GroupResponse
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
+import pl.edu.agh.gem.helper.group.createGroupMembers
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
-import pl.edu.agh.gem.internal.model.currency.Currencies
 import pl.edu.agh.gem.internal.model.currency.Currency
 import pl.edu.agh.gem.internal.model.currency.ExchangeRate
 import pl.edu.agh.gem.internal.model.expense.Expense
@@ -17,7 +17,9 @@ import pl.edu.agh.gem.internal.model.expense.ExpenseParticipant
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
-import pl.edu.agh.gem.internal.model.group.GroupOptions
+import pl.edu.agh.gem.internal.model.group.Currencies
+import pl.edu.agh.gem.internal.model.group.Group
+import pl.edu.agh.gem.model.GroupMembers
 import pl.edu.agh.gem.util.DummyData.ATTACHMENT_ID
 import pl.edu.agh.gem.util.DummyData.CURRENCY_1
 import pl.edu.agh.gem.util.DummyData.CURRENCY_2
@@ -59,11 +61,11 @@ fun createExpenseParticipantDto(
 
 fun createCurrencies(
     vararg currencies: String = arrayOf(CURRENCY_1),
-) = Currencies(currencies.map { Currency(it) })
+) = currencies.map { Currency(it) }
 
 fun createCurrenciesResponse(
     vararg currencies: String = arrayOf(CURRENCY_1),
-) = CurrenciesResponse(currencies.map { Currency(it) })
+) = CurrenciesResponse(currencies.toList())
 
 fun createExchangeRate(
     value: BigDecimal = EXCHANGE_RATE_VALUE,
@@ -116,18 +118,22 @@ fun createExpenseParticipant(
     participantCost = participantCost,
     participantStatus = participantStatus,
 )
-fun createGroupOptions(
+fun createGroup(
+    members: GroupMembers = createGroupMembers(USER_ID, OTHER_USER_ID),
     acceptRequired: Boolean = false,
-    currencies: Currencies = createCurrencies(CURRENCY_1),
-) = GroupOptions(
+    currencies: Currencies = createCurrencies(CURRENCY_1, CURRENCY_2),
+) = Group(
+    members = members,
     acceptRequired = acceptRequired,
     currencies = currencies,
 )
 
-fun createGroupOptionsResponse(
+fun createGroupResponse(
+    members: List<String> = listOf(USER_ID, OTHER_USER_ID),
     acceptRequired: Boolean = false,
-    currencies: Currencies = createCurrencies(CURRENCY_1),
-) = GroupOptionsResponse(
+    currencies: List<String> = listOf(CURRENCY_1, CURRENCY_2),
+) = GroupResponse(
+    members = members,
     acceptRequired = acceptRequired,
     currencies = currencies,
 )
@@ -136,7 +142,6 @@ object DummyData {
     const val EXPENSE_ID = "expenseId"
     const val CURRENCY_1 = "PLN"
     const val CURRENCY_2 = "EUR"
-    const val CURRENCY_3 = "USD"
     const val ATTACHMENT_ID = "attachmentId"
-    val EXCHANGE_RATE_VALUE = BigDecimal.TWO
+    val EXCHANGE_RATE_VALUE: BigDecimal = BigDecimal.TWO
 }

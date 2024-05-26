@@ -11,21 +11,22 @@ import pl.edu.agh.gem.headers.HeadersTestUtils.withAppContentType
 import pl.edu.agh.gem.integration.environment.ProjectConfig.wiremock
 import pl.edu.agh.gem.paths.Paths.INTERNAL
 import java.time.Instant
+import java.time.format.DateTimeFormatter.ISO_INSTANT
 
-private fun createOptionsUrl() =
+private fun createGroupsUrl() =
     "$INTERNAL/currencies"
 
 private fun createExchangeRateUrl(baseCurrency: String, targetCurrency: String, date: Instant) =
     UriComponentsBuilder.fromUriString("$INTERNAL/exchange-rate")
         .queryParam("baseCurrency", baseCurrency)
         .queryParam("targetCurrency", targetCurrency)
-        .queryParam("date", date.toEpochMilli())
+        .queryParam("date", ISO_INSTANT.format(date))
         .build()
         .toUriString()
 
 fun stubCurrencyManagerAvailableCurrencies(body: Any?, statusCode: HttpStatusCode = OK) {
     wiremock.stubFor(
-        get(urlMatching(createOptionsUrl()))
+        get(urlMatching(createGroupsUrl()))
             .willReturn(
                 aResponse()
                     .withStatus(statusCode.value())

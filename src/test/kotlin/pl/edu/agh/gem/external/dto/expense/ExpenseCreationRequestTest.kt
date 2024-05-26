@@ -2,8 +2,9 @@ package pl.edu.agh.gem.external.dto.expense
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.CREATED
@@ -22,17 +23,17 @@ class ExpenseCreationRequestTest : ShouldSpec({
         val expense = expenseCreationRequest.toDomain(USER_ID, GROUP_ID)
 
         // then
-        expense shouldNotBe null
+        expense.shouldNotBeNull()
         expense.also {
-            it.id shouldNotBe null
+            it.id.shouldNotBeNull()
             it.groupId shouldBe GROUP_ID
             it.creatorId shouldBe USER_ID
             it.cost shouldBe expenseCreationRequest.cost
             it.baseCurrency shouldBe expenseCreationRequest.baseCurrency
             it.targetCurrency shouldBe expenseCreationRequest.targetCurrency
-            it.exchangeRate shouldBe null
-            it.createdAt shouldNotBe null
-            it.updatedAt shouldNotBe null
+            it.exchangeRate.shouldBeNull()
+            it.createdAt.shouldNotBeNull()
+            it.updatedAt.shouldNotBeNull()
             it.expenseDate shouldBe expenseCreationRequest.expenseDate
             it.attachmentId shouldBe expenseCreationRequest.attachmentId
             it.expenseParticipants shouldHaveSize 1
@@ -44,10 +45,10 @@ class ExpenseCreationRequestTest : ShouldSpec({
             it.status shouldBe PENDING
             it.statusHistory shouldHaveSize 1
             it.statusHistory.first().also { entry ->
-                entry.createdAt shouldNotBe null
+                entry.createdAt.shouldNotBeNull()
                 entry.expenseAction shouldBe CREATED
                 entry.participantId shouldBe USER_ID
-                entry.comment shouldBe null
+                entry.comment.shouldBeNull()
             }
         }
     }

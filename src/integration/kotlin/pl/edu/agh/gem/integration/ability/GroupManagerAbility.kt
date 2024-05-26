@@ -13,8 +13,8 @@ import pl.edu.agh.gem.paths.Paths.INTERNAL
 private fun createMembersUrl(groupId: String) =
     "$INTERNAL/members/$groupId"
 
-private fun createOptionsUrl(groupId: String) =
-    "$INTERNAL/options/$groupId"
+private fun createGroupsUrl(groupId: String) =
+    "$INTERNAL/groups/$groupId"
 
 fun stubGroupManagerMembers(body: Any?, groupId: String, statusCode: HttpStatusCode = OK) {
     wiremock.stubFor(
@@ -30,9 +30,9 @@ fun stubGroupManagerMembers(body: Any?, groupId: String, statusCode: HttpStatusC
     )
 }
 
-fun stubGroupManagerOptions(body: Any?, groupId: String, statusCode: HttpStatusCode = OK) {
+fun stubGroupManagerGroup(body: Any?, groupId: String, statusCode: HttpStatusCode = OK) {
     wiremock.stubFor(
-        get(urlMatching(createOptionsUrl(groupId)))
+        get(urlMatching(createGroupsUrl(groupId)))
             .willReturn(
                 aResponse()
                     .withStatus(statusCode.value())

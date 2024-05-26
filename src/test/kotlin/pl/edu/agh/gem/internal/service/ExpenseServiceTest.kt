@@ -1,10 +1,9 @@
 package pl.edu.agh.gem.internal.service
 
-import io.kotest.assertions.throwables.shouldThrowExactly
+import io.kotest.assertions.throwables.shouldThrowWithMessage
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.datatest.withData
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import org.mockito.kotlin.anyVararg
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.mock
@@ -17,16 +16,24 @@ import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
-import pl.edu.agh.gem.internal.model.currency.Currencies
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
+import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY
+import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_AVAILABLE
+import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES
+import pl.edu.agh.gem.internal.validation.ValidationMessage.COST_NOT_SUM_UP
+import pl.edu.agh.gem.internal.validation.ValidationMessage.DUPLICATED_PARTICIPANT
+import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_MIN_SIZE
+import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_NOT_GROUP_MEMBER
+import pl.edu.agh.gem.internal.validation.ValidationMessage.TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES
+import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_PARTICIPANT
 import pl.edu.agh.gem.util.DummyData.CURRENCY_1
 import pl.edu.agh.gem.util.DummyData.CURRENCY_2
 import pl.edu.agh.gem.util.createCurrencies
 import pl.edu.agh.gem.util.createExchangeRate
 import pl.edu.agh.gem.util.createExpense
 import pl.edu.agh.gem.util.createExpenseParticipant
-import pl.edu.agh.gem.util.createGroupOptions
+import pl.edu.agh.gem.util.createGroup
 import pl.edu.agh.gem.validator.ValidatorsException
 import java.math.BigDecimal
 import java.time.Instant
@@ -42,214 +49,92 @@ class ExpenseServiceTest : ShouldSpec({
     )
     should("get group members from client") {
         // given
-        val groupMembers = createGroupMembers(listOf(USER_ID, OTHER_USER_ID))
-        whenever(groupManagerClient.getGroupMembers(GROUP_ID)).thenReturn(groupMembers)
+        val groupMembers = createGroupMembers(USER_ID, OTHER_USER_ID)
+        whenever(groupManagerClient.getMembers(GROUP_ID)).thenReturn(groupMembers)
 
         // when
-        val result = expenseService.getGroupMembers(GROUP_ID)
+        val result = expenseService.getMembers(GROUP_ID)
 
         // then
-        verify(groupManagerClient, atLeastOnce()).getGroupMembers(GROUP_ID)
+        verify(groupManagerClient, atLeastOnce()).getMembers(GROUP_ID)
         result shouldBe groupMembers
     }
 
     should("create expense") {
         // given
         val expense = createExpense()
-        val groupMembers = createGroupMembers(listOf(USER_ID, OTHER_USER_ID))
+        val group = createGroup(currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
         val exchangeRate = createExchangeRate()
         val expected = expense.copy(exchangeRate = exchangeRate)
-        whenever(groupManagerClient.getGroupOptions(GROUP_ID)).thenReturn(createGroupOptions(currencies = createCurrencies(CURRENCY_1, CURRENCY_2)))
         whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
         whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(exchangeRate)
         whenever(expenseRepository.create(anyVararg(Expense::class))).thenReturn(expected)
 
         // when
-        val result = expenseService.create(groupMembers, expense)
+        val result = expenseService.create(group, expense)
 
         // then
-        result shouldNotBe null
-        result.also {
-            it.id shouldBe expected.id
-            it.groupId shouldBe expected.groupId
-            it.creatorId shouldBe expected.creatorId
-            it.cost shouldBe expected.cost
-            it.baseCurrency shouldBe expected.baseCurrency
-            it.targetCurrency shouldBe expected.targetCurrency
-            it.exchangeRate shouldBe expected.exchangeRate
-            it.createdAt shouldBe expected.createdAt
-            it.updatedAt shouldBe expected.updatedAt
-            it.expenseDate shouldBe expected.expenseDate
-            it.attachmentId shouldBe expected.attachmentId
-            it.expenseParticipants shouldHaveSize expected.expenseParticipants.size
-            it.expenseParticipants.first().also { participant ->
-                participant.participantId shouldBe expected.expenseParticipants.first().participantId
-                participant.participantCost shouldBe expected.expenseParticipants.first().participantCost
-                participant.participantStatus shouldBe expected.expenseParticipants.first().participantStatus
-            }
-            it.expenseParticipants.last().also { participant ->
-                participant.participantId shouldBe expected.expenseParticipants.last().participantId
-                participant.participantCost shouldBe expected.expenseParticipants.last().participantCost
-                participant.participantStatus shouldBe expected.expenseParticipants.last().participantStatus
-            }
-            it.status shouldBe expected.status
-            it.statusHistory shouldHaveSize expected.statusHistory.size
-            it.statusHistory.first().also { entry ->
-                entry.createdAt shouldBe expected.statusHistory.first().createdAt
-                entry.expenseAction shouldBe expected.statusHistory.first().expenseAction
-                entry.participantId shouldBe expected.statusHistory.first().participantId
-                entry.comment shouldBe expense.statusHistory.first().comment
-            }
-            it.statusHistory.last().also { entry ->
-                entry.createdAt shouldBe expected.statusHistory.last().createdAt
-                entry.expenseAction shouldBe expected.statusHistory.last().expenseAction
-                entry.participantId shouldBe expected.statusHistory.last().participantId
-                entry.comment shouldBe expense.statusHistory.last().comment
-            }
-        }
-        verify(groupManagerClient, times(1)).getGroupOptions(GROUP_ID)
+        result shouldBe expected
+
         verify(currencyManagerClient, times(1)).getAvailableCurrencies()
         verify(currencyManagerClient, times(1)).getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))
         verify(expenseRepository, times(1)).create(anyVararg(Expense::class))
     }
 
-    should("throw ValidatorsException when participants costs do not sum up to full cost") {
-        // given
-        val expense = createExpense(cost = BigDecimal.TEN)
-        val groupMembers = createGroupMembers(listOf(USER_ID, OTHER_USER_ID))
-        whenever(groupManagerClient.getGroupOptions(GROUP_ID)).thenReturn(createGroupOptions(currencies = createCurrencies(CURRENCY_1, CURRENCY_2)))
-        whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
-        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(createExchangeRate())
+    context("throw ValidatorsException cause:") {
+        withData(
+            nameFn = { it.first },
+            Quadruple(COST_NOT_SUM_UP, createExpense(cost = BigDecimal.TEN), arrayOf(CURRENCY_1, CURRENCY_2), arrayOf(CURRENCY_1, CURRENCY_2)),
+            Quadruple(
+                USER_NOT_PARTICIPANT,
+                createExpense(creatorId = "nonGroupMember"),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+            ),
+            Quadruple(
+                DUPLICATED_PARTICIPANT,
+                createExpense(expenseParticipants = listOf(createExpenseParticipant(), createExpenseParticipant())),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+            ),
+            Quadruple(
+                PARTICIPANT_MIN_SIZE,
+                createExpense(cost = BigDecimal.TWO, expenseParticipants = listOf(createExpenseParticipant())),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+            ),
+            Quadruple(
+                PARTICIPANT_NOT_GROUP_MEMBER,
+                createExpense(expenseParticipants = listOf(createExpenseParticipant(), createExpenseParticipant("notGroupMember"))),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+            ),
+            Quadruple(BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES, createExpense(targetCurrency = null), arrayOf(), arrayOf(CURRENCY_1, CURRENCY_2)),
+            Quadruple(
+                BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY,
+                createExpense(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_1),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+            ),
+            Quadruple(TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES, createExpense(), arrayOf(CURRENCY_1), arrayOf(CURRENCY_1, CURRENCY_2)),
+            Quadruple(BASE_CURRENCY_NOT_AVAILABLE, createExpense(), arrayOf(CURRENCY_1, CURRENCY_2), arrayOf(CURRENCY_2)),
 
-        // when & then
+        ) { (expectedMessage, expense, groupCurrencies, availableCurrencies) ->
+            // given
+            val group = createGroup(currencies = createCurrencies(*groupCurrencies))
+            whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(*availableCurrencies))
+            whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(createExchangeRate())
 
-        shouldThrowExactly<ValidatorsException> { expenseService.create(groupMembers, expense) }
-        verify(expenseRepository, times(0)).create(anyVararg(Expense::class))
-    }
-
-    should("throw ValidatorsException when user is not in expense participants") {
-        // given
-        val expense = createExpense(creatorId = "nonGroupMember")
-        val groupMembers = createGroupMembers(listOf(USER_ID, OTHER_USER_ID))
-        whenever(groupManagerClient.getGroupOptions(GROUP_ID)).thenReturn(createGroupOptions(currencies = createCurrencies(CURRENCY_1, CURRENCY_2)))
-        whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
-        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(createExchangeRate())
-
-        // when & then
-
-        shouldThrowExactly<ValidatorsException> { expenseService.create(groupMembers, expense) }
-        verify(expenseRepository, times(0)).create(anyVararg(Expense::class))
-    }
-
-    should("throw ValidatorsException when participants ids are not unique") {
-        // given
-        val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant(), createExpenseParticipant()))
-        val groupMembers = createGroupMembers(listOf(USER_ID, OTHER_USER_ID))
-        whenever(groupManagerClient.getGroupOptions(GROUP_ID)).thenReturn(createGroupOptions(currencies = createCurrencies(CURRENCY_1, CURRENCY_2)))
-        whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
-        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(createExchangeRate())
-
-        // when & then
-
-        shouldThrowExactly<ValidatorsException> { expenseService.create(groupMembers, expense) }
-        verify(expenseRepository, times(0)).create(anyVararg(Expense::class))
-    }
-
-    should("throw ValidatorsException when participants size is to low") {
-        // given
-        val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant()))
-        val groupMembers = createGroupMembers(listOf(USER_ID, OTHER_USER_ID))
-        whenever(groupManagerClient.getGroupOptions(GROUP_ID)).thenReturn(createGroupOptions(currencies = createCurrencies(CURRENCY_1, CURRENCY_2)))
-        whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
-        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(createExchangeRate())
-
-        // when & then
-
-        shouldThrowExactly<ValidatorsException> { expenseService.create(groupMembers, expense) }
-        verify(expenseRepository, times(0)).create(anyVararg(Expense::class))
-    }
-
-    should("throw ValidatorsException when not all participants are group members") {
-        // given
-        val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant("notGroupMember")))
-        val groupMembers = createGroupMembers(listOf(USER_ID, OTHER_USER_ID))
-        whenever(groupManagerClient.getGroupOptions(GROUP_ID)).thenReturn(createGroupOptions(currencies = createCurrencies(CURRENCY_1, CURRENCY_2)))
-        whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
-        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(createExchangeRate())
-
-        // when & then
-
-        shouldThrowExactly<ValidatorsException> { expenseService.create(groupMembers, expense) }
-        verify(expenseRepository, times(0)).create(anyVararg(Expense::class))
-    }
-
-    should("throw ValidatorsException when base currency is not among group currencies") {
-        // given
-        val expense = createExpense()
-        val groupMembers = createGroupMembers(listOf(USER_ID, OTHER_USER_ID))
-        whenever(groupManagerClient.getGroupOptions(GROUP_ID)).thenReturn(createGroupOptions(currencies = Currencies(listOf())))
-        whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
-        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(createExchangeRate())
-
-        // when & then
-
-        shouldThrowExactly<ValidatorsException> { expenseService.create(groupMembers, expense) }
-        verify(expenseRepository, times(0)).create(anyVararg(Expense::class))
-    }
-
-    should("throw ValidatorsException when both currencies are equal") {
-        // given
-        val expense = createExpense(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_1)
-        val groupMembers = createGroupMembers(listOf(USER_ID, OTHER_USER_ID))
-        whenever(groupManagerClient.getGroupOptions(GROUP_ID)).thenReturn(createGroupOptions(currencies = createCurrencies(CURRENCY_1, CURRENCY_2)))
-        whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
-        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(createExchangeRate())
-
-        // when & then
-
-        shouldThrowExactly<ValidatorsException> { expenseService.create(groupMembers, expense) }
-        verify(expenseRepository, times(0)).create(anyVararg(Expense::class))
-    }
-
-    should("throw ValidatorsException when targetCurrency is present and is not among group currencies") {
-        // given
-        val expense = createExpense()
-        val groupMembers = createGroupMembers(listOf(USER_ID, OTHER_USER_ID))
-        whenever(groupManagerClient.getGroupOptions(GROUP_ID)).thenReturn(createGroupOptions(currencies = createCurrencies(CURRENCY_1)))
-        whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
-        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(createExchangeRate())
-
-        // when & then
-
-        shouldThrowExactly<ValidatorsException> { expenseService.create(groupMembers, expense) }
-        verify(expenseRepository, times(0)).create(anyVararg(Expense::class))
-    }
-
-    should("throw ValidatorsException when baseCurrency not available") {
-        // given
-        val expense = createExpense()
-        val groupMembers = createGroupMembers(listOf(USER_ID, OTHER_USER_ID))
-        whenever(groupManagerClient.getGroupOptions(GROUP_ID)).thenReturn(createGroupOptions(currencies = createCurrencies(CURRENCY_1)))
-        whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_2))
-        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(createExchangeRate())
-
-        // when & then
-
-        shouldThrowExactly<ValidatorsException> { expenseService.create(groupMembers, expense) }
-        verify(expenseRepository, times(0)).create(anyVararg(Expense::class))
-    }
-
-    should("throw ValidatorsException when baseCurrency not available") {
-        // given
-        val expense = createExpense()
-        val groupMembers = createGroupMembers(listOf(USER_ID, OTHER_USER_ID))
-        whenever(groupManagerClient.getGroupOptions(GROUP_ID)).thenReturn(createGroupOptions(currencies = createCurrencies(CURRENCY_1)))
-        whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_2))
-        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(createExchangeRate())
-
-        // when & then
-
-        shouldThrowExactly<ValidatorsException> { expenseService.create(groupMembers, expense) }
-        verify(expenseRepository, times(0)).create(anyVararg(Expense::class))
+            // when & then
+            shouldThrowWithMessage<ValidatorsException>("Failed validations: $expectedMessage") { expenseService.create(group, expense) }
+            verify(expenseRepository, times(0)).create(anyVararg(Expense::class))
+        }
     }
 },)
+
+data class Quadruple<A, B, C, D>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D,
+)

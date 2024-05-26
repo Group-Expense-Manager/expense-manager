@@ -7,7 +7,8 @@ import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 import org.springframework.format.annotation.DateTimeFormat
-import pl.edu.agh.gem.external.dto.expense.nullorblank.NullOrNotBlank
+import org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME
+import pl.edu.agh.gem.annotation.nullorblank.NullOrNotBlank
 import pl.edu.agh.gem.external.dto.expense.nullorpattern.NullOrPattern
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction
@@ -40,7 +41,7 @@ data class ExpenseCreationRequest(
     val baseCurrency: String,
     @field:NullOrPattern(message = TARGET_CURRENCY_PATTERN)
     val targetCurrency: String?,
-    @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    @field:DateTimeFormat(iso = DATE_TIME)
     val expenseDate: Instant,
     @field:NotEmpty(message = EXPENSE_PARTICIPANTS_NOT_EMPTY)
     @field:Valid

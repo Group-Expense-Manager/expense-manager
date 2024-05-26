@@ -1,12 +1,9 @@
 package pl.edu.agh.gem.external.dto.currency
 
-import pl.edu.agh.gem.internal.model.currency.Currencies
 import pl.edu.agh.gem.internal.model.currency.Currency
 
 data class CurrenciesResponse(
-    val currencies: List<Currency>,
+    val currencies: List<String>,
 ) {
-    fun toDomain() = Currencies(
-        currencies = currencies,
-    )
+    fun toDomain() = currencies.map { Currency(it) }
 }

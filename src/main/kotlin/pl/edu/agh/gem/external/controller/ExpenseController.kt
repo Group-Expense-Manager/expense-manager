@@ -28,12 +28,11 @@ class ExpenseController(
         @Valid @RequestBody
         expenseCreationRequest: ExpenseCreationRequest,
     ): ExpenseCreationResponse {
-        val groupMembers = expenseService.getGroupMembers(groupId)
-
-        userId.checkIfUserHaveAccess(groupMembers)
+        val group = expenseService.getGroup(groupId)
+        userId.checkIfUserHaveAccess(group.members)
 
         return ExpenseCreationResponse(
-            expenseService.create(groupMembers, expenseCreationRequest.toDomain(userId, groupId)).id,
+            expenseService.create(group, expenseCreationRequest.toDomain(userId, groupId)).id,
         )
     }
 

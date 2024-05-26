@@ -1,7 +1,7 @@
 package pl.edu.agh.gem.internal.client
 
-import pl.edu.agh.gem.internal.model.currency.Currencies
 import pl.edu.agh.gem.internal.model.currency.ExchangeRate
+import pl.edu.agh.gem.internal.model.group.Currencies
 import java.time.Instant
 
 interface CurrencyManagerClient {
