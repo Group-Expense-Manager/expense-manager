@@ -10,15 +10,18 @@ import org.springframework.http.HttpStatus.FORBIDDEN
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.HttpStatus.OK
 import pl.edu.agh.gem.assertion.shouldBody
+import pl.edu.agh.gem.assertion.shouldHaveErrors
 import pl.edu.agh.gem.assertion.shouldHaveHttpStatus
 import pl.edu.agh.gem.assertion.shouldHaveValidationError
 import pl.edu.agh.gem.assertion.shouldHaveValidatorError
 import pl.edu.agh.gem.dto.GroupMemberResponse
 import pl.edu.agh.gem.dto.GroupMembersResponse
+import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
 import pl.edu.agh.gem.external.dto.currency.ExchangeRateResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
 import pl.edu.agh.gem.external.dto.expense.GroupExpensesResponse
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
+import pl.edu.agh.gem.helper.group.createGroupMembers
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.helper.user.createGemUser
@@ -29,6 +32,8 @@ import pl.edu.agh.gem.integration.ability.stubCurrencyManagerExchangeRate
 import pl.edu.agh.gem.integration.ability.stubGroupManagerGroup
 import pl.edu.agh.gem.integration.ability.stubGroupManagerMembers
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
+import pl.edu.agh.gem.internal.service.MissingExpenseException
+import pl.edu.agh.gem.internal.service.UserNotParticipantException
 import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NOT_NULL_AND_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_AVAILABLE
@@ -36,8 +41,12 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_BL
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_PATTERN
 import pl.edu.agh.gem.internal.validation.ValidationMessage.COST_NOT_SUM_UP
+import pl.edu.agh.gem.internal.validation.ValidationMessage.CREATOR_DECISION
 import pl.edu.agh.gem.internal.validation.ValidationMessage.DUPLICATED_PARTICIPANT
+import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_PARTICIPANTS_NOT_EMPTY
+import pl.edu.agh.gem.internal.validation.ValidationMessage.GROUP_ID_NOT_BLANK
+import pl.edu.agh.gem.internal.validation.ValidationMessage.MESSAGE_NOT_NULL_AND_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_MIN_SIZE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_NOT_GROUP_MEMBER
@@ -55,6 +64,7 @@ import pl.edu.agh.gem.util.DummyData.EXPENSE_ID
 import pl.edu.agh.gem.util.createCurrenciesResponse
 import pl.edu.agh.gem.util.createExpense
 import pl.edu.agh.gem.util.createExpenseCreationRequest
+import pl.edu.agh.gem.util.createExpenseDecisionRequest
 import pl.edu.agh.gem.util.createExpenseParticipant
 import pl.edu.agh.gem.util.createExpenseParticipantDto
 import pl.edu.agh.gem.util.createGroupResponse
@@ -376,6 +386,112 @@ class ExpenseControllerIT(
 
             // then
             response shouldHaveHttpStatus FORBIDDEN
+            response shouldHaveErrors {
+                errors shouldHaveSize 1
+                errors.first().code shouldBe UserWithoutGroupAccessException::class.simpleName
+            }
+        }
+
+        context("return validation exception cause:") {
+            withData(
+                nameFn = { it.first },
+                Pair(EXPENSE_ID_NOT_BLANK, createExpenseDecisionRequest(expenseId = "")),
+                Pair(GROUP_ID_NOT_BLANK, createExpenseDecisionRequest(groupId = "")),
+                Pair(MESSAGE_NOT_NULL_AND_BLANK, createExpenseDecisionRequest(message = "")),
+
+            ) { (expectedMessage, expenseDecisionRequest) ->
+                // when
+                val response = service.decide(expenseDecisionRequest, createGemUser())
+
+                // then
+                response shouldHaveHttpStatus BAD_REQUEST
+                response shouldHaveValidationError expectedMessage
+            }
+        }
+
+        should("decide") {
+            // given
+            val decisionRequest = createExpenseDecisionRequest()
+            val groupMembersResponse = createGroupMembers(USER_ID, OTHER_USER_ID)
+            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+            val expense = createExpense()
+            repository.create(expense)
+
+            // when
+            val response = service.decide(decisionRequest, createGemUser(id = OTHER_USER_ID))
+
+            // then
+            response shouldHaveHttpStatus OK
+        }
+
+        should("return forbidden if user is not a group member") {
+            // given
+            val decisionRequest = createExpenseDecisionRequest()
+            val groupMembersResponse = createGroupMembers(USER_ID)
+            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+
+            // when
+            val response = service.decide(decisionRequest, createGemUser(id = OTHER_USER_ID))
+
+            // then
+            response shouldHaveHttpStatus FORBIDDEN
+            response shouldHaveErrors {
+                errors shouldHaveSize 1
+                errors.first().code shouldBe UserWithoutGroupAccessException::class.simpleName
+            }
+        }
+
+        should("return not found when expense is not present") {
+            // given
+            val decisionRequest = createExpenseDecisionRequest()
+            val groupMembersResponse = createGroupMembers(USER_ID, OTHER_USER_ID)
+            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+
+            // when
+            val response = service.decide(decisionRequest, createGemUser(id = OTHER_USER_ID))
+
+            // then
+            response shouldHaveHttpStatus NOT_FOUND
+            response shouldHaveErrors {
+                errors shouldHaveSize 1
+                errors.first().code shouldBe MissingExpenseException::class.simpleName
+            }
+        }
+
+        should("return bad request when user is expense creator") {
+            // given
+            val decisionRequest = createExpenseDecisionRequest()
+            val groupMembersResponse = createGroupMembers(USER_ID, OTHER_USER_ID)
+            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+            val expense = createExpense()
+            repository.create(expense)
+
+            // when
+            val response = service.decide(decisionRequest, createGemUser(id = USER_ID))
+
+            // then
+            response shouldHaveHttpStatus BAD_REQUEST
+            response shouldHaveValidatorError CREATOR_DECISION
+        }
+
+        should("return forbidden when group member is not expense participant") {
+            // given
+            val decisionRequest = createExpenseDecisionRequest()
+            val anotherUserId = "AnotherUserId"
+            val groupMembersResponse = createGroupMembers(USER_ID, OTHER_USER_ID, anotherUserId)
+            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+            val expense = createExpense()
+            repository.create(expense)
+
+            // when
+            val response = service.decide(decisionRequest, createGemUser(id = anotherUserId))
+
+            // then
+            response shouldHaveHttpStatus FORBIDDEN
+            response shouldHaveErrors {
+                errors shouldHaveSize 1
+                errors.first().code shouldBe UserNotParticipantException::class.simpleName
+            }
         }
     },
 )

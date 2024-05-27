@@ -19,6 +19,7 @@ import pl.edu.agh.gem.error.withMessage
 import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
 import pl.edu.agh.gem.internal.service.GroupWithoutExpenseException
 import pl.edu.agh.gem.internal.service.MissingExpenseException
+import pl.edu.agh.gem.internal.service.UserNotParticipantException
 import pl.edu.agh.gem.validator.ValidatorsException
 
 @ControllerAdvice
@@ -52,6 +53,11 @@ class ApiExceptionHandler {
     @ExceptionHandler(GroupWithoutExpenseException::class)
     fun handleGroupWithoutExpenseException(exception: GroupWithoutExpenseException): ResponseEntity<SimpleErrorsHolder> {
         return ResponseEntity(handleError(exception), NOT_FOUND)
+    }
+
+    @ExceptionHandler(UserNotParticipantException::class)
+    fun handleUserNotParticipantException(exception: UserNotParticipantException): ResponseEntity<SimpleErrorsHolder> {
+        return ResponseEntity(handleError(exception), FORBIDDEN)
     }
 
     private fun handleValidatorException(exception: ValidatorsException): SimpleErrorsHolder {

@@ -3,6 +3,7 @@ package pl.edu.agh.gem.util
 import pl.edu.agh.gem.external.dto.currency.CurrenciesResponse
 import pl.edu.agh.gem.external.dto.currency.ExchangeRateResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseCreationRequest
+import pl.edu.agh.gem.external.dto.expense.ExpenseDecisionRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseParticipantRequestData
 import pl.edu.agh.gem.external.dto.group.GroupResponse
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
@@ -11,8 +12,11 @@ import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.internal.model.currency.Currency
 import pl.edu.agh.gem.internal.model.currency.ExchangeRate
+import pl.edu.agh.gem.internal.model.expense.Decision
+import pl.edu.agh.gem.internal.model.expense.Decision.ACCEPT
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction
+import pl.edu.agh.gem.internal.model.expense.ExpenseDecision
 import pl.edu.agh.gem.internal.model.expense.ExpenseParticipant
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
@@ -136,6 +140,32 @@ fun createGroupResponse(
     members = members,
     acceptRequired = acceptRequired,
     currencies = currencies,
+)
+
+fun createExpenseDecisionRequest(
+    expenseId: String = EXPENSE_ID,
+    groupId: String = GROUP_ID,
+    decision: String = ACCEPT.name,
+    message: String = "Some message",
+) = ExpenseDecisionRequest(
+    expenseId = expenseId,
+    groupId = groupId,
+    decision = decision,
+    message = message,
+)
+
+fun createExpenseDecision(
+    userId: String = USER_ID,
+    expenseId: String = EXPENSE_ID,
+    groupId: String = GROUP_ID,
+    decision: Decision = ACCEPT,
+    message: String = "Some message",
+) = ExpenseDecision(
+    userId = userId,
+    expenseId = expenseId,
+    groupId = groupId,
+    decision = decision,
+    message = message,
 )
 
 object DummyData {
