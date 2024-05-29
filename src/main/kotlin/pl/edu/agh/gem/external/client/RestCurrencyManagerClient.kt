@@ -23,7 +23,6 @@ import pl.edu.agh.gem.internal.model.currency.ExchangeRate
 import pl.edu.agh.gem.internal.model.group.Currencies
 import pl.edu.agh.gem.paths.Paths.INTERNAL
 import java.time.Instant
-import java.time.format.DateTimeFormatter.ISO_INSTANT
 
 @Component
 class RestCurrencyManagerClient(
@@ -84,7 +83,7 @@ class RestCurrencyManagerClient(
         UriComponentsBuilder.fromUriString("${currencyManagerProperties.url}$INTERNAL/exchange-rate")
             .queryParam("baseCurrency", baseCurrency)
             .queryParam("targetCurrency", targetCurrency)
-            .queryParam("date", ISO_INSTANT.format(date))
+            .queryParam("date", date.toString())
             .build()
             .toUriString()
 

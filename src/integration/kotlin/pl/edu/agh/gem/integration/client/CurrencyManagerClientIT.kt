@@ -64,7 +64,7 @@ class CurrencyManagerClientIT(
         stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, date)
 
         // when
-        val result = currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))
+        val result = currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, date)
 
         // then
         result.value shouldBe EXCHANGE_RATE_VALUE
@@ -78,7 +78,7 @@ class CurrencyManagerClientIT(
 
         // when & then
         shouldThrow<CurrencyManagerClientException> {
-            currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))
+            currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, date)
         }
     }
 
@@ -90,7 +90,7 @@ class CurrencyManagerClientIT(
 
         // when & then
         shouldThrow<RetryableCurrencyManagerClientException> {
-            currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))
+            currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, date)
         }
     }
 },)

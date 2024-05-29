@@ -32,14 +32,14 @@ class NullOrPatternValidatorTest : ShouldSpec({
         result shouldBe true
     }
 
-    should("reject string withou pattern") {
+    should("reject string without pattern") {
         // given
-        val nullString = "abc"
+        val string = "abc"
         val validator = NullOrPatternValidator()
         val constraintValidatorContext = mock<ConstraintValidatorContext>()
 
         // given
-        val result = validator.isValid(nullString, constraintValidatorContext)
+        val result = validator.isValid(string, constraintValidatorContext)
 
         // then
         result shouldBe false

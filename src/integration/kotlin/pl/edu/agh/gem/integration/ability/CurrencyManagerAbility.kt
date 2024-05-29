@@ -11,7 +11,6 @@ import pl.edu.agh.gem.headers.HeadersTestUtils.withAppContentType
 import pl.edu.agh.gem.integration.environment.ProjectConfig.wiremock
 import pl.edu.agh.gem.paths.Paths.INTERNAL
 import java.time.Instant
-import java.time.format.DateTimeFormatter.ISO_INSTANT
 
 private fun createGroupsUrl() =
     "$INTERNAL/currencies"
@@ -20,7 +19,7 @@ private fun createExchangeRateUrl(baseCurrency: String, targetCurrency: String, 
     UriComponentsBuilder.fromUriString("$INTERNAL/exchange-rate")
         .queryParam("baseCurrency", baseCurrency)
         .queryParam("targetCurrency", targetCurrency)
-        .queryParam("date", ISO_INSTANT.format(date))
+        .queryParam("date", date.toString())
         .build()
         .toUriString()
 
