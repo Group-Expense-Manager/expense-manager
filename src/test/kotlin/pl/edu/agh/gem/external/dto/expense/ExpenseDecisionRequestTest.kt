@@ -4,7 +4,6 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
-import pl.edu.agh.gem.internal.model.expense.Decision
 import pl.edu.agh.gem.util.createExpenseDecisionRequest
 
 class ExpenseDecisionRequestTest : ShouldSpec({
@@ -20,7 +19,7 @@ class ExpenseDecisionRequestTest : ShouldSpec({
         result.also {
             it.expenseId shouldBe expenseDecision.expenseId
             it.groupId shouldBe expenseDecision.groupId
-            it.decision shouldBe Decision.valueOf(expenseDecision.decision)
+            it.decision shouldBe expenseDecision.decision
             it.message shouldBe expenseDecision.message
         }
     }

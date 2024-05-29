@@ -145,7 +145,7 @@ fun createGroupResponse(
 fun createExpenseDecisionRequest(
     expenseId: String = EXPENSE_ID,
     groupId: String = GROUP_ID,
-    decision: String = ACCEPT.name,
+    decision: Decision = ACCEPT,
     message: String = "Some message",
 ) = ExpenseDecisionRequest(
     expenseId = expenseId,

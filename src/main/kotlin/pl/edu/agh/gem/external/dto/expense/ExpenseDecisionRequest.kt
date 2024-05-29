@@ -13,7 +13,7 @@ data class ExpenseDecisionRequest(
     val expenseId: String,
     @field:NotBlank(message = GROUP_ID_NOT_BLANK)
     val groupId: String,
-    val decision: String,
+    val decision: Decision,
     @field:NullOrNotBlank(message = MESSAGE_NOT_NULL_AND_BLANK)
     val message: String?,
 ) {
@@ -21,7 +21,7 @@ data class ExpenseDecisionRequest(
         userId = userId,
         expenseId = expenseId,
         groupId = groupId,
-        decision = Decision.valueOf(decision),
+        decision = decision,
         message = message,
     )
 }
