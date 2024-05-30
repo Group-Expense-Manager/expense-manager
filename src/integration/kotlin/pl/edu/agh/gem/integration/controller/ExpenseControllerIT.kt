@@ -1,13 +1,22 @@
 package pl.edu.agh.gem.integration.controller
 
 import io.kotest.datatest.withData
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.CREATED
 import org.springframework.http.HttpStatus.FORBIDDEN
+import org.springframework.http.HttpStatus.NOT_FOUND
+import org.springframework.http.HttpStatus.OK
+import pl.edu.agh.gem.assertion.shouldBody
 import pl.edu.agh.gem.assertion.shouldHaveHttpStatus
 import pl.edu.agh.gem.assertion.shouldHaveValidationError
 import pl.edu.agh.gem.assertion.shouldHaveValidatorError
+import pl.edu.agh.gem.dto.GroupMemberResponse
+import pl.edu.agh.gem.dto.GroupMembersResponse
 import pl.edu.agh.gem.external.dto.currency.ExchangeRateResponse
+import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
@@ -17,6 +26,8 @@ import pl.edu.agh.gem.integration.ability.ServiceTestClient
 import pl.edu.agh.gem.integration.ability.stubCurrencyManagerAvailableCurrencies
 import pl.edu.agh.gem.integration.ability.stubCurrencyManagerExchangeRate
 import pl.edu.agh.gem.integration.ability.stubGroupManagerGroup
+import pl.edu.agh.gem.integration.ability.stubGroupManagerMembers
+import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NOT_NULL_AND_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_AVAILABLE
@@ -39,8 +50,11 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_PARTICIPANT
 import pl.edu.agh.gem.util.DummyData.CURRENCY_1
 import pl.edu.agh.gem.util.DummyData.CURRENCY_2
 import pl.edu.agh.gem.util.DummyData.EXCHANGE_RATE_VALUE
+import pl.edu.agh.gem.util.DummyData.EXPENSE_ID
 import pl.edu.agh.gem.util.createCurrenciesResponse
+import pl.edu.agh.gem.util.createExpense
 import pl.edu.agh.gem.util.createExpenseCreationRequest
+import pl.edu.agh.gem.util.createExpenseParticipant
 import pl.edu.agh.gem.util.createExpenseParticipantDto
 import pl.edu.agh.gem.util.createGroupResponse
 import java.math.BigDecimal
@@ -48,6 +62,7 @@ import java.time.Instant
 
 class ExpenseControllerIT(
     private val service: ServiceTestClient,
+    private val repository: ExpenseRepository,
 ) : BaseIntegrationSpec({
     context("return validation exception cause:") {
         withData(
@@ -247,5 +262,66 @@ class ExpenseControllerIT(
         // then
         response shouldHaveHttpStatus BAD_REQUEST
         response shouldHaveValidatorError BASE_CURRENCY_NOT_AVAILABLE
+    }
+
+    should("get expense") {
+        // given
+        val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(USER_ID), GroupMemberResponse(OTHER_USER_ID)))
+        stubGroupManagerMembers(groupMembers, GROUP_ID)
+        val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant()))
+        repository.create(expense)
+
+        // when
+        val response = service.getExpense(createGemUser(USER_ID), expense.id, GROUP_ID)
+
+        // then
+        response shouldHaveHttpStatus OK
+        response.shouldBody<ExpenseResponse> {
+            creatorId shouldBe expense.creatorId
+            cost shouldBe expense.cost
+            baseCurrency shouldBe expense.baseCurrency
+            targetCurrency shouldBe expense.targetCurrency
+            exchangeRate shouldBe expense.exchangeRate?.value
+            createdAt.shouldNotBeNull()
+            updatedAt.shouldNotBeNull()
+            expenseDate.shouldNotBeNull()
+            attachmentId shouldBe expense.attachmentId
+            expenseParticipants shouldHaveSize 1
+            expenseParticipants.first().also { participant ->
+                participant.participantId shouldBe expense.expenseParticipants.first().participantId
+                participant.participantCost shouldBe expense.expenseParticipants.first().participantCost
+                participant.participantStatus shouldBe expense.expenseParticipants.first().participantStatus.name
+            }
+            status shouldBe expense.status.name
+            statusHistory shouldHaveSize 1
+            statusHistory.first().also { entry ->
+                entry.createdAt.shouldNotBeNull()
+                entry.expenseAction shouldBe expense.statusHistory.first().expenseAction.name
+                entry.participantId shouldBe expense.statusHistory.first().participantId
+                entry.comment shouldBe expense.statusHistory.first().comment
+            }
+        }
+    }
+
+    should("return forbidden if user is not a group member") {
+        // given
+        val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(OTHER_USER_ID)))
+        stubGroupManagerMembers(groupMembers, GROUP_ID)
+        // when
+        val response = service.getExpense(createGemUser(USER_ID), EXPENSE_ID, GROUP_ID)
+
+        // then
+        response shouldHaveHttpStatus FORBIDDEN
+    }
+
+    should("return not found when expense doesn't exist") {
+        // given
+        val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(USER_ID), GroupMemberResponse(OTHER_USER_ID)))
+        stubGroupManagerMembers(groupMembers, GROUP_ID)
+        // when
+        val response = service.getExpense(createGemUser(USER_ID), EXPENSE_ID, GROUP_ID)
+
+        // then
+        response shouldHaveHttpStatus NOT_FOUND
     }
 },)

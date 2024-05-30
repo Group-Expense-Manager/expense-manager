@@ -1,5 +1,6 @@
 package pl.edu.agh.gem.internal.service
 
+import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.assertions.throwables.shouldThrowWithMessage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.datatest.withData
@@ -29,6 +30,7 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.TARGET_CURRENCY_NOT_
 import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_PARTICIPANT
 import pl.edu.agh.gem.util.DummyData.CURRENCY_1
 import pl.edu.agh.gem.util.DummyData.CURRENCY_2
+import pl.edu.agh.gem.util.DummyData.EXPENSE_ID
 import pl.edu.agh.gem.util.createCurrencies
 import pl.edu.agh.gem.util.createExchangeRate
 import pl.edu.agh.gem.util.createExpense
@@ -129,6 +131,28 @@ class ExpenseServiceTest : ShouldSpec({
             shouldThrowWithMessage<ValidatorsException>("Failed validations: $expectedMessage") { expenseService.create(group, expense) }
             verify(expenseRepository, times(0)).create(anyVararg(Expense::class))
         }
+    }
+
+    should("get expense") {
+        // given
+        val expense = createExpense()
+        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
+
+        // when
+        val result = expenseService.getExpense(EXPENSE_ID, GROUP_ID)
+
+        // then
+        result shouldBe expense
+        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
+    }
+
+    should("throw MissingExpenseException when there is no expense for given id & groupId") {
+        // given
+        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(null)
+
+        // when & then
+        shouldThrowExactly<MissingExpenseException> { expenseService.getExpense(EXPENSE_ID, GROUP_ID) }
+        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
     }
 },)
 
