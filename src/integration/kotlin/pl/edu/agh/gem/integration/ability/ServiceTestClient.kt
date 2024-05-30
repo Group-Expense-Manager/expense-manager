@@ -36,4 +36,11 @@ class ServiceTestClient(applicationContext: WebApplicationContext) {
             .headers { it.withValidatedUser(user).withAppAcceptType() }
             .exchange()
     }
+
+    fun getGroupExpenses(user: GemUser, groupId: String): ResponseSpec {
+        return webClient.get()
+            .uri { it.path("$EXTERNAL/expenses").queryParam("groupId", groupId).build() }
+            .headers { it.withValidatedUser(user).withAppAcceptType() }
+            .exchange()
+    }
 }
