@@ -5,7 +5,9 @@ import pl.edu.agh.gem.external.dto.currency.ExchangeRateResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseCreationRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseDecisionRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseParticipantRequestData
+import pl.edu.agh.gem.external.dto.group.CurrencyDTO
 import pl.edu.agh.gem.external.dto.group.GroupResponse
+import pl.edu.agh.gem.external.dto.group.MemberDTO
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.group.createGroupMembers
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
@@ -69,15 +71,23 @@ fun createCurrencies(
 
 fun createCurrenciesResponse(
     vararg currencies: String = arrayOf(CURRENCY_1),
-) = CurrenciesResponse(currencies.toList())
+) = CurrenciesResponse(currencies.map { CurrencyDTO(it) })
 
 fun createExchangeRate(
     value: BigDecimal = EXCHANGE_RATE_VALUE,
 ) = ExchangeRate(value)
 
 fun createExchangeRateResponse(
+    currencyFrom: String = CURRENCY_1,
+    currencyTo: String = CURRENCY_2,
     value: BigDecimal = EXCHANGE_RATE_VALUE,
-) = ExchangeRateResponse(value)
+    createdAt: Instant = now(),
+) = ExchangeRateResponse(
+    currencyFrom = currencyFrom,
+    currencyTo = currencyTo,
+    rate = value,
+    createdAt = createdAt,
+)
 
 fun createExpense(
     id: String = EXPENSE_ID,
@@ -133,9 +143,9 @@ fun createGroup(
 )
 
 fun createGroupResponse(
-    members: List<String> = listOf(USER_ID, OTHER_USER_ID),
+    members: List<MemberDTO> = listOf(USER_ID, OTHER_USER_ID).map { MemberDTO(it) },
     acceptRequired: Boolean = false,
-    currencies: List<String> = listOf(CURRENCY_1, CURRENCY_2),
+    currencies: List<CurrencyDTO> = listOf(CURRENCY_1, CURRENCY_2).map { CurrencyDTO(it) },
 ) = GroupResponse(
     members = members,
     acceptRequired = acceptRequired,
@@ -167,6 +177,14 @@ fun createExpenseDecision(
     decision = decision,
     message = message,
 )
+
+fun createCurrenciesDTO(
+    vararg currency: String = arrayOf(CURRENCY_1, CURRENCY_2),
+) = currency.map { CurrencyDTO(it) }
+
+fun createMembersDTO(
+    vararg members: String = arrayOf(USER_ID, OTHER_USER_ID),
+) = members.map { MemberDTO(it) }
 
 object DummyData {
     const val EXPENSE_ID = "expenseId"
