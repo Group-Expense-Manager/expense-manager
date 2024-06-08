@@ -28,8 +28,8 @@ class GroupManagerClientIT(
         // given
         val members = createMembersDTO(USER_ID, OTHER_USER_ID)
         val listOfCurrencies = createCurrenciesDTO("PLN", "USD", "EUR")
-        val groupOptions = createGroupResponse(members = members, acceptRequired = true, currencies = listOfCurrencies)
-        stubGroupManagerGroup(groupOptions, GROUP_ID)
+        val groupResponse = createGroupResponse(members = members, acceptRequired = true, groupCurrencies = listOfCurrencies)
+        stubGroupManagerGroup(groupResponse, GROUP_ID)
 
         // when
         val result = groupManagerClient.getGroup(GROUP_ID)
@@ -45,8 +45,8 @@ class GroupManagerClientIT(
 
     should("throw GroupManagerClientException when we send bad request") {
         // given
-        val groupOptions = createGroupResponse()
-        stubGroupManagerGroup(groupOptions, GROUP_ID, NOT_ACCEPTABLE)
+        val groupResponse = createGroupResponse()
+        stubGroupManagerGroup(groupResponse, GROUP_ID, NOT_ACCEPTABLE)
 
         // when & then
         shouldThrow<GroupManagerClientException> {
@@ -56,8 +56,8 @@ class GroupManagerClientIT(
 
     should("throw RetryableCurrencyManagerClientException when client has internal error") {
         // given
-        val groupOptions = createGroupResponse()
-        stubGroupManagerGroup(groupOptions, GROUP_ID, INTERNAL_SERVER_ERROR)
+        val groupResponse = createGroupResponse()
+        stubGroupManagerGroup(groupResponse, GROUP_ID, INTERNAL_SERVER_ERROR)
 
         // when & then
         shouldThrow<RetryableGroupManagerClientException> {

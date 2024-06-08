@@ -8,12 +8,12 @@ import pl.edu.agh.gem.model.GroupMembers
 data class GroupResponse(
     val members: List<MemberDTO>,
     val acceptRequired: Boolean,
-    val currencies: List<CurrencyDTO>,
+    val groupCurrencies: List<CurrencyDTO>,
 ) {
     fun toDomain() = Group(
         members = GroupMembers(members.map { GroupMember(it.id) }),
         acceptRequired = acceptRequired,
-        currencies = currencies.map { Currency(it.code) },
+        currencies = groupCurrencies.map { Currency(it.code) },
     )
 }
 

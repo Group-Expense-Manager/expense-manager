@@ -145,11 +145,11 @@ fun createGroup(
 fun createGroupResponse(
     members: List<MemberDTO> = listOf(USER_ID, OTHER_USER_ID).map { MemberDTO(it) },
     acceptRequired: Boolean = false,
-    currencies: List<CurrencyDTO> = listOf(CURRENCY_1, CURRENCY_2).map { CurrencyDTO(it) },
+    groupCurrencies: List<CurrencyDTO> = listOf(CURRENCY_1, CURRENCY_2).map { CurrencyDTO(it) },
 ) = GroupResponse(
     members = members,
     acceptRequired = acceptRequired,
-    currencies = currencies,
+    groupCurrencies = groupCurrencies,
 )
 
 fun createExpenseDecisionRequest(
