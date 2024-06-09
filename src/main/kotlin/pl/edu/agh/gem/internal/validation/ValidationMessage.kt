@@ -8,7 +8,7 @@ object ValidationMessage {
     const val BASE_CURRENCY_PATTERN = "Base currency must be a 3-letter uppercase code"
     const val TARGET_CURRENCY_PATTERN = "Target Currency must be null or a 3-letter uppercase code"
     const val EXPENSE_PARTICIPANTS_NOT_EMPTY = "Expense participant list can not be empty"
-    const val ATTACHMENT_ID_NOT_NULL_AND_BLANK = "AttachmentId can not be not null and blank at the same time"
+    const val ATTACHMENT_ID_NULL_OR_NOT_BLANK = "AttachmentId can not be not null and blank at the same time"
     const val PARTICIPANT_ID_NOT_BLANK = "Participant's id can not be blank"
     const val POSITIVE_PARTICIPANT_COST = "Participant's cost must be positive"
 
@@ -24,7 +24,7 @@ object ValidationMessage {
 
     const val EXPENSE_ID_NOT_BLANK = "Expense id can not be blank"
     const val GROUP_ID_NOT_BLANK = "Group id can not be blank"
-    const val MESSAGE_NOT_NULL_AND_BLANK = "Message can not be blank and not null at the same time"
+    const val MESSAGE_NULL_OR_NOT_BLANK = "Message can not be blank and not null at the same time"
 
     const val CREATOR_DECISION = "Expense creator can not accept or reject expense"
 }

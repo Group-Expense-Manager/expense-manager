@@ -33,7 +33,7 @@ import pl.edu.agh.gem.integration.ability.stubGroupManagerMembers
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.internal.service.MissingExpenseException
 import pl.edu.agh.gem.internal.service.UserNotParticipantException
-import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NOT_NULL_AND_BLANK
+import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NULL_OR_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_AVAILABLE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_BLANK
@@ -45,7 +45,7 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.DUPLICATED_PARTICIPA
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_PARTICIPANTS_NOT_EMPTY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.GROUP_ID_NOT_BLANK
-import pl.edu.agh.gem.internal.validation.ValidationMessage.MESSAGE_NOT_NULL_AND_BLANK
+import pl.edu.agh.gem.internal.validation.ValidationMessage.MESSAGE_NULL_OR_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_MIN_SIZE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_NOT_GROUP_MEMBER
@@ -91,7 +91,7 @@ class ExpenseControllerIT(
                 Pair(BASE_CURRENCY_PATTERN, createExpenseCreationRequest(baseCurrency = "pln")),
                 Pair(TARGET_CURRENCY_PATTERN, createExpenseCreationRequest(targetCurrency = "pln")),
                 Pair(EXPENSE_PARTICIPANTS_NOT_EMPTY, createExpenseCreationRequest(expenseParticipants = emptyList())),
-                Pair(ATTACHMENT_ID_NOT_NULL_AND_BLANK, createExpenseCreationRequest(attachmentId = "")),
+                Pair(ATTACHMENT_ID_NULL_OR_NOT_BLANK, createExpenseCreationRequest(attachmentId = "")),
                 Pair(
                     PARTICIPANT_ID_NOT_BLANK,
                     createExpenseCreationRequest(expenseParticipants = listOf(createExpenseParticipantDto(participantId = ""))),
@@ -452,7 +452,7 @@ class ExpenseControllerIT(
                 nameFn = { it.first },
                 Pair(EXPENSE_ID_NOT_BLANK, createExpenseDecisionRequest(expenseId = "")),
                 Pair(GROUP_ID_NOT_BLANK, createExpenseDecisionRequest(groupId = "")),
-                Pair(MESSAGE_NOT_NULL_AND_BLANK, createExpenseDecisionRequest(message = "")),
+                Pair(MESSAGE_NULL_OR_NOT_BLANK, createExpenseDecisionRequest(message = "")),
 
             ) { (expectedMessage, expenseDecisionRequest) ->
                 // when
