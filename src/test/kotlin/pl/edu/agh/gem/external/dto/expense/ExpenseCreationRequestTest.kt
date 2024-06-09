@@ -49,7 +49,7 @@ class ExpenseCreationRequestTest : ShouldSpec({
                 entry.createdAt.shouldNotBeNull()
                 entry.expenseAction shouldBe CREATED
                 entry.participantId shouldBe USER_ID
-                entry.comment.shouldBeNull()
+                entry.comment shouldBe expenseCreationRequest.message
             }
         }
     }
