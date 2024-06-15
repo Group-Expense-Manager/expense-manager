@@ -20,6 +20,7 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NULL_O
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_PATTERN
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_PARTICIPANTS_NOT_EMPTY
+import pl.edu.agh.gem.internal.validation.ValidationMessage.MESSAGE_NULL_OR_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.POSITIVE_COST
 import pl.edu.agh.gem.internal.validation.ValidationMessage.POSITIVE_PARTICIPANT_COST
@@ -47,6 +48,8 @@ data class ExpenseCreationRequest(
     @field:NotEmpty(message = EXPENSE_PARTICIPANTS_NOT_EMPTY)
     @field:Valid
     val expenseParticipants: List<ExpenseParticipantRequestData>,
+    @field:NullOrNotBlank(message = MESSAGE_NULL_OR_NOT_BLANK)
+    val message: String? = null,
     @field:NullOrNotBlank(message = ATTACHMENT_ID_NULL_OR_NOT_BLANK)
     val attachmentId: String?,
 ) {
@@ -66,7 +69,7 @@ data class ExpenseCreationRequest(
             attachmentId = attachmentId,
             expenseParticipants = expenseParticipants.map { it.toDomain(it.participantId == userId) },
             status = PENDING,
-            statusHistory = arrayListOf(StatusHistoryEntry(userId, ExpenseAction.CREATED)),
+            statusHistory = arrayListOf(StatusHistoryEntry(userId, ExpenseAction.CREATED, comment = message)),
         )
 }
 

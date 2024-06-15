@@ -45,7 +45,7 @@ fun createExpenseCreationRequest(
         createExpenseParticipantDto(USER_ID, BigDecimal.ONE),
         createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.valueOf(9L)),
     ),
-
+    message: String? = "Something",
     attachmentId: String? = "1234-1234-ffff",
 ) = ExpenseCreationRequest(
     title = title,
@@ -54,6 +54,7 @@ fun createExpenseCreationRequest(
     targetCurrency = targetCurrency,
     expenseDate = expenseDate,
     expenseParticipants = expenseParticipants,
+    message = message,
     attachmentId = attachmentId,
 )
 
