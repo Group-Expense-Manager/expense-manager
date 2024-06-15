@@ -17,17 +17,19 @@ import pl.edu.agh.gem.internal.client.GroupManagerClientException
 import pl.edu.agh.gem.internal.client.RetryableGroupManagerClientException
 import pl.edu.agh.gem.internal.model.currency.Currency
 import pl.edu.agh.gem.model.GroupMember
+import pl.edu.agh.gem.util.createCurrenciesDTO
 import pl.edu.agh.gem.util.createGroupResponse
+import pl.edu.agh.gem.util.createMembersDTO
 
 class GroupManagerClientIT(
     private val groupManagerClient: GroupManagerClient,
 ) : BaseIntegrationSpec({
     should("get group") {
         // given
-        val members = listOf(USER_ID, OTHER_USER_ID)
-        val listOfCurrencies = listOf("PLN", "USD", "EUR")
-        val groupOptions = createGroupResponse(members = members, acceptRequired = true, currencies = listOfCurrencies)
-        stubGroupManagerGroup(groupOptions, GROUP_ID)
+        val members = createMembersDTO(USER_ID, OTHER_USER_ID)
+        val listOfCurrencies = createCurrenciesDTO("PLN", "USD", "EUR")
+        val groupResponse = createGroupResponse(members = members, acceptRequired = true, groupCurrencies = listOfCurrencies)
+        stubGroupManagerGroup(groupResponse, GROUP_ID)
 
         // when
         val result = groupManagerClient.getGroup(GROUP_ID)
@@ -36,15 +38,15 @@ class GroupManagerClientIT(
         result.also {
             it.shouldNotBeNull()
             it.acceptRequired shouldBe true
-            it.currencies shouldBe listOfCurrencies.map { currency -> Currency(currency) }
-            it.members.members shouldBe members.map { member -> GroupMember(member) }
+            it.currencies shouldBe listOfCurrencies.map { currency -> Currency(currency.code) }
+            it.members.members shouldBe members.map { member -> GroupMember(member.id) }
         }
     }
 
     should("throw GroupManagerClientException when we send bad request") {
         // given
-        val groupOptions = createGroupResponse()
-        stubGroupManagerGroup(groupOptions, GROUP_ID, NOT_ACCEPTABLE)
+        val groupResponse = createGroupResponse()
+        stubGroupManagerGroup(groupResponse, GROUP_ID, NOT_ACCEPTABLE)
 
         // when & then
         shouldThrow<GroupManagerClientException> {
@@ -54,8 +56,8 @@ class GroupManagerClientIT(
 
     should("throw RetryableCurrencyManagerClientException when client has internal error") {
         // given
-        val groupOptions = createGroupResponse()
-        stubGroupManagerGroup(groupOptions, GROUP_ID, INTERNAL_SERVER_ERROR)
+        val groupResponse = createGroupResponse()
+        stubGroupManagerGroup(groupResponse, GROUP_ID, INTERNAL_SERVER_ERROR)
 
         // when & then
         shouldThrow<RetryableGroupManagerClientException> {

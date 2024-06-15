@@ -16,7 +16,7 @@ import pl.edu.agh.gem.internal.model.expense.ExpenseParticipant
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
-import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NOT_NULL_AND_BLANK
+import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NULL_OR_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_PATTERN
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_PARTICIPANTS_NOT_EMPTY
@@ -47,7 +47,7 @@ data class ExpenseCreationRequest(
     @field:NotEmpty(message = EXPENSE_PARTICIPANTS_NOT_EMPTY)
     @field:Valid
     val expenseParticipants: List<ExpenseParticipantRequestData>,
-    @field:NullOrNotBlank(message = ATTACHMENT_ID_NOT_NULL_AND_BLANK)
+    @field:NullOrNotBlank(message = ATTACHMENT_ID_NULL_OR_NOT_BLANK)
     val attachmentId: String?,
 ) {
     fun toDomain(userId: String, groupId: String) =

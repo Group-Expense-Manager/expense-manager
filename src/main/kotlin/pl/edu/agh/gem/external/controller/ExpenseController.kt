@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
 import pl.edu.agh.gem.external.dto.expense.ExpenseCreationRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseCreationResponse
+import pl.edu.agh.gem.external.dto.expense.ExpenseDecisionRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
 import pl.edu.agh.gem.external.dto.expense.GroupExpensesResponse
 import pl.edu.agh.gem.external.dto.expense.toGroupExpensesResponse
@@ -63,6 +64,17 @@ class ExpenseController(
     ): GroupExpensesResponse {
         userId.checkIfUserHaveAccess(expenseService.getMembers(groupId))
         return expenseService.getGroupExpenses(groupId).toGroupExpensesResponse()
+    }
+
+    @PostMapping("decide", consumes = [APPLICATION_JSON_INTERNAL_VER_1])
+    @ResponseStatus(OK)
+    fun decide(
+        @GemUserId userId: String,
+        @Valid @RequestBody
+        expenseDecisionRequest: ExpenseDecisionRequest,
+    ) {
+        userId.checkIfUserHaveAccess(expenseService.getMembers(expenseDecisionRequest.groupId))
+        expenseService.decide(expenseDecisionRequest.toDomain(userId))
     }
 
     private fun String.checkIfUserHaveAccess(groupMembers: GroupMembers) {

@@ -28,6 +28,10 @@ class MongoExpenseRepository(
         return mongo.find(query, ExpenseEntity::class.java).map(ExpenseEntity::toDomain)
     }
 
+    override fun save(expense: Expense) {
+        mongo.save(expense.toEntity())
+    }
+
     private fun Expense.toEntity() =
         ExpenseEntity(
             id = id,

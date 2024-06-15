@@ -23,6 +23,7 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_AVAILABLE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES
 import pl.edu.agh.gem.internal.validation.ValidationMessage.COST_NOT_SUM_UP
+import pl.edu.agh.gem.internal.validation.ValidationMessage.CREATOR_DECISION
 import pl.edu.agh.gem.internal.validation.ValidationMessage.DUPLICATED_PARTICIPANT
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_MIN_SIZE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_NOT_GROUP_MEMBER
@@ -34,6 +35,7 @@ import pl.edu.agh.gem.util.DummyData.EXPENSE_ID
 import pl.edu.agh.gem.util.createCurrencies
 import pl.edu.agh.gem.util.createExchangeRate
 import pl.edu.agh.gem.util.createExpense
+import pl.edu.agh.gem.util.createExpenseDecision
 import pl.edu.agh.gem.util.createExpenseParticipant
 import pl.edu.agh.gem.util.createGroup
 import pl.edu.agh.gem.validator.ValidatorsException
@@ -175,6 +177,58 @@ class ExpenseServiceTest : ShouldSpec({
         // when & then
         shouldThrowExactly<GroupWithoutExpenseException> { expenseService.getGroupExpenses(GROUP_ID) }
         verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
+    }
+
+    should("decide") {
+        // given
+        val expense = createExpense()
+        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
+
+        val expenseDecision = createExpenseDecision(userId = OTHER_USER_ID)
+
+        // when
+        expenseService.decide(expenseDecision)
+
+        // then
+        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
+        verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
+    }
+
+    should("throw MissingExpenseException when expense is not present") {
+        // given
+        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(null)
+        val expenseDecision = createExpenseDecision()
+
+        // when & then
+        shouldThrowExactly<MissingExpenseException> { expenseService.decide(expenseDecision) }
+        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
+        verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
+    }
+
+    should("throw ValidatorsException when user is expense creator") {
+        // given
+        val expense = createExpense()
+        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
+
+        val expenseDecision = createExpenseDecision()
+
+        // when & then
+        shouldThrowWithMessage<ValidatorsException>("Failed validations: $CREATOR_DECISION") { expenseService.decide(expenseDecision) }
+        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
+        verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
+    }
+
+    should("throw UserNotParticipantException when user is not participant") {
+        // given
+        val expense = createExpense()
+        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
+
+        val expenseDecision = createExpenseDecision(userId = "notParticipant")
+
+        // when & then
+        shouldThrowExactly<UserNotParticipantException> { expenseService.decide(expenseDecision) }
+        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
+        verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
     }
 },)
 

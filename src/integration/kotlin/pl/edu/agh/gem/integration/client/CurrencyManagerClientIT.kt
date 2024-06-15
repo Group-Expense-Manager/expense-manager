@@ -60,7 +60,7 @@ class CurrencyManagerClientIT(
     should("get exchange rate") {
         // given
         val date = Instant.ofEpochMilli(0L)
-        val exchangeRateResponse = createExchangeRateResponse(EXCHANGE_RATE_VALUE)
+        val exchangeRateResponse = createExchangeRateResponse(value = EXCHANGE_RATE_VALUE)
         stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, date)
 
         // when

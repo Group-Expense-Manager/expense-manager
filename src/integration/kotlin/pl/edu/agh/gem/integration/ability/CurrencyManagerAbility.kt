@@ -1,5 +1,6 @@
 package pl.edu.agh.gem.integration.ability
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
@@ -16,9 +17,7 @@ private fun createGroupsUrl() =
     "$INTERNAL/currencies"
 
 private fun createExchangeRateUrl(baseCurrency: String, targetCurrency: String, date: Instant) =
-    UriComponentsBuilder.fromUriString("$INTERNAL/exchange-rate")
-        .queryParam("baseCurrency", baseCurrency)
-        .queryParam("targetCurrency", targetCurrency)
+    UriComponentsBuilder.fromUriString("$INTERNAL/currencies/from/$baseCurrency/to/$targetCurrency/")
         .queryParam("date", date.toString())
         .build()
         .toUriString()
@@ -45,7 +44,7 @@ fun stubCurrencyManagerExchangeRate(body: Any?, baseCurrency: String, targetCurr
                     .withStatus(statusCode.value())
                     .withAppContentType()
                     .withBody(
-                        jacksonObjectMapper().writeValueAsString(body),
+                        jacksonObjectMapper().registerModules(JavaTimeModule()).writeValueAsString(body),
                     ),
             ),
     )

@@ -80,9 +80,7 @@ class RestCurrencyManagerClient(
         "${currencyManagerProperties.url}$INTERNAL/currencies"
 
     private fun resolveExchangeRateAddress(baseCurrency: String, targetCurrency: String, date: Instant) =
-        UriComponentsBuilder.fromUriString("${currencyManagerProperties.url}$INTERNAL/exchange-rate")
-            .queryParam("baseCurrency", baseCurrency)
-            .queryParam("targetCurrency", targetCurrency)
+        UriComponentsBuilder.fromUriString("${currencyManagerProperties.url}$INTERNAL/currencies/from/$baseCurrency/to/$targetCurrency/")
             .queryParam("date", date.toString())
             .build()
             .toUriString()

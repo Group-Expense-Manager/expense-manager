@@ -43,4 +43,12 @@ class ServiceTestClient(applicationContext: WebApplicationContext) {
             .headers { it.withValidatedUser(user).withAppAcceptType() }
             .exchange()
     }
+
+    fun decide(body: Any, user: GemUser): ResponseSpec {
+        return webClient.post()
+            .uri(URI("$EXTERNAL/expenses/decide"))
+            .headers { it.withValidatedUser(user).withAppContentType() }
+            .bodyValue(body)
+            .exchange()
+    }
 }

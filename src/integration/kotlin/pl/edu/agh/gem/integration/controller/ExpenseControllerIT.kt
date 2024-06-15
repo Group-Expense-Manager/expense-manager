@@ -10,15 +10,17 @@ import org.springframework.http.HttpStatus.FORBIDDEN
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.HttpStatus.OK
 import pl.edu.agh.gem.assertion.shouldBody
+import pl.edu.agh.gem.assertion.shouldHaveErrors
 import pl.edu.agh.gem.assertion.shouldHaveHttpStatus
 import pl.edu.agh.gem.assertion.shouldHaveValidationError
 import pl.edu.agh.gem.assertion.shouldHaveValidatorError
 import pl.edu.agh.gem.dto.GroupMemberResponse
 import pl.edu.agh.gem.dto.GroupMembersResponse
-import pl.edu.agh.gem.external.dto.currency.ExchangeRateResponse
+import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
 import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
 import pl.edu.agh.gem.external.dto.expense.GroupExpensesResponse
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
+import pl.edu.agh.gem.helper.group.createGroupMembers
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.helper.user.createGemUser
@@ -29,15 +31,21 @@ import pl.edu.agh.gem.integration.ability.stubCurrencyManagerExchangeRate
 import pl.edu.agh.gem.integration.ability.stubGroupManagerGroup
 import pl.edu.agh.gem.integration.ability.stubGroupManagerMembers
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
-import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NOT_NULL_AND_BLANK
+import pl.edu.agh.gem.internal.service.MissingExpenseException
+import pl.edu.agh.gem.internal.service.UserNotParticipantException
+import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NULL_OR_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_AVAILABLE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_PATTERN
 import pl.edu.agh.gem.internal.validation.ValidationMessage.COST_NOT_SUM_UP
+import pl.edu.agh.gem.internal.validation.ValidationMessage.CREATOR_DECISION
 import pl.edu.agh.gem.internal.validation.ValidationMessage.DUPLICATED_PARTICIPANT
+import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_PARTICIPANTS_NOT_EMPTY
+import pl.edu.agh.gem.internal.validation.ValidationMessage.GROUP_ID_NOT_BLANK
+import pl.edu.agh.gem.internal.validation.ValidationMessage.MESSAGE_NULL_OR_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_MIN_SIZE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_NOT_GROUP_MEMBER
@@ -52,12 +60,16 @@ import pl.edu.agh.gem.util.DummyData.CURRENCY_1
 import pl.edu.agh.gem.util.DummyData.CURRENCY_2
 import pl.edu.agh.gem.util.DummyData.EXCHANGE_RATE_VALUE
 import pl.edu.agh.gem.util.DummyData.EXPENSE_ID
+import pl.edu.agh.gem.util.createCurrenciesDTO
 import pl.edu.agh.gem.util.createCurrenciesResponse
+import pl.edu.agh.gem.util.createExchangeRateResponse
 import pl.edu.agh.gem.util.createExpense
 import pl.edu.agh.gem.util.createExpenseCreationRequest
+import pl.edu.agh.gem.util.createExpenseDecisionRequest
 import pl.edu.agh.gem.util.createExpenseParticipant
 import pl.edu.agh.gem.util.createExpenseParticipantDto
 import pl.edu.agh.gem.util.createGroupResponse
+import pl.edu.agh.gem.util.createMembersDTO
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -79,7 +91,7 @@ class ExpenseControllerIT(
                 Pair(BASE_CURRENCY_PATTERN, createExpenseCreationRequest(baseCurrency = "pln")),
                 Pair(TARGET_CURRENCY_PATTERN, createExpenseCreationRequest(targetCurrency = "pln")),
                 Pair(EXPENSE_PARTICIPANTS_NOT_EMPTY, createExpenseCreationRequest(expenseParticipants = emptyList())),
-                Pair(ATTACHMENT_ID_NOT_NULL_AND_BLANK, createExpenseCreationRequest(attachmentId = "")),
+                Pair(ATTACHMENT_ID_NULL_OR_NOT_BLANK, createExpenseCreationRequest(attachmentId = "")),
                 Pair(
                     PARTICIPANT_ID_NOT_BLANK,
                     createExpenseCreationRequest(expenseParticipants = listOf(createExpenseParticipantDto(participantId = ""))),
@@ -102,9 +114,14 @@ class ExpenseControllerIT(
         should("create expense") {
             // given
             val createExpenseRequest = createExpenseCreationRequest()
-            stubGroupManagerGroup(createGroupResponse(currencies = listOf(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
-            stubCurrencyManagerExchangeRate(ExchangeRateResponse(EXCHANGE_RATE_VALUE), CURRENCY_1, CURRENCY_2, Instant.ofEpochSecond(0L))
+            stubCurrencyManagerExchangeRate(
+                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
+                CURRENCY_1,
+                CURRENCY_2,
+                Instant.ofEpochSecond(0L),
+            )
 
             // when
             val response = service.createExpense(createExpenseRequest, createGemUser(USER_ID), GROUP_ID)
@@ -118,7 +135,7 @@ class ExpenseControllerIT(
             val user = createGemUser()
             val groupId = GROUP_ID
             val createExpenseRequest = createExpenseCreationRequest()
-            stubGroupManagerGroup(createGroupResponse(members = listOf(OTHER_USER_ID)), GROUP_ID)
+            stubGroupManagerGroup(createGroupResponse(members = createMembersDTO(OTHER_USER_ID)), GROUP_ID)
 
             // when
             val response = service.createExpense(createExpenseRequest, user, groupId)
@@ -130,9 +147,14 @@ class ExpenseControllerIT(
         should("return validator exception cause COST_NOT_SUM_UP") {
             // given
             val createExpenseRequest = createExpenseCreationRequest(cost = BigDecimal.TWO)
-            stubGroupManagerGroup(createGroupResponse(currencies = listOf(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
-            stubCurrencyManagerExchangeRate(ExchangeRateResponse(EXCHANGE_RATE_VALUE), CURRENCY_1, CURRENCY_2, Instant.ofEpochSecond(0L))
+            stubCurrencyManagerExchangeRate(
+                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
+                CURRENCY_1,
+                CURRENCY_2,
+                Instant.ofEpochSecond(0L),
+            )
 
             // when
             val response = service.createExpense(createExpenseRequest, createGemUser(USER_ID), GROUP_ID)
@@ -147,9 +169,14 @@ class ExpenseControllerIT(
             val createExpenseRequest = createExpenseCreationRequest(
                 expenseParticipants = listOf(createExpenseParticipantDto(participantId = OTHER_USER_ID)),
             )
-            stubGroupManagerGroup(createGroupResponse(currencies = listOf(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
-            stubCurrencyManagerExchangeRate(ExchangeRateResponse(EXCHANGE_RATE_VALUE), CURRENCY_1, CURRENCY_2, Instant.ofEpochSecond(0L))
+            stubCurrencyManagerExchangeRate(
+                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
+                CURRENCY_1,
+                CURRENCY_2,
+                Instant.ofEpochSecond(0L),
+            )
 
             // when
             val response = service.createExpense(createExpenseRequest, createGemUser(USER_ID), GROUP_ID)
@@ -164,9 +191,14 @@ class ExpenseControllerIT(
             val createExpenseRequest = createExpenseCreationRequest(
                 expenseParticipants = listOf(createExpenseParticipantDto(), createExpenseParticipantDto()),
             )
-            stubGroupManagerGroup(createGroupResponse(currencies = listOf(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
-            stubCurrencyManagerExchangeRate(ExchangeRateResponse(EXCHANGE_RATE_VALUE), CURRENCY_1, CURRENCY_2, Instant.ofEpochSecond(0L))
+            stubCurrencyManagerExchangeRate(
+                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
+                CURRENCY_1,
+                CURRENCY_2,
+                Instant.ofEpochSecond(0L),
+            )
 
             // when
             val response = service.createExpense(createExpenseRequest, createGemUser(USER_ID), GROUP_ID)
@@ -179,9 +211,14 @@ class ExpenseControllerIT(
         should("return validator exception cause PARTICIPANT_MIN_SIZE") {
             // given
             val createExpenseRequest = createExpenseCreationRequest(expenseParticipants = listOf(createExpenseParticipantDto()))
-            stubGroupManagerGroup(createGroupResponse(currencies = listOf(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
-            stubCurrencyManagerExchangeRate(ExchangeRateResponse(EXCHANGE_RATE_VALUE), CURRENCY_1, CURRENCY_2, Instant.ofEpochSecond(0L))
+            stubCurrencyManagerExchangeRate(
+                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
+                CURRENCY_1,
+                CURRENCY_2,
+                Instant.ofEpochSecond(0L),
+            )
 
             // when
             val response = service.createExpense(createExpenseRequest, createGemUser(USER_ID), GROUP_ID)
@@ -194,9 +231,17 @@ class ExpenseControllerIT(
         should("return validator exception cause PARTICIPANT_NOT_GROUP_MEMBER") {
             // given
             val createExpenseRequest = createExpenseCreationRequest()
-            stubGroupManagerGroup(createGroupResponse(members = listOf(USER_ID), currencies = listOf(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroup(
+                createGroupResponse(members = createMembersDTO(USER_ID), groupCurrencies = createCurrenciesDTO(CURRENCY_2)),
+                GROUP_ID,
+            )
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
-            stubCurrencyManagerExchangeRate(ExchangeRateResponse(EXCHANGE_RATE_VALUE), CURRENCY_1, CURRENCY_2, Instant.ofEpochSecond(0L))
+            stubCurrencyManagerExchangeRate(
+                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
+                CURRENCY_1,
+                CURRENCY_2,
+                Instant.ofEpochSecond(0L),
+            )
 
             // when
             val response = service.createExpense(createExpenseRequest, createGemUser(USER_ID), GROUP_ID)
@@ -209,9 +254,14 @@ class ExpenseControllerIT(
         should("return validator exception cause BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES") {
             // given
             val createExpenseRequest = createExpenseCreationRequest(targetCurrency = null)
-            stubGroupManagerGroup(createGroupResponse(currencies = listOf(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
-            stubCurrencyManagerExchangeRate(ExchangeRateResponse(EXCHANGE_RATE_VALUE), CURRENCY_1, CURRENCY_2, Instant.ofEpochSecond(0L))
+            stubCurrencyManagerExchangeRate(
+                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
+                CURRENCY_1,
+                CURRENCY_2,
+                Instant.ofEpochSecond(0L),
+            )
 
             // when
             val response = service.createExpense(createExpenseRequest, createGemUser(USER_ID), GROUP_ID)
@@ -224,9 +274,14 @@ class ExpenseControllerIT(
         should("return validator exception cause BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY") {
             // given
             val createExpenseRequest = createExpenseCreationRequest(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_1)
-            stubGroupManagerGroup(createGroupResponse(currencies = listOf(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
-            stubCurrencyManagerExchangeRate(ExchangeRateResponse(EXCHANGE_RATE_VALUE), CURRENCY_1, CURRENCY_2, Instant.ofEpochSecond(0L))
+            stubCurrencyManagerExchangeRate(
+                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
+                CURRENCY_1,
+                CURRENCY_2,
+                Instant.ofEpochSecond(0L),
+            )
 
             // when
             val response = service.createExpense(createExpenseRequest, createGemUser(USER_ID), GROUP_ID)
@@ -239,9 +294,14 @@ class ExpenseControllerIT(
         should("return validator exception cause TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES") {
             // given
             val createExpenseRequest = createExpenseCreationRequest(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_2)
-            stubGroupManagerGroup(createGroupResponse(currencies = listOf(CURRENCY_1)), GROUP_ID)
+            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_1)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
-            stubCurrencyManagerExchangeRate(ExchangeRateResponse(EXCHANGE_RATE_VALUE), CURRENCY_1, CURRENCY_2, Instant.ofEpochSecond(0L))
+            stubCurrencyManagerExchangeRate(
+                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
+                CURRENCY_1,
+                CURRENCY_2,
+                Instant.ofEpochSecond(0L),
+            )
 
             // when
             val response = service.createExpense(createExpenseRequest, createGemUser(USER_ID), GROUP_ID)
@@ -254,9 +314,14 @@ class ExpenseControllerIT(
         should("return validator exception cause BASE_CURRENCY_NOT_AVAILABLE") {
             // given
             val createExpenseRequest = createExpenseCreationRequest(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_2)
-            stubGroupManagerGroup(createGroupResponse(currencies = listOf(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_2))
-            stubCurrencyManagerExchangeRate(ExchangeRateResponse(EXCHANGE_RATE_VALUE), CURRENCY_1, CURRENCY_2, Instant.ofEpochSecond(0L))
+            stubCurrencyManagerExchangeRate(
+                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
+                CURRENCY_1,
+                CURRENCY_2,
+                Instant.ofEpochSecond(0L),
+            )
 
             // when
             val response = service.createExpense(createExpenseRequest, createGemUser(USER_ID), GROUP_ID)
@@ -376,6 +441,112 @@ class ExpenseControllerIT(
 
             // then
             response shouldHaveHttpStatus FORBIDDEN
+            response shouldHaveErrors {
+                errors shouldHaveSize 1
+                errors.first().code shouldBe UserWithoutGroupAccessException::class.simpleName
+            }
+        }
+
+        context("return validation exception cause:") {
+            withData(
+                nameFn = { it.first },
+                Pair(EXPENSE_ID_NOT_BLANK, createExpenseDecisionRequest(expenseId = "")),
+                Pair(GROUP_ID_NOT_BLANK, createExpenseDecisionRequest(groupId = "")),
+                Pair(MESSAGE_NULL_OR_NOT_BLANK, createExpenseDecisionRequest(message = "")),
+
+            ) { (expectedMessage, expenseDecisionRequest) ->
+                // when
+                val response = service.decide(expenseDecisionRequest, createGemUser())
+
+                // then
+                response shouldHaveHttpStatus BAD_REQUEST
+                response shouldHaveValidationError expectedMessage
+            }
+        }
+
+        should("decide") {
+            // given
+            val decisionRequest = createExpenseDecisionRequest()
+            val groupMembersResponse = createGroupMembers(USER_ID, OTHER_USER_ID)
+            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+            val expense = createExpense()
+            repository.create(expense)
+
+            // when
+            val response = service.decide(decisionRequest, createGemUser(id = OTHER_USER_ID))
+
+            // then
+            response shouldHaveHttpStatus OK
+        }
+
+        should("return forbidden if user is not a group member") {
+            // given
+            val decisionRequest = createExpenseDecisionRequest()
+            val groupMembersResponse = createGroupMembers(USER_ID)
+            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+
+            // when
+            val response = service.decide(decisionRequest, createGemUser(id = OTHER_USER_ID))
+
+            // then
+            response shouldHaveHttpStatus FORBIDDEN
+            response shouldHaveErrors {
+                errors shouldHaveSize 1
+                errors.first().code shouldBe UserWithoutGroupAccessException::class.simpleName
+            }
+        }
+
+        should("return not found when expense is not present") {
+            // given
+            val decisionRequest = createExpenseDecisionRequest()
+            val groupMembersResponse = createGroupMembers(USER_ID, OTHER_USER_ID)
+            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+
+            // when
+            val response = service.decide(decisionRequest, createGemUser(id = OTHER_USER_ID))
+
+            // then
+            response shouldHaveHttpStatus NOT_FOUND
+            response shouldHaveErrors {
+                errors shouldHaveSize 1
+                errors.first().code shouldBe MissingExpenseException::class.simpleName
+            }
+        }
+
+        should("return bad request when user is expense creator") {
+            // given
+            val decisionRequest = createExpenseDecisionRequest()
+            val groupMembersResponse = createGroupMembers(USER_ID, OTHER_USER_ID)
+            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+            val expense = createExpense()
+            repository.create(expense)
+
+            // when
+            val response = service.decide(decisionRequest, createGemUser(id = USER_ID))
+
+            // then
+            response shouldHaveHttpStatus BAD_REQUEST
+            response shouldHaveValidatorError CREATOR_DECISION
+        }
+
+        should("return forbidden when group member is not expense participant") {
+            // given
+            val decisionRequest = createExpenseDecisionRequest()
+            val anotherUserId = "AnotherUserId"
+            val groupMembersResponse = createGroupMembers(USER_ID, OTHER_USER_ID, anotherUserId)
+            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+            val expense = createExpense()
+            repository.create(expense)
+
+            // when
+            val response = service.decide(decisionRequest, createGemUser(id = anotherUserId))
+
+            // then
+            response shouldHaveHttpStatus FORBIDDEN
+            response shouldHaveErrors {
+                errors shouldHaveSize 1
+                errors.first().code shouldBe UserNotParticipantException::class.simpleName
+            }
         }
     },
 )
