@@ -1,4 +1,15 @@
-data:
-  mongodb:
-    uri: mongodb + srv ://<username>:<pwd>@<cluster>.mongodb.net/<dbname>
+spring:
+  data:
+    mongodb:
+      uri: ${EXPENSE_MANAGER_DB_URI}
 
+currency-manager:
+  url: http://${CURRENCY_MANAGER_SERVICE_SERVICE_HOST}:8080
+  read-timeout: 1000ms
+  connect-timeout: 1000ms
+
+
+group-manager:
+  url: http://${GROUP_MANAGER_SERVICE_SERVICE_HOST}:8080
+  read-timeout: 1000ms
+  connect-timeout: 1000ms
