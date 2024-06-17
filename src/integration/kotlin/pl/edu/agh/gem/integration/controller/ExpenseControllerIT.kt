@@ -420,18 +420,6 @@ class ExpenseControllerIT(
             }
         }
 
-        should("return not found if group has no expenses") {
-            // given
-            val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(USER_ID)))
-            stubGroupManagerMembers(groupMembers, GROUP_ID)
-
-            // when
-            val response = service.getGroupExpenses(createGemUser(USER_ID), GROUP_ID)
-
-            // then
-            response shouldHaveHttpStatus NOT_FOUND
-        }
-
         should("return forbidden if user is not a group member") {
             // given
             val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(OTHER_USER_ID)))

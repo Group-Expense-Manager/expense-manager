@@ -170,12 +170,15 @@ class ExpenseServiceTest : ShouldSpec({
         verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
     }
 
-    should("throw GroupWithoutExpenseException when group has no expenses") {
+    should("return empty list when group has no expenses") {
         // given
         whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(listOf())
 
-        // when & then
-        shouldThrowExactly<GroupWithoutExpenseException> { expenseService.getGroupExpenses(GROUP_ID) }
+        // when
+        val result = expenseService.getGroupExpenses(GROUP_ID)
+
+        // then
+        result shouldBe listOf()
         verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
     }
 
