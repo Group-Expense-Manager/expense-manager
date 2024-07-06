@@ -116,10 +116,25 @@ class ExpenseService(
             expenseDecision = expenseDecision,
         )
     }
+
+    fun deleteExpense(expenseId: String, groupId: String, userId: String) {
+        val expenseToDelete = expenseRepository.findByExpenseIdAndGroupId(expenseId, groupId) ?: throw MissingExpenseException(expenseId, groupId)
+
+        if (!userId.isCreator(expenseToDelete)) {
+            throw UserNotExpenseCreatorException(userId, expenseId)
+        }
+
+        expenseRepository.delete(expenseToDelete)
+    }
+
+    private fun String.isCreator(expense: Expense) = expense.creatorId == this
 }
 
 class MissingExpenseException(expenseId: String, groupId: String) :
     RuntimeException("Failed to find expense with id: $expenseId and groupId: $groupId")
 
 class UserNotParticipantException(userId: String, expenseId: String) :
-    RuntimeException("User with id: $userId is not participant of expense with id: $expenseId")
+    RuntimeException("User with id: $userId is not a participant of expense with id: $expenseId")
+
+class UserNotExpenseCreatorException(userId: String, expenseId: String) :
+    RuntimeException("User with id: $userId is not an author of expense with id: $expenseId")

@@ -233,6 +233,41 @@ class ExpenseServiceTest : ShouldSpec({
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
     }
+
+    should("delete expense") {
+        // given
+        val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
+        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
+
+        // when
+        expenseService.deleteExpense(EXPENSE_ID, GROUP_ID, USER_ID)
+
+        // then
+        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
+        verify(expenseRepository, times(1)).delete(expense)
+    }
+
+    should("throw MissingExpenseException when expense does not exist") {
+        // given
+        val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
+        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(null)
+
+        // when & then
+        shouldThrowExactly<MissingExpenseException> { expenseService.deleteExpense(EXPENSE_ID, GROUP_ID, USER_ID) }
+        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
+        verify(expenseRepository, times(0)).delete(expense)
+    }
+
+    should("throw UserNotExpenseCreatorException when expense does not exist") {
+        // given
+        val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = OTHER_USER_ID)
+        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
+
+        // when & then
+        shouldThrowExactly<UserNotExpenseCreatorException> { expenseService.deleteExpense(EXPENSE_ID, GROUP_ID, USER_ID) }
+        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
+        verify(expenseRepository, times(0)).delete(expense)
+    }
 },)
 
 data class Quadruple<A, B, C, D>(
