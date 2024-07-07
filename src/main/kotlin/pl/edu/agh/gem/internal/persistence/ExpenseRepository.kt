@@ -7,4 +7,5 @@ interface ExpenseRepository {
     fun findByExpenseIdAndGroupId(expenseId: String, groupId: String): Expense?
     fun findByGroupId(groupId: String): List<Expense>
     fun save(expense: Expense)
+    fun delete(expense: Expense)
 }

@@ -2,6 +2,7 @@ package pl.edu.agh.gem.integration.controller
 
 import io.kotest.datatest.withData
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.springframework.http.HttpStatus.BAD_REQUEST
@@ -21,6 +22,7 @@ import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
 import pl.edu.agh.gem.external.dto.expense.GroupExpensesResponse
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.group.createGroupMembers
+import pl.edu.agh.gem.helper.user.DummyUser.EMAIL
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.helper.user.createGemUser
@@ -31,6 +33,7 @@ import pl.edu.agh.gem.integration.ability.stubCurrencyManagerExchangeRate
 import pl.edu.agh.gem.integration.ability.stubGroupManagerGroup
 import pl.edu.agh.gem.integration.ability.stubGroupManagerMembers
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
+import pl.edu.agh.gem.internal.service.ExpenseDeletionAccessException
 import pl.edu.agh.gem.internal.service.MissingExpenseException
 import pl.edu.agh.gem.internal.service.UserNotParticipantException
 import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NULL_OR_NOT_BLANK
@@ -534,6 +537,68 @@ class ExpenseControllerIT(
             response shouldHaveErrors {
                 errors shouldHaveSize 1
                 errors.first().code shouldBe UserNotParticipantException::class.simpleName
+            }
+        }
+
+        should("delete expense") {
+            // given
+            val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
+            repository.create(expense)
+            stubGroupManagerMembers(createGroupMembers(USER_ID, OTHER_USER_ID), GROUP_ID)
+
+            // when
+            val response = service.delete(createGemUser(USER_ID, EMAIL), GROUP_ID, EXPENSE_ID)
+
+            // then
+            response shouldHaveHttpStatus OK
+            repository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID).also {
+                it.shouldBeNull()
+            }
+        }
+        should("return forbidden if user is not a group member") {
+            // given
+            stubGroupManagerMembers(createGroupMembers(OTHER_USER_ID), GROUP_ID)
+
+            // when
+            val response = service.delete(createGemUser(USER_ID, EMAIL), GROUP_ID, EXPENSE_ID)
+
+            // then
+            response shouldHaveHttpStatus FORBIDDEN
+            response shouldHaveErrors {
+                errors shouldHaveSize 1
+                errors.first().code shouldBe UserWithoutGroupAccessException::class.simpleName
+            }
+        }
+
+        should("return not found when expense is not present") {
+            // given
+            stubGroupManagerMembers(createGroupMembers(USER_ID, OTHER_USER_ID), GROUP_ID)
+
+            // when
+            val response = service.delete(createGemUser(USER_ID, EMAIL), GROUP_ID, EXPENSE_ID)
+
+            // then
+            response shouldHaveHttpStatus NOT_FOUND
+            response shouldHaveErrors {
+                errors shouldHaveSize 1
+                errors.first().code shouldBe MissingExpenseException::class.simpleName
+            }
+        }
+
+        should("return forbidden when user is not expense creator") {
+            // given
+            val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = OTHER_USER_ID)
+            repository.create(expense)
+            stubGroupManagerMembers(createGroupMembers(USER_ID, OTHER_USER_ID), GROUP_ID)
+
+            // when
+            val response = service.delete(createGemUser(USER_ID, EMAIL), GROUP_ID, EXPENSE_ID)
+
+            // then
+            response shouldHaveHttpStatus FORBIDDEN
+            response shouldHaveErrors {
+                errors shouldHaveSize 1
+                errors.first().code shouldBe ExpenseDeletionAccessException::class.simpleName
             }
         }
     },

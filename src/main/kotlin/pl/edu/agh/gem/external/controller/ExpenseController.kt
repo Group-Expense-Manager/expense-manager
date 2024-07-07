@@ -3,6 +3,7 @@ package pl.edu.agh.gem.external.controller
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus.CREATED
 import org.springframework.http.HttpStatus.OK
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -75,6 +76,17 @@ class ExpenseController(
     ) {
         userId.checkIfUserHaveAccess(expenseService.getMembers(expenseDecisionRequest.groupId))
         expenseService.decide(expenseDecisionRequest.toDomain(userId))
+    }
+
+    @DeleteMapping("{expenseId}/groups/{groupId}")
+    @ResponseStatus(OK)
+    fun deleteExpense(
+        @GemUserId userId: String,
+        @PathVariable expenseId: String,
+        @PathVariable groupId: String,
+    ) {
+        userId.checkIfUserHaveAccess(expenseService.getMembers(groupId))
+        expenseService.deleteExpense(expenseId, groupId, userId)
     }
 
     private fun String.checkIfUserHaveAccess(groupMembers: GroupMembers) {

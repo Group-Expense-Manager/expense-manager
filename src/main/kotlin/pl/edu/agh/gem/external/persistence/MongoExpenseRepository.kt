@@ -32,6 +32,10 @@ class MongoExpenseRepository(
         mongo.save(expense.toEntity())
     }
 
+    override fun delete(expense: Expense) {
+        mongo.remove(expense.toEntity())
+    }
+
     private fun Expense.toEntity() =
         ExpenseEntity(
             id = id,
