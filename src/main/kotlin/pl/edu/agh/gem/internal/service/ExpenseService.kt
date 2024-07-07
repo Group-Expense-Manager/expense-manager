@@ -8,6 +8,7 @@ import pl.edu.agh.gem.internal.model.expense.ExpenseDecision
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
 import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import pl.edu.agh.gem.internal.model.group.Group
+import pl.edu.agh.gem.internal.persistence.ArchivedExpenseRepository
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.internal.validation.creation.CostValidator
 import pl.edu.agh.gem.internal.validation.creation.CurrenciesValidator
@@ -26,6 +27,7 @@ class ExpenseService(
     private val groupManagerClient: GroupManagerClient,
     private val currencyManagerClient: CurrencyManagerClient,
     private val expenseRepository: ExpenseRepository,
+    private val archivedExpenseRepository: ArchivedExpenseRepository,
 ) {
     private val expenseCreationValidators = validatorsOf(
         CostValidator(),
@@ -121,10 +123,11 @@ class ExpenseService(
         val expenseToDelete = expenseRepository.findByExpenseIdAndGroupId(expenseId, groupId) ?: throw MissingExpenseException(expenseId, groupId)
 
         if (!userId.isCreator(expenseToDelete)) {
-            throw UserNotExpenseCreatorException(userId, expenseId)
+            throw ExpenseDeletionAccessException(userId, expenseId)
         }
 
         expenseRepository.delete(expenseToDelete)
+        archivedExpenseRepository.add(expenseToDelete)
     }
 
     private fun String.isCreator(expense: Expense) = expense.creatorId == this
@@ -136,5 +139,5 @@ class MissingExpenseException(expenseId: String, groupId: String) :
 class UserNotParticipantException(userId: String, expenseId: String) :
     RuntimeException("User with id: $userId is not a participant of expense with id: $expenseId")
 
-class UserNotExpenseCreatorException(userId: String, expenseId: String) :
-    RuntimeException("User with id: $userId is not an author of expense with id: $expenseId")
+class ExpenseDeletionAccessException(userId: String, expenseId: String) :
+    RuntimeException("User with id: $userId can not delete expense with id: $expenseId")

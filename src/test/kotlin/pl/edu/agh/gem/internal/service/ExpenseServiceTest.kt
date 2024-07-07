@@ -18,6 +18,7 @@ import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
 import pl.edu.agh.gem.internal.model.expense.Expense
+import pl.edu.agh.gem.internal.persistence.ArchivedExpenseRepository
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_AVAILABLE
@@ -46,10 +47,12 @@ class ExpenseServiceTest : ShouldSpec({
     val groupManagerClient = mock<GroupManagerClient> { }
     val currencyManagerClient = mock<CurrencyManagerClient> {}
     val expenseRepository = mock<ExpenseRepository> {}
+    val archivedExpenseRepository = mock<ArchivedExpenseRepository> {}
     val expenseService = ExpenseService(
         groupManagerClient = groupManagerClient,
         currencyManagerClient = currencyManagerClient,
         expenseRepository = expenseRepository,
+        archivedExpenseRepository = archivedExpenseRepository,
     )
     should("get group members from client") {
         // given
@@ -245,6 +248,7 @@ class ExpenseServiceTest : ShouldSpec({
         // then
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(expenseRepository, times(1)).delete(expense)
+        verify(archivedExpenseRepository, times(1)).add(expense)
     }
 
     should("throw MissingExpenseException when expense does not exist") {
@@ -256,17 +260,19 @@ class ExpenseServiceTest : ShouldSpec({
         shouldThrowExactly<MissingExpenseException> { expenseService.deleteExpense(EXPENSE_ID, GROUP_ID, USER_ID) }
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(expenseRepository, times(0)).delete(expense)
+        verify(archivedExpenseRepository, times(0)).add(expense)
     }
 
-    should("throw UserNotExpenseCreatorException when expense does not exist") {
+    should("throw ExpenseDeletionAccessException when expense does not exist") {
         // given
         val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = OTHER_USER_ID)
         whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
 
         // when & then
-        shouldThrowExactly<UserNotExpenseCreatorException> { expenseService.deleteExpense(EXPENSE_ID, GROUP_ID, USER_ID) }
+        shouldThrowExactly<ExpenseDeletionAccessException> { expenseService.deleteExpense(EXPENSE_ID, GROUP_ID, USER_ID) }
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(expenseRepository, times(0)).delete(expense)
+        verify(archivedExpenseRepository, times(0)).add(expense)
     }
 },)
 

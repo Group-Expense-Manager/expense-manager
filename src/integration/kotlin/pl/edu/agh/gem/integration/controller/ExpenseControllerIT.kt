@@ -33,8 +33,8 @@ import pl.edu.agh.gem.integration.ability.stubCurrencyManagerExchangeRate
 import pl.edu.agh.gem.integration.ability.stubGroupManagerGroup
 import pl.edu.agh.gem.integration.ability.stubGroupManagerMembers
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
+import pl.edu.agh.gem.internal.service.ExpenseDeletionAccessException
 import pl.edu.agh.gem.internal.service.MissingExpenseException
-import pl.edu.agh.gem.internal.service.UserNotExpenseCreatorException
 import pl.edu.agh.gem.internal.service.UserNotParticipantException
 import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NULL_OR_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY
@@ -598,7 +598,7 @@ class ExpenseControllerIT(
             response shouldHaveHttpStatus FORBIDDEN
             response shouldHaveErrors {
                 errors shouldHaveSize 1
-                errors.first().code shouldBe UserNotExpenseCreatorException::class.simpleName
+                errors.first().code shouldBe ExpenseDeletionAccessException::class.simpleName
             }
         }
     },
