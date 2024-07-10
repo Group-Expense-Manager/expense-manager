@@ -21,8 +21,10 @@ import pl.edu.agh.gem.internal.model.expense.ExpenseAction
 import pl.edu.agh.gem.internal.model.expense.ExpenseDecision
 import pl.edu.agh.gem.internal.model.expense.ExpenseParticipant
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
+import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
+import pl.edu.agh.gem.internal.model.expense.UserExpense
 import pl.edu.agh.gem.internal.model.group.Currencies
 import pl.edu.agh.gem.internal.model.group.Group
 import pl.edu.agh.gem.model.GroupMembers
@@ -133,6 +135,13 @@ fun createExpenseParticipant(
     participantCost = participantCost,
     participantStatus = participantStatus,
 )
+
+fun createExpenseParticipants(
+    ids: List<String> = listOf("userId1", "userId2", "userId3"),
+    costs: List<BigDecimal> = listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+    statuses: List<ExpenseStatus> = listOf(ACCEPTED, ACCEPTED, ACCEPTED),
+) = ids.mapIndexed { index, id -> createExpenseParticipant(id, costs[index], statuses[index]) }
+
 fun createGroup(
     members: GroupMembers = createGroupMembers(USER_ID, OTHER_USER_ID),
     acceptRequired: Boolean = false,
@@ -187,6 +196,16 @@ fun createMembersDTO(
     vararg members: String = arrayOf(USER_ID, OTHER_USER_ID),
 ) = members.map { MemberDTO(it) }
 
+fun createUserExpense(
+    value: BigDecimal = BigDecimal.ONE,
+    currency: String = CURRENCY_1,
+    exchangeRate: BigDecimal? = null,
+) = UserExpense(
+    value = value,
+    currency = currency,
+    exchangeRate = exchangeRate?.let { ExchangeRate(it) },
+)
+
 object DummyData {
     const val EXPENSE_ID = "expenseId"
     const val CURRENCY_1 = "PLN"
@@ -194,3 +213,9 @@ object DummyData {
     const val ATTACHMENT_ID = "attachmentId"
     val EXCHANGE_RATE_VALUE: BigDecimal = BigDecimal.TWO
 }
+
+data class Triple<A, B, C>(
+    val first: A,
+    val second: B,
+    val third: C,
+)

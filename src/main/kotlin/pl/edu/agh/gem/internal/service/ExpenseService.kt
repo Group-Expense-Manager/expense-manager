@@ -3,10 +3,13 @@ package pl.edu.agh.gem.internal.service
 import org.springframework.stereotype.Service
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
+import pl.edu.agh.gem.internal.mapper.CreditorUserExpenseMapper
+import pl.edu.agh.gem.internal.mapper.DebtorUserExpenseMapper
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseDecision
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
 import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
+import pl.edu.agh.gem.internal.model.expense.UserExpense
 import pl.edu.agh.gem.internal.model.group.Group
 import pl.edu.agh.gem.internal.persistence.ArchivedExpenseRepository
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
@@ -38,6 +41,9 @@ class ExpenseService(
     private val expenseDecisionValidators = validatorsOf(
         ExpenseDecisionValidator(),
     )
+
+    private val creditorUserExpenseMapper = CreditorUserExpenseMapper()
+    private val debtorUserExpenseMapper = DebtorUserExpenseMapper()
 
     fun getMembers(groupId: String): GroupMembers {
         return groupManagerClient.getMembers(groupId)
@@ -129,8 +135,18 @@ class ExpenseService(
         expenseRepository.delete(expenseToDelete)
         archivedExpenseRepository.add(expenseToDelete)
     }
-
     private fun String.isCreator(expense: Expense) = expense.creatorId == this
+
+    fun getUserExpenses(groupId: String, userId: String): List<UserExpense> {
+        val expenses = expenseRepository.findByGroupId(groupId)
+
+        val costsAsExpenseCreator = expenses
+            .mapNotNull { creditorUserExpenseMapper.mapToUserExpense(userId, it) }
+        val costsAsExpenseMember = expenses
+            .mapNotNull { debtorUserExpenseMapper.mapToUserExpense(userId, it) }
+
+        return costsAsExpenseCreator + costsAsExpenseMember
+    }
 }
 
 class MissingExpenseException(expenseId: String, groupId: String) :

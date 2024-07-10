@@ -9,6 +9,7 @@ import pl.edu.agh.gem.headers.HeadersUtils.withAppAcceptType
 import pl.edu.agh.gem.headers.HeadersUtils.withAppContentType
 import pl.edu.agh.gem.headers.HeadersUtils.withValidatedUser
 import pl.edu.agh.gem.paths.Paths.EXTERNAL
+import pl.edu.agh.gem.paths.Paths.INTERNAL
 import pl.edu.agh.gem.security.GemUser
 import java.net.URI
 
@@ -56,6 +57,13 @@ class ServiceTestClient(applicationContext: WebApplicationContext) {
         return webClient.delete()
             .uri(URI("$EXTERNAL/expenses/$expenseId/groups/$groupId"))
             .headers { it.withValidatedUser(user) }
+            .exchange()
+    }
+
+    fun getUserExpenses(groupId: String, userId: String): ResponseSpec {
+        return webClient.get()
+            .uri(URI("$INTERNAL/expenses/groups/$groupId/users/$userId"))
+            .headers { it.withAppAcceptType() }
             .exchange()
     }
 }

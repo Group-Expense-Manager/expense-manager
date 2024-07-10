@@ -27,7 +27,7 @@ import pl.edu.agh.gem.security.GemUserId
 
 @RestController
 @RequestMapping("$EXTERNAL/expenses")
-class ExpenseController(
+class ExternalExpenseController(
     private val expenseService: ExpenseService,
 ) {
     @PostMapping(consumes = [APPLICATION_JSON_INTERNAL_VER_1], produces = [APPLICATION_JSON_INTERNAL_VER_1])
