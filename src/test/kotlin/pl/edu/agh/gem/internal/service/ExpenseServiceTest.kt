@@ -21,6 +21,8 @@ import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
+import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
+import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.REJECTED
 import pl.edu.agh.gem.internal.persistence.ArchivedExpenseRepository
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY
@@ -165,13 +167,13 @@ class ExpenseServiceTest : ShouldSpec({
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
     }
 
-    should("get expenses") {
+    should("get external expenses") {
         // given
         val expenses = listOf(createExpense())
         whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(expenses)
 
         // when
-        val result = expenseService.getGroupExpenses(GROUP_ID)
+        val result = expenseService.getExternalGroupExpenses(GROUP_ID)
 
         // then
         result shouldBe expenses
@@ -183,7 +185,7 @@ class ExpenseServiceTest : ShouldSpec({
         whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(listOf())
 
         // when
-        val result = expenseService.getGroupExpenses(GROUP_ID)
+        val result = expenseService.getExternalGroupExpenses(GROUP_ID)
 
         // then
         result shouldBe listOf()
@@ -331,6 +333,44 @@ class ExpenseServiceTest : ShouldSpec({
                 userExpenses.exchangeRate shouldBe createExchangeRate()
             }
         }
+        verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
+    }
+
+    should("get internal expenses") {
+        // given
+        val acceptedExpense = createExpense(status = ACCEPTED)
+        val expenses = listOf(
+            acceptedExpense,
+            createExpense(status = PENDING),
+            createExpense(status = REJECTED),
+        )
+        whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(expenses)
+
+        // when
+        val result = expenseService.getInternalGroupExpenses(GROUP_ID)
+
+        // then
+        result.also {
+            it shouldHaveSize 1
+            it.first() shouldBe acceptedExpense
+        }
+        verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
+    }
+
+    should("return empty list when group has no accepted expenses") {
+        // given
+        whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(
+            listOf(
+                createExpense(status = PENDING),
+                createExpense(status = REJECTED),
+            ),
+        )
+
+        // when
+        val result = expenseService.getInternalGroupExpenses(GROUP_ID)
+
+        // then
+        result shouldBe listOf()
         verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
     }
 },)

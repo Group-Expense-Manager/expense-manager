@@ -4,11 +4,11 @@ import pl.edu.agh.gem.internal.model.expense.Expense
 import java.math.BigDecimal
 import java.time.Instant
 
-data class GroupExpensesResponse(
-    val expenses: List<GroupExpensesDto>,
+data class ExternalGroupExpensesResponse(
+    val expenses: List<ExternalGroupExpensesDto>,
 )
 
-data class GroupExpensesDto(
+data class ExternalGroupExpensesDto(
     val expenseId: String,
     val creatorId: String,
     val title: String,
@@ -19,7 +19,7 @@ data class GroupExpensesDto(
     val expenseDate: Instant,
 ) {
     companion object {
-        fun fromExpense(expense: Expense) = GroupExpensesDto(
+        fun fromExpense(expense: Expense) = ExternalGroupExpensesDto(
             expenseId = expense.id,
             creatorId = expense.creatorId,
             title = expense.title,
@@ -32,6 +32,6 @@ data class GroupExpensesDto(
     }
 }
 
-fun List<Expense>.toGroupExpensesResponse() = GroupExpensesResponse(
-    expenses = map { GroupExpensesDto.fromExpense(it) },
+fun List<Expense>.toExternalGroupExpensesResponse() = ExternalGroupExpensesResponse(
+    expenses = map { ExternalGroupExpensesDto.fromExpense(it) },
 )

@@ -5,6 +5,7 @@ import pl.edu.agh.gem.external.dto.currency.ExchangeRateResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseCreationRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseDecisionRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseParticipantRequestData
+import pl.edu.agh.gem.external.dto.expense.InternalGroupExpenseParticipantDto
 import pl.edu.agh.gem.external.dto.group.CurrencyDTO
 import pl.edu.agh.gem.external.dto.group.GroupResponse
 import pl.edu.agh.gem.external.dto.group.MemberDTO
@@ -205,6 +206,11 @@ fun createUserExpense(
     currency = currency,
     exchangeRate = exchangeRate?.let { ExchangeRate(it) },
 )
+
+fun createListOfInternalGroupExpenseParticipantDto(
+    participantIds: List<String> = listOf("userId1", "userId2", "userId3"),
+    participantCosts: List<BigDecimal> = listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+) = participantIds.mapIndexed { index, id -> InternalGroupExpenseParticipantDto(id, participantCosts[index]) }
 
 object DummyData {
     const val EXPENSE_ID = "expenseId"

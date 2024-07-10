@@ -13,14 +13,14 @@ import pl.edu.agh.gem.util.createExpenseParticipant
 import java.math.BigDecimal
 import java.time.Instant
 
-class GroupExpensesResponseTest : ShouldSpec({
+class ExternalGroupExpensesResponseTest : ShouldSpec({
 
-    should("map Expense to GroupExpensesResponse") {
+    should("map Expense to ExternalGroupExpensesResponse") {
         // given
         val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant()))
 
         // when
-        val groupExpensesResponse = listOf(expense).toGroupExpensesResponse()
+        val groupExpensesResponse = listOf(expense).toExternalGroupExpensesResponse()
 
         // then
         groupExpensesResponse.expenses shouldHaveSize 1
@@ -37,7 +37,7 @@ class GroupExpensesResponseTest : ShouldSpec({
         }
     }
 
-    should("map multiple Expenses to GroupExpensesResponse") {
+    should("map multiple Expenses to ExternalGroupExpensesResponse") {
         // given
         val expenseIds = listOf("expenseId1", "expenseId2", "expenseId3")
         val creatorIds = listOf("creatorId1", "creatorId2", "creatorId3")
@@ -69,7 +69,7 @@ class GroupExpensesResponseTest : ShouldSpec({
         }
 
         // when
-        val groupExpensesResponse = expenses.toGroupExpensesResponse()
+        val groupExpensesResponse = expenses.toExternalGroupExpensesResponse()
 
         // then
         groupExpensesResponse.expenses.also {
@@ -90,7 +90,7 @@ class GroupExpensesResponseTest : ShouldSpec({
         val expenses = listOf<Expense>()
 
         // when
-        val groupExpensesResponse = expenses.toGroupExpensesResponse()
+        val groupExpensesResponse = expenses.toExternalGroupExpensesResponse()
 
         // then
         groupExpensesResponse.expenses shouldBe listOf()
