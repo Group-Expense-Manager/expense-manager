@@ -5,6 +5,7 @@ import pl.edu.agh.gem.external.dto.currency.ExchangeRateResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseCreationRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseDecisionRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseParticipantRequestData
+import pl.edu.agh.gem.external.dto.expense.ExpenseUpdateRequest
 import pl.edu.agh.gem.external.dto.expense.InternalGroupExpenseParticipantDto
 import pl.edu.agh.gem.external.dto.group.CurrencyDTO
 import pl.edu.agh.gem.external.dto.group.GroupResponse
@@ -24,8 +25,11 @@ import pl.edu.agh.gem.internal.model.expense.ExpenseParticipant
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
+import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
+import pl.edu.agh.gem.internal.model.expense.ExpenseUpdateParticipant
 import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.UserExpense
+import pl.edu.agh.gem.internal.model.expense.toExpenseUpdateParticipant
 import pl.edu.agh.gem.internal.model.group.Currencies
 import pl.edu.agh.gem.internal.model.group.Group
 import pl.edu.agh.gem.model.GroupMembers
@@ -212,11 +216,94 @@ fun createListOfInternalGroupExpenseParticipantDto(
     participantCosts: List<BigDecimal> = listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
 ) = participantIds.mapIndexed { index, id -> InternalGroupExpenseParticipantDto(id, participantCosts[index]) }
 
+fun createExpenseUpdateRequest(
+    title: String = "My Modified Expense",
+    cost: BigDecimal = BigDecimal(10),
+    baseCurrency: String = CURRENCY_1,
+    targetCurrency: String? = CURRENCY_2,
+    expenseDate: Instant = Instant.ofEpochMilli(0L),
+    expenseParticipants: List<ExpenseParticipantRequestData> = listOf(
+        createExpenseParticipantDto(USER_ID, BigDecimal.ONE),
+        createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.valueOf(9L)),
+    ),
+    message: String? = "Something",
+) = ExpenseUpdateRequest(
+    title = title,
+    cost = cost,
+    baseCurrency = baseCurrency,
+    targetCurrency = targetCurrency,
+    expenseDate = expenseDate,
+    expenseParticipants = expenseParticipants,
+    message = message,
+)
+
+fun createExpenseUpdateRequestFromExpense(
+    expense: Expense = createExpense(),
+) = ExpenseUpdateRequest(
+    title = expense.title,
+    cost = expense.cost,
+    baseCurrency = expense.baseCurrency,
+    targetCurrency = expense.targetCurrency,
+    expenseDate = expense.expenseDate,
+    expenseParticipants = expense.expenseParticipants.map { createExpenseParticipantDto(it.participantId, it.participantCost) },
+    message = null,
+)
+
+fun createExpenseUpdate(
+    id: String = EXPENSE_ID,
+    groupId: String = GROUP_ID,
+    userId: String = USER_ID,
+    title: String = "Some modified title",
+    cost: BigDecimal = BigDecimal.valueOf(4L),
+    baseCurrency: String = CURRENCY_1,
+    targetCurrency: String? = CURRENCY_2,
+    expenseDate: Instant = Instant.ofEpochMilli(0L),
+    expenseParticipants: List<ExpenseUpdateParticipant> = listOf(
+        createExpenseUpdateParticipant(USER_ID),
+        createExpenseUpdateParticipant(OTHER_USER_ID),
+    ),
+    message: String? = "Something",
+) = ExpenseUpdate(
+    id = id,
+    groupId = groupId,
+    userId = userId,
+    title = title,
+    cost = cost,
+    baseCurrency = baseCurrency,
+    targetCurrency = targetCurrency,
+    expenseDate = expenseDate,
+    expenseParticipants = expenseParticipants,
+    message = message,
+)
+
+fun createExpenseUpdateFromExpense(
+    expense: Expense = createExpense(),
+) = ExpenseUpdate(
+    id = expense.id,
+    groupId = expense.groupId,
+    userId = expense.creatorId,
+    title = expense.title,
+    cost = expense.cost,
+    baseCurrency = expense.baseCurrency,
+    targetCurrency = expense.targetCurrency,
+    expenseDate = expense.expenseDate,
+    expenseParticipants = expense.expenseParticipants.map { it.toExpenseUpdateParticipant() },
+    message = null,
+)
+fun createExpenseUpdateParticipant(
+    participantId: String = USER_ID,
+    participantCost: BigDecimal = BigDecimal.TWO,
+) = ExpenseUpdateParticipant(
+    participantId = participantId,
+    participantCost = participantCost,
+)
+
 object DummyData {
     const val EXPENSE_ID = "expenseId"
     const val CURRENCY_1 = "PLN"
     const val CURRENCY_2 = "EUR"
     const val ATTACHMENT_ID = "attachmentId"
+    const val ANOTHER_USER_ID = "anotherUserId"
     val EXCHANGE_RATE_VALUE: BigDecimal = BigDecimal.TWO
 }
 

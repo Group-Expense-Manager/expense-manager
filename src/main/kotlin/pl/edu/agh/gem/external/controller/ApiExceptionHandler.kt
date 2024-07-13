@@ -18,7 +18,9 @@ import pl.edu.agh.gem.error.withDetails
 import pl.edu.agh.gem.error.withMessage
 import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
 import pl.edu.agh.gem.internal.service.ExpenseDeletionAccessException
+import pl.edu.agh.gem.internal.service.ExpenseUpdateAccessException
 import pl.edu.agh.gem.internal.service.MissingExpenseException
+import pl.edu.agh.gem.internal.service.NoExpenseUpdateException
 import pl.edu.agh.gem.internal.service.UserNotParticipantException
 import pl.edu.agh.gem.validator.ValidatorsException
 
@@ -45,6 +47,20 @@ class ApiExceptionHandler {
         exception: ExpenseDeletionAccessException,
     ): ResponseEntity<SimpleErrorsHolder> {
         return ResponseEntity(handleError(exception), FORBIDDEN)
+    }
+
+    @ExceptionHandler(ExpenseUpdateAccessException::class)
+    fun handleExpenseUpdateAccessException(
+        exception: ExpenseUpdateAccessException,
+    ): ResponseEntity<SimpleErrorsHolder> {
+        return ResponseEntity(handleError(exception), FORBIDDEN)
+    }
+
+    @ExceptionHandler(NoExpenseUpdateException::class)
+    fun handleNoExpenseUpdateException(
+        exception: NoExpenseUpdateException,
+    ): ResponseEntity<SimpleErrorsHolder> {
+        return ResponseEntity(handleError(exception), BAD_REQUEST)
     }
 
     @ExceptionHandler(ValidatorsException::class)
