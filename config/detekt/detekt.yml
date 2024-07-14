@@ -757,7 +757,7 @@ style:
   UseIfEmptyOrIfBlank:
     active: true
   UseIfInsteadOfWhen:
-    active: true
+    active: false
     ignoreWhenContainingVariableDeclaration: true
   UseIsNullOrEmpty:
     active: true

@@ -3,6 +3,7 @@ package pl.edu.agh.gem.external.dto.expense
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.util.createUserExpense
 
 class UserExpensesResponseTest : ShouldSpec({
@@ -11,14 +12,17 @@ class UserExpensesResponseTest : ShouldSpec({
         val userExpense = createUserExpense()
 
         // when
-        val userExpensesResponse = listOf(userExpense).toUserExpensesResponse()
+        val userExpensesResponse = listOf(userExpense).toUserExpensesResponse(USER_ID)
 
         // then
-        userExpensesResponse.expenses shouldHaveSize 1
-        userExpensesResponse.expenses.first().also {
-            it.value shouldBe userExpense.value
-            it.currency shouldBe userExpense.currency
-            it.exchangeRate shouldBe userExpense.exchangeRate
+        userExpensesResponse.also {
+            it.userId shouldBe USER_ID
+            it.expenses shouldHaveSize 1
+            it.expenses.first().also { expense ->
+                expense.value shouldBe userExpense.value
+                expense.currency shouldBe userExpense.currency
+                expense.exchangeRate shouldBe userExpense.exchangeRate
+            }
         }
     }
 },)

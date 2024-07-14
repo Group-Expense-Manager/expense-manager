@@ -65,6 +65,7 @@ class InternalExpenseControllerIT(
         // then
         response shouldHaveHttpStatus OK
         response.shouldBody<UserExpensesResponse> {
+            userId shouldBe USER_ID
             expenses.size shouldBe 2
             expenses.first().also { userExpenses ->
                 userExpenses.value shouldBe BigDecimal("50")

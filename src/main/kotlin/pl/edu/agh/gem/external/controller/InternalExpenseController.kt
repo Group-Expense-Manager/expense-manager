@@ -24,6 +24,6 @@ class InternalExpenseController(
         @PathVariable groupId: String,
         @PathVariable userId: String,
     ): UserExpensesResponse {
-        return expenseService.getUserExpenses(groupId, userId).toUserExpensesResponse()
+        return expenseService.getUserExpenses(groupId, userId).toUserExpensesResponse(userId)
     }
 }
