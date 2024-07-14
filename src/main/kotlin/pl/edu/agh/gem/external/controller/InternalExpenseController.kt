@@ -34,6 +34,6 @@ class InternalExpenseController(
     fun getInternalGroupExpenses(
         @PathVariable groupId: String,
     ): InternalGroupExpensesResponse {
-        return expenseService.getExternalGroupExpenses(groupId).toInternalGroupExpensesResponse()
+        return expenseService.getExternalGroupExpenses(groupId).toInternalGroupExpensesResponse(groupId)
     }
 }

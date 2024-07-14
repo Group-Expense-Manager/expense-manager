@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.util.createExpense
 import pl.edu.agh.gem.util.createExpenseParticipant
@@ -18,9 +19,10 @@ class InternalGroupExpensesResponseTest : ShouldSpec({
         val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant()))
 
         // when
-        val groupExpensesResponse = listOf(expense).toInternalGroupExpensesResponse()
+        val groupExpensesResponse = listOf(expense).toInternalGroupExpensesResponse(GROUP_ID)
 
         // then
+        groupExpensesResponse.groupId shouldBe GROUP_ID
         groupExpensesResponse.expenses shouldHaveSize 1
         groupExpensesResponse.expenses.first().also {
             it.creatorId shouldBe expense.creatorId
@@ -79,9 +81,10 @@ class InternalGroupExpensesResponseTest : ShouldSpec({
         }
 
         // when
-        val groupExpensesResponse = expenses.toInternalGroupExpensesResponse()
+        val groupExpensesResponse = expenses.toInternalGroupExpensesResponse(GROUP_ID)
 
         // then
+        groupExpensesResponse.groupId shouldBe GROUP_ID
         groupExpensesResponse.expenses.also {
             it shouldHaveSize 3
             it.map { groupExpensesDto -> groupExpensesDto.creatorId } shouldContainExactly creatorIds
@@ -100,9 +103,12 @@ class InternalGroupExpensesResponseTest : ShouldSpec({
         val expenses = listOf<Expense>()
 
         // when
-        val groupExpensesResponse = expenses.toInternalGroupExpensesResponse()
+        val groupExpensesResponse = expenses.toInternalGroupExpensesResponse(GROUP_ID)
 
         // then
-        groupExpensesResponse.expenses shouldBe listOf()
+        groupExpensesResponse.also {
+            it.groupId shouldBe GROUP_ID
+            it.expenses shouldBe listOf()
+        }
     }
 },)

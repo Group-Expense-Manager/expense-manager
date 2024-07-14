@@ -101,6 +101,7 @@ class InternalExpenseControllerIT(
         // then
         response shouldHaveHttpStatus OK
         response.shouldBody<InternalGroupExpensesResponse> {
+            groupId shouldBe GROUP_ID
             expenses shouldHaveSize 1
             expenses.first().also {
                 it.creatorId shouldBe expense.creatorId

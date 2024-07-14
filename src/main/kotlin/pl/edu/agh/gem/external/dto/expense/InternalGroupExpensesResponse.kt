@@ -6,6 +6,7 @@ import java.math.BigDecimal
 import java.time.Instant
 
 data class InternalGroupExpensesResponse(
+    val groupId: String,
     val expenses: List<InternalGroupExpenseDto>,
 )
 
@@ -40,6 +41,7 @@ private fun ExpenseParticipant.toInternalGroupExpenseParticipantDto() =
         participantCost = participantCost,
     )
 
-fun List<Expense>.toInternalGroupExpensesResponse() = InternalGroupExpensesResponse(
+fun List<Expense>.toInternalGroupExpensesResponse(groupId: String) = InternalGroupExpensesResponse(
+    groupId = groupId,
     expenses = map { it.toInternalGroupExpenseDto() },
 )
