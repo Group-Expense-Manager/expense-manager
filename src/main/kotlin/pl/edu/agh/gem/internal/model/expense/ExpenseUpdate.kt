@@ -1,6 +1,7 @@
 package pl.edu.agh.gem.internal.model.expense
 
 import pl.edu.agh.gem.external.dto.expense.ExpenseParticipantRequestData
+import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -24,7 +25,7 @@ data class ExpenseUpdateParticipant(
     fun toExpenseParticipant() = ExpenseParticipant(
         participantId = participantId,
         participantCost = participantCost,
-        participantStatus = ExpenseStatus.PENDING,
+        participantStatus = PENDING,
     )
 }
 fun ExpenseParticipant.toExpenseUpdateParticipant() =
