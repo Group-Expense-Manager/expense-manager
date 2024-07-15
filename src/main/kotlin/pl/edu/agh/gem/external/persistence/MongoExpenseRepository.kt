@@ -12,8 +12,8 @@ import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 class MongoExpenseRepository(
     private val mongo: MongoTemplate,
 ) : ExpenseRepository {
-    override fun create(expense: Expense): Expense {
-        return mongo.insert(expense.toEntity()).toDomain()
+    override fun save(expense: Expense): Expense {
+        return mongo.save(expense.toEntity()).toDomain()
     }
 
     override fun findByExpenseIdAndGroupId(expenseId: String, groupId: String): Expense? {
@@ -26,10 +26,6 @@ class MongoExpenseRepository(
     override fun findByGroupId(groupId: String): List<Expense> {
         val query = Query(where(ExpenseEntity::groupId).isEqualTo(groupId))
         return mongo.find(query, ExpenseEntity::class.java).map(ExpenseEntity::toDomain)
-    }
-
-    override fun save(expense: Expense) {
-        mongo.save(expense.toEntity())
     }
 
     override fun delete(expense: Expense) {

@@ -12,7 +12,7 @@ class MongoExpenseRepositoryIT(
     should("delete expense") {
         // given
         val expense = createExpense()
-        expenseRepository.create(expense)
+        expenseRepository.save(expense)
 
         // when
         expenseRepository.delete(expense)

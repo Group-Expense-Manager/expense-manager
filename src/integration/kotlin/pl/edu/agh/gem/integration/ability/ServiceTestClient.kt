@@ -73,4 +73,15 @@ class ServiceTestClient(applicationContext: WebApplicationContext) {
             .headers { it.withAppAcceptType() }
             .exchange()
     }
+
+    fun updateExpense(body: Any, user: GemUser, groupId: String, expenseId: String): ResponseSpec {
+        return webClient.put()
+            .uri(URI("$EXTERNAL/expenses/$expenseId/groups/$groupId"))
+            .headers {
+                it.withValidatedUser(user)
+                it.withAppContentType()
+            }
+            .bodyValue(body)
+            .exchange()
+    }
 }

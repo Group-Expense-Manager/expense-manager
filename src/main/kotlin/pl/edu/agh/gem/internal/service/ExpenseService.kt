@@ -6,11 +6,15 @@ import pl.edu.agh.gem.internal.client.GroupManagerClient
 import pl.edu.agh.gem.internal.mapper.CreditorUserExpenseMapper
 import pl.edu.agh.gem.internal.mapper.DebtorUserExpenseMapper
 import pl.edu.agh.gem.internal.model.expense.Expense
+import pl.edu.agh.gem.internal.model.expense.ExpenseAction.EDITED
 import pl.edu.agh.gem.internal.model.expense.ExpenseDecision
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
+import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
+import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
 import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.UserExpense
+import pl.edu.agh.gem.internal.model.expense.toExpenseUpdateParticipant
 import pl.edu.agh.gem.internal.model.group.Group
 import pl.edu.agh.gem.internal.persistence.ArchivedExpenseRepository
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
@@ -59,7 +63,7 @@ class ExpenseService(
             .getFailedValidations(createExpenseCreationDataWrapper(group, expense))
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
-        return expenseRepository.create(
+        return expenseRepository.save(
             expense.copy(
                 exchangeRate = getExchangeRate(expense.baseCurrency, expense.targetCurrency, expense.expenseDate),
             ),
@@ -152,6 +156,60 @@ class ExpenseService(
 
         return costsAsExpenseCreator + costsAsExpenseMember
     }
+
+    fun updateExpense(group: Group, update: ExpenseUpdate): Expense {
+        val originalExpense = expenseRepository.findByExpenseIdAndGroupId(update.id, update.groupId)
+            ?: throw MissingExpenseException(update.id, update.groupId)
+
+        if (!update.userId.isCreator(originalExpense)) {
+            throw ExpenseUpdateAccessException(update.userId, update.id)
+        }
+
+        if (!update.modifies(originalExpense)) {
+            throw NoExpenseUpdateException(update.userId, update.id)
+        }
+
+        val partiallyUpdatedExpense = originalExpense.update(update)
+
+        expenseCreationValidators
+            .getFailedValidations(createExpenseCreationDataWrapper(group, partiallyUpdatedExpense))
+            .takeIf { it.isNotEmpty() }
+            ?.also { throw ValidatorsException(it) }
+
+        return expenseRepository.save(
+            partiallyUpdatedExpense.copy(
+                exchangeRate = getExchangeRate(
+                    partiallyUpdatedExpense.baseCurrency,
+                    partiallyUpdatedExpense.targetCurrency,
+                    partiallyUpdatedExpense.expenseDate,
+                ),
+            ),
+        )
+    }
+
+    private fun ExpenseUpdate.modifies(expense: Expense): Boolean {
+        return expense.title != this.title ||
+            expense.cost != this.cost ||
+            expense.baseCurrency != this.baseCurrency ||
+            expense.targetCurrency != this.targetCurrency ||
+            expense.expenseDate != this.expenseDate ||
+            expense.expenseParticipants.map { it.toExpenseUpdateParticipant() }.toSet() != this.expenseParticipants.toSet()
+    }
+
+    private fun Expense.update(expenseUpdate: ExpenseUpdate): Expense {
+        return this.copy(
+            title = expenseUpdate.title,
+            cost = expenseUpdate.cost,
+            baseCurrency = expenseUpdate.baseCurrency,
+            targetCurrency = expenseUpdate.targetCurrency,
+            updatedAt = now(),
+            expenseDate = expenseUpdate.expenseDate,
+            expenseParticipants = expenseUpdate.expenseParticipants.map { it.toExpenseParticipant() },
+            status = PENDING,
+            statusHistory = statusHistory + StatusHistoryEntry(creatorId, EDITED, now(), expenseUpdate.message),
+
+        )
+    }
 }
 
 class MissingExpenseException(expenseId: String, groupId: String) :
@@ -162,3 +220,9 @@ class UserNotParticipantException(userId: String, expenseId: String) :
 
 class ExpenseDeletionAccessException(userId: String, expenseId: String) :
     RuntimeException("User with id: $userId can not delete expense with id: $expenseId")
+
+class ExpenseUpdateAccessException(userId: String, expenseId: String) :
+    RuntimeException("User with id: $userId can not update expense with id: $expenseId")
+
+class NoExpenseUpdateException(userId: String, expenseId: String) :
+    RuntimeException("No update occurred for expense with id: $expenseId by user with id: $userId")
