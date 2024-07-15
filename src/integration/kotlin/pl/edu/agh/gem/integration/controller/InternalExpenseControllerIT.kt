@@ -92,7 +92,8 @@ class InternalExpenseControllerIT(
         // given
         val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(USER_ID)))
         stubGroupManagerMembers(groupMembers, GROUP_ID)
-        val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant()))
+        val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant()), status = ACCEPTED)
+
         repository.save(expense)
 
         // when
