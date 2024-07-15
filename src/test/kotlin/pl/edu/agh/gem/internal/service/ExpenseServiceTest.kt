@@ -4,6 +4,8 @@ import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.assertions.throwables.shouldThrowWithMessage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.datatest.withData
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import org.mockito.kotlin.anyVararg
 import org.mockito.kotlin.atLeastOnce
@@ -18,6 +20,7 @@ import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
 import pl.edu.agh.gem.internal.model.expense.Expense
+import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.persistence.ArchivedExpenseRepository
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY
@@ -32,12 +35,14 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.TARGET_CURRENCY_NOT_
 import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_PARTICIPANT
 import pl.edu.agh.gem.util.DummyData.CURRENCY_1
 import pl.edu.agh.gem.util.DummyData.CURRENCY_2
+import pl.edu.agh.gem.util.DummyData.EXCHANGE_RATE_VALUE
 import pl.edu.agh.gem.util.DummyData.EXPENSE_ID
 import pl.edu.agh.gem.util.createCurrencies
 import pl.edu.agh.gem.util.createExchangeRate
 import pl.edu.agh.gem.util.createExpense
 import pl.edu.agh.gem.util.createExpenseDecision
 import pl.edu.agh.gem.util.createExpenseParticipant
+import pl.edu.agh.gem.util.createExpenseParticipants
 import pl.edu.agh.gem.util.createGroup
 import pl.edu.agh.gem.validator.ValidatorsException
 import java.math.BigDecimal
@@ -273,6 +278,60 @@ class ExpenseServiceTest : ShouldSpec({
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(expenseRepository, times(0)).delete(expense)
         verify(archivedExpenseRepository, times(0)).add(expense)
+    }
+
+    should("get user expenses") {
+        // given
+        val expenses = listOf(
+            createExpense(
+                creatorId = USER_ID,
+                cost = BigDecimal("60"),
+                baseCurrency = CURRENCY_1,
+                targetCurrency = null,
+                exchangeRate = null,
+                expenseParticipants = createExpenseParticipants(
+                    listOf(USER_ID, "userId2", "userId3"),
+                    listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+                ),
+                status = ACCEPTED,
+            ),
+
+            createExpense(
+                creatorId = OTHER_USER_ID,
+                cost = BigDecimal("60"),
+                baseCurrency = CURRENCY_1,
+                targetCurrency = CURRENCY_2,
+                exchangeRate = EXCHANGE_RATE_VALUE,
+                expenseParticipants = createExpenseParticipants(
+                    listOf(USER_ID, OTHER_USER_ID, "userId3"),
+                    listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+                ),
+                status = ACCEPTED,
+            ),
+
+        )
+
+        whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(expenses)
+
+        // when
+        val result = expenseService.getUserExpenses(GROUP_ID, USER_ID)
+
+        // then
+        result.also {
+            it shouldHaveSize 2
+            it.first().also { userExpenses ->
+                userExpenses.value shouldBe BigDecimal("50")
+                userExpenses.currency shouldBe CURRENCY_1
+                userExpenses.exchangeRate.shouldBeNull()
+            }
+
+            it.last().also { userExpenses ->
+                userExpenses.value shouldBe BigDecimal("-10")
+                userExpenses.currency shouldBe CURRENCY_2
+                userExpenses.exchangeRate shouldBe createExchangeRate()
+            }
+        }
+        verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
     }
 },)
 

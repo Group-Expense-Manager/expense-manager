@@ -76,7 +76,7 @@ import pl.edu.agh.gem.util.createMembersDTO
 import java.math.BigDecimal
 import java.time.Instant
 
-class ExpenseControllerIT(
+class ExternalExpenseControllerIT(
     private val service: ServiceTestClient,
     private val repository: ExpenseRepository,
 ) : BaseIntegrationSpec(
