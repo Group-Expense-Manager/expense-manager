@@ -6,7 +6,9 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import pl.edu.agh.gem.external.dto.expense.InternalGroupExpensesResponse
 import pl.edu.agh.gem.external.dto.expense.UserExpensesResponse
+import pl.edu.agh.gem.external.dto.expense.toInternalGroupExpensesResponse
 import pl.edu.agh.gem.external.dto.expense.toUserExpensesResponse
 import pl.edu.agh.gem.internal.service.ExpenseService
 import pl.edu.agh.gem.media.InternalApiMediaType.APPLICATION_JSON_INTERNAL_VER_1
@@ -25,5 +27,13 @@ class InternalExpenseController(
         @PathVariable userId: String,
     ): UserExpensesResponse {
         return expenseService.getUserExpenses(groupId, userId).toUserExpensesResponse(userId)
+    }
+
+    @GetMapping("groups/{groupId}", produces = [APPLICATION_JSON_INTERNAL_VER_1])
+    @ResponseStatus(OK)
+    fun getInternalGroupExpenses(
+        @PathVariable groupId: String,
+    ): InternalGroupExpensesResponse {
+        return expenseService.getExternalGroupExpenses(groupId).toInternalGroupExpensesResponse(groupId)
     }
 }

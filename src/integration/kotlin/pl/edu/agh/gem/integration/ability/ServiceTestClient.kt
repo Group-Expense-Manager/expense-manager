@@ -38,7 +38,7 @@ class ServiceTestClient(applicationContext: WebApplicationContext) {
             .exchange()
     }
 
-    fun getGroupExpenses(user: GemUser, groupId: String): ResponseSpec {
+    fun getExternalGroupExpenses(user: GemUser, groupId: String): ResponseSpec {
         return webClient.get()
             .uri { it.path("$EXTERNAL/expenses").queryParam("groupId", groupId).build() }
             .headers { it.withValidatedUser(user).withAppAcceptType() }
@@ -63,6 +63,13 @@ class ServiceTestClient(applicationContext: WebApplicationContext) {
     fun getUserExpenses(groupId: String, userId: String): ResponseSpec {
         return webClient.get()
             .uri(URI("$INTERNAL/expenses/groups/$groupId/users/$userId"))
+            .headers { it.withAppAcceptType() }
+            .exchange()
+    }
+
+    fun getInternalGroupExpenses(groupId: String): ResponseSpec {
+        return webClient.get()
+            .uri(URI("$INTERNAL/expenses/groups/$groupId"))
             .headers { it.withAppAcceptType() }
             .exchange()
     }

@@ -19,7 +19,7 @@ import pl.edu.agh.gem.dto.GroupMemberResponse
 import pl.edu.agh.gem.dto.GroupMembersResponse
 import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
 import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
-import pl.edu.agh.gem.external.dto.expense.GroupExpensesResponse
+import pl.edu.agh.gem.external.dto.expense.ExternalGroupExpensesResponse
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.group.createGroupMembers
 import pl.edu.agh.gem.helper.user.DummyUser.EMAIL
@@ -395,7 +395,7 @@ class ExternalExpenseControllerIT(
             response shouldHaveHttpStatus NOT_FOUND
         }
 
-        should("get expenses") {
+        should("get external expenses") {
             // given
             val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(USER_ID)))
             stubGroupManagerMembers(groupMembers, GROUP_ID)
@@ -403,11 +403,11 @@ class ExternalExpenseControllerIT(
             repository.create(expense)
 
             // when
-            val response = service.getGroupExpenses(createGemUser(USER_ID), GROUP_ID)
+            val response = service.getExternalGroupExpenses(createGemUser(USER_ID), GROUP_ID)
 
             // then
             response shouldHaveHttpStatus OK
-            response.shouldBody<GroupExpensesResponse> {
+            response.shouldBody<ExternalGroupExpensesResponse> {
                 expenses shouldHaveSize 1
                 expenses.first().also {
                     it.expenseId shouldBe expense.id
@@ -428,7 +428,7 @@ class ExternalExpenseControllerIT(
             val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(OTHER_USER_ID)))
             stubGroupManagerMembers(groupMembers, GROUP_ID)
             // when
-            val response = service.getGroupExpenses(createGemUser(USER_ID), GROUP_ID)
+            val response = service.getExternalGroupExpenses(createGemUser(USER_ID), GROUP_ID)
 
             // then
             response shouldHaveHttpStatus FORBIDDEN

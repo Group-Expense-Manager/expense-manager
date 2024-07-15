@@ -8,6 +8,7 @@ import pl.edu.agh.gem.internal.mapper.DebtorUserExpenseMapper
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseDecision
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
+import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.UserExpense
 import pl.edu.agh.gem.internal.model.group.Group
@@ -80,8 +81,12 @@ class ExpenseService(
         return expenseRepository.findByExpenseIdAndGroupId(expenseId, groupId) ?: throw MissingExpenseException(expenseId, groupId)
     }
 
-    fun getGroupExpenses(groupId: String): List<Expense> {
+    fun getExternalGroupExpenses(groupId: String): List<Expense> {
         return expenseRepository.findByGroupId(groupId)
+    }
+
+    fun getInternalGroupExpenses(groupId: String): List<Expense> {
+        return expenseRepository.findByGroupId(groupId).filter { it.status == ACCEPTED }
     }
 
     fun decide(expenseDecision: ExpenseDecision) {
