@@ -15,7 +15,7 @@ import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
 import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.UserExpense
 import pl.edu.agh.gem.internal.model.expense.toExpenseUpdateParticipant
-import pl.edu.agh.gem.internal.model.group.Group
+import pl.edu.agh.gem.internal.model.group.GroupData
 import pl.edu.agh.gem.internal.persistence.ArchivedExpenseRepository
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.internal.validation.creation.CostValidator
@@ -24,7 +24,6 @@ import pl.edu.agh.gem.internal.validation.creation.ExpenseCreationDataWrapper
 import pl.edu.agh.gem.internal.validation.creation.ParticipantValidator
 import pl.edu.agh.gem.internal.validation.decision.ExpenseDecisionDataWrapper
 import pl.edu.agh.gem.internal.validation.decision.ExpenseDecisionValidator
-import pl.edu.agh.gem.model.GroupMembers
 import pl.edu.agh.gem.validator.ValidatorList.Companion.validatorsOf
 import pl.edu.agh.gem.validator.ValidatorsException
 import java.time.Instant
@@ -50,17 +49,13 @@ class ExpenseService(
     private val creditorUserExpenseMapper = CreditorUserExpenseMapper()
     private val debtorUserExpenseMapper = DebtorUserExpenseMapper()
 
-    fun getMembers(groupId: String): GroupMembers {
-        return groupManagerClient.getMembers(groupId)
-    }
-
-    fun getGroup(groupId: String): Group {
+    fun getGroup(groupId: String): GroupData {
         return groupManagerClient.getGroup(groupId)
     }
 
-    fun create(group: Group, expense: Expense): Expense {
+    fun create(groupData: GroupData, expense: Expense): Expense {
         expenseCreationValidators
-            .getFailedValidations(createExpenseCreationDataWrapper(group, expense))
+            .getFailedValidations(createExpenseCreationDataWrapper(groupData, expense))
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
         return expenseRepository.save(
@@ -73,9 +68,9 @@ class ExpenseService(
     private fun getExchangeRate(baseCurrency: String, targetCurrency: String?, date: Instant) =
         targetCurrency?.let { currencyManagerClient.getExchangeRate(baseCurrency, targetCurrency, date) }
 
-    private fun createExpenseCreationDataWrapper(group: Group, expense: Expense): ExpenseCreationDataWrapper {
+    private fun createExpenseCreationDataWrapper(groupData: GroupData, expense: Expense): ExpenseCreationDataWrapper {
         return ExpenseCreationDataWrapper(
-            group,
+            groupData,
             expense,
             currencyManagerClient.getAvailableCurrencies(),
         )
@@ -157,7 +152,7 @@ class ExpenseService(
         return costsAsExpenseCreator + costsAsExpenseMember
     }
 
-    fun updateExpense(group: Group, update: ExpenseUpdate): Expense {
+    fun updateExpense(groupData: GroupData, update: ExpenseUpdate): Expense {
         val originalExpense = expenseRepository.findByExpenseIdAndGroupId(update.id, update.groupId)
             ?: throw MissingExpenseException(update.id, update.groupId)
 
@@ -172,7 +167,7 @@ class ExpenseService(
         val partiallyUpdatedExpense = originalExpense.update(update)
 
         expenseCreationValidators
-            .getFailedValidations(createExpenseCreationDataWrapper(group, partiallyUpdatedExpense))
+            .getFailedValidations(createExpenseCreationDataWrapper(groupData, partiallyUpdatedExpense))
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
 

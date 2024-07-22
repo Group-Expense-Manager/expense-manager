@@ -17,7 +17,7 @@ class CurrenciesValidator : BaseValidator<ExpenseCreationDataWrapper>() {
 
     private fun validateBaseCurrencyInGroupCurrencies(expenseCreationDataWrapper: ExpenseCreationDataWrapper): Boolean {
         return expenseCreationDataWrapper.expense.targetCurrency != null ||
-            expenseCreationDataWrapper.group.currencies.any { it.code == expenseCreationDataWrapper.expense.baseCurrency }
+            expenseCreationDataWrapper.groupData.currencies.any { it.code == expenseCreationDataWrapper.expense.baseCurrency }
     }
 
     private fun validateBaseCurrencyNotEqualTargetCurrency(expenseCreationDataWrapper: ExpenseCreationDataWrapper): Boolean {
@@ -27,7 +27,7 @@ class CurrenciesValidator : BaseValidator<ExpenseCreationDataWrapper>() {
 
     private fun validateTargetCurrencyInGroupCurrencies(expenseCreationDataWrapper: ExpenseCreationDataWrapper): Boolean {
         return expenseCreationDataWrapper.expense.targetCurrency == null ||
-            expenseCreationDataWrapper.group.currencies.any { it.code == expenseCreationDataWrapper.expense.targetCurrency }
+            expenseCreationDataWrapper.groupData.currencies.any { it.code == expenseCreationDataWrapper.expense.targetCurrency }
     }
 
     private fun validateBaseCurrencyAvailable(expenseCreationDataWrapper: ExpenseCreationDataWrapper): Boolean {

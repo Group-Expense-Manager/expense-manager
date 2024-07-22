@@ -16,7 +16,7 @@ data class Expense(
     val createdAt: Instant,
     val updatedAt: Instant,
     val expenseDate: Instant,
-    val attachmentId: String?,
+    val attachmentId: String,
     val expenseParticipants: List<ExpenseParticipant>,
     val status: ExpenseStatus,
     val statusHistory: List<StatusHistoryEntry>,

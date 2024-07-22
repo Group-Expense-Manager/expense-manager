@@ -31,7 +31,7 @@ class ParticipantValidator : BaseValidator<ExpenseCreationDataWrapper>() {
     }
 
     private fun validateIfParticipantsAreGroupMembers(expenseCreationDataWrapper: ExpenseCreationDataWrapper): Boolean {
-        val membersIds = expenseCreationDataWrapper.group.members.members.map { it.id }
+        val membersIds = expenseCreationDataWrapper.groupData.members.members.map { it.id }
         return expenseCreationDataWrapper.expense.expenseParticipants
             .map { it.participantId }
             .filterNot { it in membersIds }

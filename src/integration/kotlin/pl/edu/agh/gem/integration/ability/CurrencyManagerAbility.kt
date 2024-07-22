@@ -13,7 +13,7 @@ import pl.edu.agh.gem.integration.environment.ProjectConfig.wiremock
 import pl.edu.agh.gem.paths.Paths.INTERNAL
 import java.time.Instant
 
-private fun createGroupsUrl() =
+private fun createGroupDataUrl() =
     "$INTERNAL/currencies"
 
 private fun createExchangeRateUrl(baseCurrency: String, targetCurrency: String, date: Instant) =
@@ -24,7 +24,7 @@ private fun createExchangeRateUrl(baseCurrency: String, targetCurrency: String, 
 
 fun stubCurrencyManagerAvailableCurrencies(body: Any?, statusCode: HttpStatusCode = OK) {
     wiremock.stubFor(
-        get(urlMatching(createGroupsUrl()))
+        get(urlMatching(createGroupDataUrl()))
             .willReturn(
                 aResponse()
                     .withStatus(statusCode.value())

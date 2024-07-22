@@ -8,9 +8,12 @@ import pl.edu.agh.gem.external.dto.expense.ExpenseParticipantRequestData
 import pl.edu.agh.gem.external.dto.expense.ExpenseUpdateRequest
 import pl.edu.agh.gem.external.dto.expense.InternalGroupExpenseParticipantDto
 import pl.edu.agh.gem.external.dto.group.CurrencyDTO
+import pl.edu.agh.gem.external.dto.group.GroupDto
 import pl.edu.agh.gem.external.dto.group.GroupResponse
 import pl.edu.agh.gem.external.dto.group.MemberDTO
+import pl.edu.agh.gem.external.dto.group.UserGroupsResponse
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
+import pl.edu.agh.gem.helper.group.DummyGroup.OTHER_GROUP_ID
 import pl.edu.agh.gem.helper.group.createGroupMembers
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
@@ -31,7 +34,7 @@ import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.UserExpense
 import pl.edu.agh.gem.internal.model.expense.toExpenseUpdateParticipant
 import pl.edu.agh.gem.internal.model.group.Currencies
-import pl.edu.agh.gem.internal.model.group.Group
+import pl.edu.agh.gem.internal.model.group.GroupData
 import pl.edu.agh.gem.model.GroupMembers
 import pl.edu.agh.gem.util.DummyData.ATTACHMENT_ID
 import pl.edu.agh.gem.util.DummyData.CURRENCY_1
@@ -53,7 +56,7 @@ fun createExpenseCreationRequest(
         createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.valueOf(9L)),
     ),
     message: String? = "Something",
-    attachmentId: String? = "1234-1234-ffff",
+    attachmentId: String = "1234-1234-ffff",
 ) = ExpenseCreationRequest(
     title = title,
     cost = cost,
@@ -109,7 +112,7 @@ fun createExpense(
     createdAt: Instant = now(),
     updatedAt: Instant = now(),
     expenseDate: Instant = Instant.ofEpochMilli(0L),
-    attachmentId: String? = ATTACHMENT_ID,
+    attachmentId: String = ATTACHMENT_ID,
     expenseParticipants: List<ExpenseParticipant> = listOf(createExpenseParticipant(USER_ID), createExpenseParticipant(OTHER_USER_ID)),
     status: ExpenseStatus = PENDING,
     statusHistory: List<StatusHistoryEntry> = arrayListOf(StatusHistoryEntry(USER_ID, ExpenseAction.CREATED)),
@@ -151,7 +154,7 @@ fun createGroup(
     members: GroupMembers = createGroupMembers(USER_ID, OTHER_USER_ID),
     acceptRequired: Boolean = false,
     currencies: Currencies = createCurrencies(CURRENCY_1, CURRENCY_2),
-) = Group(
+) = GroupData(
     members = members,
     acceptRequired = acceptRequired,
     currencies = currencies,
@@ -297,6 +300,10 @@ fun createExpenseUpdateParticipant(
     participantId = participantId,
     participantCost = participantCost,
 )
+
+fun createUserGroupsResponse(
+    vararg groups: String = arrayOf(GROUP_ID, OTHER_GROUP_ID),
+) = UserGroupsResponse(groups = groups.map { GroupDto(it) })
 
 object DummyData {
     const val EXPENSE_ID = "expenseId"

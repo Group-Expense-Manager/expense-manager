@@ -6,20 +6,21 @@ import io.kotest.matchers.shouldBe
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_ACCEPTABLE
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
-import pl.edu.agh.gem.helper.group.createGroupMembers
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.integration.BaseIntegrationSpec
-import pl.edu.agh.gem.integration.ability.stubGroupManagerGroup
-import pl.edu.agh.gem.integration.ability.stubGroupManagerMembers
+import pl.edu.agh.gem.integration.ability.stubGroupManagerGroupData
+import pl.edu.agh.gem.integration.ability.stubGroupManagerUserGroups
 import pl.edu.agh.gem.internal.client.GroupManagerClient
 import pl.edu.agh.gem.internal.client.GroupManagerClientException
 import pl.edu.agh.gem.internal.client.RetryableGroupManagerClientException
 import pl.edu.agh.gem.internal.model.currency.Currency
 import pl.edu.agh.gem.model.GroupMember
+import pl.edu.agh.gem.util.DummyData.ANOTHER_USER_ID
 import pl.edu.agh.gem.util.createCurrenciesDTO
 import pl.edu.agh.gem.util.createGroupResponse
 import pl.edu.agh.gem.util.createMembersDTO
+import pl.edu.agh.gem.util.createUserGroupsResponse
 
 class GroupManagerClientIT(
     private val groupManagerClient: GroupManagerClient,
@@ -29,7 +30,7 @@ class GroupManagerClientIT(
         val members = createMembersDTO(USER_ID, OTHER_USER_ID)
         val listOfCurrencies = createCurrenciesDTO("PLN", "USD", "EUR")
         val groupResponse = createGroupResponse(members = members, acceptRequired = true, groupCurrencies = listOfCurrencies)
-        stubGroupManagerGroup(groupResponse, GROUP_ID)
+        stubGroupManagerGroupData(groupResponse, GROUP_ID)
 
         // when
         val result = groupManagerClient.getGroup(GROUP_ID)
@@ -46,7 +47,7 @@ class GroupManagerClientIT(
     should("throw GroupManagerClientException when we send bad request") {
         // given
         val groupResponse = createGroupResponse()
-        stubGroupManagerGroup(groupResponse, GROUP_ID, NOT_ACCEPTABLE)
+        stubGroupManagerGroupData(groupResponse, GROUP_ID, NOT_ACCEPTABLE)
 
         // when & then
         shouldThrow<GroupManagerClientException> {
@@ -57,7 +58,7 @@ class GroupManagerClientIT(
     should("throw RetryableCurrencyManagerClientException when client has internal error") {
         // given
         val groupResponse = createGroupResponse()
-        stubGroupManagerGroup(groupResponse, GROUP_ID, INTERNAL_SERVER_ERROR)
+        stubGroupManagerGroupData(groupResponse, GROUP_ID, INTERNAL_SERVER_ERROR)
 
         // when & then
         shouldThrow<RetryableGroupManagerClientException> {
@@ -65,35 +66,38 @@ class GroupManagerClientIT(
         }
     }
 
-    should("get members") {
+    should("get user groups") {
         // given
-        val groupMembers = createGroupMembers(USER_ID, OTHER_USER_ID)
-        stubGroupManagerMembers(groupMembers, GROUP_ID)
+        val userGroups = arrayOf(GROUP_ID, ANOTHER_USER_ID)
+        val userGroupsResponse = createUserGroupsResponse(GROUP_ID, ANOTHER_USER_ID)
+        stubGroupManagerUserGroups(userGroupsResponse, USER_ID)
 
         // when
-        val result = groupManagerClient.getMembers(GROUP_ID)
+        val result = groupManagerClient.getUserGroups(USER_ID)
 
         // then
-        result shouldBe groupMembers
+        result.all {
+            it.groupId in userGroups
+        }
     }
 
     should("throw GroupManagerClientException when we send bad request") {
         // given
-        stubGroupManagerMembers(createGroupMembers(), GROUP_ID, NOT_ACCEPTABLE)
+        stubGroupManagerUserGroups(createUserGroupsResponse(), USER_ID, NOT_ACCEPTABLE)
 
         // when & then
         shouldThrow<GroupManagerClientException> {
-            groupManagerClient.getMembers(GROUP_ID)
+            groupManagerClient.getUserGroups(USER_ID)
         }
     }
 
     should("throw RetryableGroupManagerClientException when client has internal error") {
         // given
-        stubGroupManagerMembers(createGroupMembers(), GROUP_ID, INTERNAL_SERVER_ERROR)
+        stubGroupManagerUserGroups(createUserGroupsResponse(), USER_ID, INTERNAL_SERVER_ERROR)
 
         // when & then
         shouldThrow<RetryableGroupManagerClientException> {
-            groupManagerClient.getMembers(GROUP_ID)
+            groupManagerClient.getUserGroups(USER_ID)
         }
     }
 },)
