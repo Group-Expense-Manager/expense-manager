@@ -11,7 +11,6 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.mockito.kotlin.anyVararg
-import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
@@ -70,18 +69,6 @@ class ExpenseServiceTest : ShouldSpec({
         expenseRepository = expenseRepository,
         archivedExpenseRepository = archivedExpenseRepository,
     )
-    should("get group members from client") {
-        // given
-        val groupMembers = createGroupMembers(USER_ID, OTHER_USER_ID)
-        whenever(groupManagerClient.getMembers(GROUP_ID)).thenReturn(groupMembers)
-
-        // when
-        val result = expenseService.getMembers(GROUP_ID)
-
-        // then
-        verify(groupManagerClient, atLeastOnce()).getMembers(GROUP_ID)
-        result shouldBe groupMembers
-    }
 
     should("create expense") {
         // given

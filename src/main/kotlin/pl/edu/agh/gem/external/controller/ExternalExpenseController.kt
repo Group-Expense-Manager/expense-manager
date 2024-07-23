@@ -23,6 +23,7 @@ import pl.edu.agh.gem.external.dto.expense.ExpenseUpdateResponse
 import pl.edu.agh.gem.external.dto.expense.ExternalGroupExpensesResponse
 import pl.edu.agh.gem.external.dto.expense.toExpenseUpdateResponse
 import pl.edu.agh.gem.external.dto.expense.toExternalGroupExpensesResponse
+import pl.edu.agh.gem.internal.client.GroupManagerClient
 import pl.edu.agh.gem.internal.service.ExpenseService
 import pl.edu.agh.gem.media.InternalApiMediaType.APPLICATION_JSON_INTERNAL_VER_1
 import pl.edu.agh.gem.model.GroupMembers
@@ -33,6 +34,7 @@ import pl.edu.agh.gem.security.GemUserId
 @RequestMapping("$EXTERNAL/expenses")
 class ExternalExpenseController(
     private val expenseService: ExpenseService,
+    private val groupManagerClient: GroupManagerClient,
 ) {
     @PostMapping(consumes = [APPLICATION_JSON_INTERNAL_VER_1], produces = [APPLICATION_JSON_INTERNAL_VER_1])
     @ResponseStatus(CREATED)
@@ -57,7 +59,7 @@ class ExternalExpenseController(
         @PathVariable expenseId: String,
         @PathVariable groupId: String,
     ): ExpenseResponse {
-        userId.checkIfUserHaveAccess(expenseService.getMembers(groupId))
+        userId.checkIfUserHaveAccess(groupId)
         return ExpenseResponse.fromExpense(expenseService.getExpense(expenseId, groupId))
     }
 
@@ -67,7 +69,7 @@ class ExternalExpenseController(
         @GemUserId userId: String,
         @RequestParam groupId: String,
     ): ExternalGroupExpensesResponse {
-        userId.checkIfUserHaveAccess(expenseService.getMembers(groupId))
+        userId.checkIfUserHaveAccess(groupId)
         return expenseService.getExternalGroupExpenses(groupId).toExternalGroupExpensesResponse()
     }
 
@@ -78,7 +80,7 @@ class ExternalExpenseController(
         @Valid @RequestBody
         expenseDecisionRequest: ExpenseDecisionRequest,
     ) {
-        userId.checkIfUserHaveAccess(expenseService.getMembers(expenseDecisionRequest.groupId))
+        userId.checkIfUserHaveAccess(expenseDecisionRequest.groupId)
         expenseService.decide(expenseDecisionRequest.toDomain(userId))
     }
 
@@ -89,7 +91,7 @@ class ExternalExpenseController(
         @PathVariable expenseId: String,
         @PathVariable groupId: String,
     ) {
-        userId.checkIfUserHaveAccess(expenseService.getMembers(groupId))
+        userId.checkIfUserHaveAccess(groupId)
         expenseService.deleteExpense(expenseId, groupId, userId)
     }
 
@@ -110,4 +112,7 @@ class ExternalExpenseController(
     private fun String.checkIfUserHaveAccess(groupMembers: GroupMembers) {
         groupMembers.members.find { it.id == this } ?: throw UserWithoutGroupAccessException(this)
     }
+
+    private fun String.checkIfUserHaveAccess(groupId: String) =
+        groupManagerClient.getUserGroups(this).find { it.groupId == groupId } ?: throw UserWithoutGroupAccessException(this)
 }

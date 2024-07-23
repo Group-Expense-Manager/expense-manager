@@ -16,7 +16,7 @@ import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.integration.BaseIntegrationSpec
 import pl.edu.agh.gem.integration.ability.ServiceTestClient
-import pl.edu.agh.gem.integration.ability.stubGroupManagerMembers
+import pl.edu.agh.gem.integration.ability.stubGroupManagerUserGroups
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.util.DummyData.CURRENCY_1
@@ -91,7 +91,7 @@ class InternalExpenseControllerIT(
     should("get internal expenses") {
         // given
         val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(USER_ID)))
-        stubGroupManagerMembers(groupMembers, GROUP_ID)
+        stubGroupManagerUserGroups(groupMembers, GROUP_ID)
         val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant()), status = ACCEPTED)
 
         repository.save(expense)

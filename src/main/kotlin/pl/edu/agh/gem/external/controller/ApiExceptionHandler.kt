@@ -4,6 +4,7 @@ import org.springframework.core.Ordered.LOWEST_PRECEDENCE
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.FORBIDDEN
+import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
@@ -17,6 +18,10 @@ import pl.edu.agh.gem.error.withCode
 import pl.edu.agh.gem.error.withDetails
 import pl.edu.agh.gem.error.withMessage
 import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
+import pl.edu.agh.gem.internal.client.CurrencyManagerClientException
+import pl.edu.agh.gem.internal.client.GroupManagerClientException
+import pl.edu.agh.gem.internal.client.RetryableCurrencyManagerClientException
+import pl.edu.agh.gem.internal.client.RetryableGroupManagerClientException
 import pl.edu.agh.gem.internal.service.ExpenseDeletionAccessException
 import pl.edu.agh.gem.internal.service.ExpenseUpdateAccessException
 import pl.edu.agh.gem.internal.service.MissingExpenseException
@@ -76,6 +81,30 @@ class ApiExceptionHandler {
     @ExceptionHandler(UserNotParticipantException::class)
     fun handleUserNotParticipantException(exception: UserNotParticipantException): ResponseEntity<SimpleErrorsHolder> {
         return ResponseEntity(handleError(exception), FORBIDDEN)
+    }
+
+    @ExceptionHandler(CurrencyManagerClientException::class)
+    fun handleCurrencyManagerClientException(exception: CurrencyManagerClientException): ResponseEntity<SimpleErrorsHolder> {
+        return ResponseEntity(handleError(exception), INTERNAL_SERVER_ERROR)
+    }
+
+    @ExceptionHandler(RetryableCurrencyManagerClientException::class)
+    fun handleRetryableCurrencyManagerClientException(
+        exception: RetryableCurrencyManagerClientException,
+    ): ResponseEntity<SimpleErrorsHolder> {
+        return ResponseEntity(handleError(exception), INTERNAL_SERVER_ERROR)
+    }
+
+    @ExceptionHandler(GroupManagerClientException::class)
+    fun handleGroupManagerClientException(exception: GroupManagerClientException): ResponseEntity<SimpleErrorsHolder> {
+        return ResponseEntity(handleError(exception), INTERNAL_SERVER_ERROR)
+    }
+
+    @ExceptionHandler(RetryableGroupManagerClientException::class)
+    fun handleRetryableGroupManagerClientException(
+        exception: RetryableGroupManagerClientException,
+    ): ResponseEntity<SimpleErrorsHolder> {
+        return ResponseEntity(handleError(exception), INTERNAL_SERVER_ERROR)
     }
 
     private fun handleValidatorException(exception: ValidatorsException): SimpleErrorsHolder {

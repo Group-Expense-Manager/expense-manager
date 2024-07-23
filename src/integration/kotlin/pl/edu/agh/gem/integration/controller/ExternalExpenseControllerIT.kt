@@ -16,15 +16,13 @@ import pl.edu.agh.gem.assertion.shouldHaveErrors
 import pl.edu.agh.gem.assertion.shouldHaveHttpStatus
 import pl.edu.agh.gem.assertion.shouldHaveValidationError
 import pl.edu.agh.gem.assertion.shouldHaveValidatorError
-import pl.edu.agh.gem.dto.GroupMemberResponse
-import pl.edu.agh.gem.dto.GroupMembersResponse
 import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
 import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseUpdateResponse
 import pl.edu.agh.gem.external.dto.expense.ExternalGroupExpensesResponse
 import pl.edu.agh.gem.external.dto.group.CurrencyDTO
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
-import pl.edu.agh.gem.helper.group.createGroupMembers
+import pl.edu.agh.gem.helper.group.DummyGroup.OTHER_GROUP_ID
 import pl.edu.agh.gem.helper.user.DummyUser.EMAIL
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
@@ -33,8 +31,8 @@ import pl.edu.agh.gem.integration.BaseIntegrationSpec
 import pl.edu.agh.gem.integration.ability.ServiceTestClient
 import pl.edu.agh.gem.integration.ability.stubCurrencyManagerAvailableCurrencies
 import pl.edu.agh.gem.integration.ability.stubCurrencyManagerExchangeRate
-import pl.edu.agh.gem.integration.ability.stubGroupManagerGroup
-import pl.edu.agh.gem.integration.ability.stubGroupManagerMembers
+import pl.edu.agh.gem.integration.ability.stubGroupManagerGroupData
+import pl.edu.agh.gem.integration.ability.stubGroupManagerUserGroups
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.EDITED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.toExpenseUpdateParticipant
@@ -45,7 +43,7 @@ import pl.edu.agh.gem.internal.service.MissingExpenseException
 import pl.edu.agh.gem.internal.service.NoExpenseUpdateException
 import pl.edu.agh.gem.internal.service.Quadruple
 import pl.edu.agh.gem.internal.service.UserNotParticipantException
-import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NULL_OR_NOT_BLANK
+import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_AVAILABLE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_BLANK
@@ -86,6 +84,7 @@ import pl.edu.agh.gem.util.createExpenseUpdateRequest
 import pl.edu.agh.gem.util.createExpenseUpdateRequestFromExpense
 import pl.edu.agh.gem.util.createGroupResponse
 import pl.edu.agh.gem.util.createMembersDTO
+import pl.edu.agh.gem.util.createUserGroupsResponse
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -107,7 +106,7 @@ class ExternalExpenseControllerIT(
                 Pair(BASE_CURRENCY_PATTERN, createExpenseCreationRequest(baseCurrency = "pln")),
                 Pair(TARGET_CURRENCY_PATTERN, createExpenseCreationRequest(targetCurrency = "pln")),
                 Pair(EXPENSE_PARTICIPANTS_NOT_EMPTY, createExpenseCreationRequest(expenseParticipants = emptyList())),
-                Pair(ATTACHMENT_ID_NULL_OR_NOT_BLANK, createExpenseCreationRequest(attachmentId = "")),
+                Pair(ATTACHMENT_ID_NOT_BLANK, createExpenseCreationRequest(attachmentId = "")),
                 Pair(
                     PARTICIPANT_ID_NOT_BLANK,
                     createExpenseCreationRequest(expenseParticipants = listOf(createExpenseParticipantDto(participantId = ""))),
@@ -130,7 +129,7 @@ class ExternalExpenseControllerIT(
         should("create expense") {
             // given
             val createExpenseRequest = createExpenseCreationRequest()
-            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
             stubCurrencyManagerExchangeRate(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
@@ -151,7 +150,7 @@ class ExternalExpenseControllerIT(
             val user = createGemUser()
             val groupId = GROUP_ID
             val createExpenseRequest = createExpenseCreationRequest()
-            stubGroupManagerGroup(createGroupResponse(members = createMembersDTO(OTHER_USER_ID)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(members = createMembersDTO(OTHER_USER_ID)), GROUP_ID)
 
             // when
             val response = service.createExpense(createExpenseRequest, user, groupId)
@@ -163,7 +162,7 @@ class ExternalExpenseControllerIT(
         should("return validator exception cause COST_NOT_SUM_UP") {
             // given
             val createExpenseRequest = createExpenseCreationRequest(cost = BigDecimal.TWO)
-            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
             stubCurrencyManagerExchangeRate(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
@@ -185,7 +184,7 @@ class ExternalExpenseControllerIT(
             val createExpenseRequest = createExpenseCreationRequest(
                 expenseParticipants = listOf(createExpenseParticipantDto(participantId = OTHER_USER_ID)),
             )
-            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
             stubCurrencyManagerExchangeRate(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
@@ -207,7 +206,7 @@ class ExternalExpenseControllerIT(
             val createExpenseRequest = createExpenseCreationRequest(
                 expenseParticipants = listOf(createExpenseParticipantDto(), createExpenseParticipantDto()),
             )
-            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
             stubCurrencyManagerExchangeRate(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
@@ -227,7 +226,7 @@ class ExternalExpenseControllerIT(
         should("return validator exception cause PARTICIPANT_MIN_SIZE") {
             // given
             val createExpenseRequest = createExpenseCreationRequest(expenseParticipants = listOf(createExpenseParticipantDto()))
-            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
             stubCurrencyManagerExchangeRate(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
@@ -247,7 +246,7 @@ class ExternalExpenseControllerIT(
         should("return validator exception cause PARTICIPANT_NOT_GROUP_MEMBER") {
             // given
             val createExpenseRequest = createExpenseCreationRequest()
-            stubGroupManagerGroup(
+            stubGroupManagerGroupData(
                 createGroupResponse(members = createMembersDTO(USER_ID), groupCurrencies = createCurrenciesDTO(CURRENCY_2)),
                 GROUP_ID,
             )
@@ -270,7 +269,7 @@ class ExternalExpenseControllerIT(
         should("return validator exception cause BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES") {
             // given
             val createExpenseRequest = createExpenseCreationRequest(targetCurrency = null)
-            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
             stubCurrencyManagerExchangeRate(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
@@ -290,7 +289,7 @@ class ExternalExpenseControllerIT(
         should("return validator exception cause BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY") {
             // given
             val createExpenseRequest = createExpenseCreationRequest(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_1)
-            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
             stubCurrencyManagerExchangeRate(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
@@ -310,7 +309,7 @@ class ExternalExpenseControllerIT(
         should("return validator exception cause TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES") {
             // given
             val createExpenseRequest = createExpenseCreationRequest(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_2)
-            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_1)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_1)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
             stubCurrencyManagerExchangeRate(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
@@ -330,7 +329,7 @@ class ExternalExpenseControllerIT(
         should("return validator exception cause BASE_CURRENCY_NOT_AVAILABLE") {
             // given
             val createExpenseRequest = createExpenseCreationRequest(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_2)
-            stubGroupManagerGroup(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_2))
             stubCurrencyManagerExchangeRate(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
@@ -349,8 +348,7 @@ class ExternalExpenseControllerIT(
 
         should("get expense") {
             // given
-            val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(USER_ID), GroupMemberResponse(OTHER_USER_ID)))
-            stubGroupManagerMembers(groupMembers, GROUP_ID)
+            stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), USER_ID)
             val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant()))
             repository.save(expense)
 
@@ -388,8 +386,8 @@ class ExternalExpenseControllerIT(
 
         should("return forbidden if user is not a group member") {
             // given
-            val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(OTHER_USER_ID)))
-            stubGroupManagerMembers(groupMembers, GROUP_ID)
+            stubGroupManagerUserGroups(createUserGroupsResponse(OTHER_GROUP_ID), USER_ID)
+
             // when
             val response = service.getExpense(createGemUser(USER_ID), EXPENSE_ID, GROUP_ID)
 
@@ -399,8 +397,8 @@ class ExternalExpenseControllerIT(
 
         should("return not found when expense doesn't exist") {
             // given
-            val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(USER_ID), GroupMemberResponse(OTHER_USER_ID)))
-            stubGroupManagerMembers(groupMembers, GROUP_ID)
+            stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), USER_ID)
+
             // when
             val response = service.getExpense(createGemUser(USER_ID), EXPENSE_ID, GROUP_ID)
 
@@ -410,8 +408,7 @@ class ExternalExpenseControllerIT(
 
         should("get external expenses") {
             // given
-            val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(USER_ID)))
-            stubGroupManagerMembers(groupMembers, GROUP_ID)
+            stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), USER_ID)
             val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant()))
             repository.save(expense)
 
@@ -438,8 +435,8 @@ class ExternalExpenseControllerIT(
 
         should("return forbidden if user is not a group member") {
             // given
-            val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(OTHER_USER_ID)))
-            stubGroupManagerMembers(groupMembers, GROUP_ID)
+            stubGroupManagerUserGroups(createUserGroupsResponse(OTHER_GROUP_ID), USER_ID)
+
             // when
             val response = service.getExternalGroupExpenses(createGemUser(USER_ID), GROUP_ID)
 
@@ -471,8 +468,8 @@ class ExternalExpenseControllerIT(
         should("decide") {
             // given
             val decisionRequest = createExpenseDecisionRequest()
-            val groupMembersResponse = createGroupMembers(USER_ID, OTHER_USER_ID)
-            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+            stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), OTHER_USER_ID)
+
             val expense = createExpense()
             repository.save(expense)
 
@@ -486,11 +483,10 @@ class ExternalExpenseControllerIT(
         should("return forbidden if user is not a group member") {
             // given
             val decisionRequest = createExpenseDecisionRequest()
-            val groupMembersResponse = createGroupMembers(USER_ID)
-            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+            stubGroupManagerUserGroups(createUserGroupsResponse(OTHER_GROUP_ID), USER_ID)
 
             // when
-            val response = service.decide(decisionRequest, createGemUser(id = OTHER_USER_ID))
+            val response = service.decide(decisionRequest, createGemUser(id = USER_ID))
 
             // then
             response shouldHaveHttpStatus FORBIDDEN
@@ -503,11 +499,10 @@ class ExternalExpenseControllerIT(
         should("return not found when expense is not present") {
             // given
             val decisionRequest = createExpenseDecisionRequest()
-            val groupMembersResponse = createGroupMembers(USER_ID, OTHER_USER_ID)
-            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+            stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), USER_ID)
 
             // when
-            val response = service.decide(decisionRequest, createGemUser(id = OTHER_USER_ID))
+            val response = service.decide(decisionRequest, createGemUser(id = USER_ID))
 
             // then
             response shouldHaveHttpStatus NOT_FOUND
@@ -520,8 +515,8 @@ class ExternalExpenseControllerIT(
         should("return bad request when user is expense creator") {
             // given
             val decisionRequest = createExpenseDecisionRequest()
-            val groupMembersResponse = createGroupMembers(USER_ID, OTHER_USER_ID)
-            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+            stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), USER_ID)
+
             val expense = createExpense()
             repository.save(expense)
 
@@ -537,8 +532,8 @@ class ExternalExpenseControllerIT(
             // given
             val decisionRequest = createExpenseDecisionRequest()
             val anotherUserId = "AnotherUserId"
-            val groupMembersResponse = createGroupMembers(USER_ID, OTHER_USER_ID, anotherUserId)
-            stubGroupManagerMembers(groupMembersResponse, GROUP_ID)
+            stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID), anotherUserId)
+
             val expense = createExpense()
             repository.save(expense)
 
@@ -557,7 +552,7 @@ class ExternalExpenseControllerIT(
             // given
             val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
             repository.save(expense)
-            stubGroupManagerMembers(createGroupMembers(USER_ID, OTHER_USER_ID), GROUP_ID)
+            stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), USER_ID)
 
             // when
             val response = service.delete(createGemUser(USER_ID, EMAIL), GROUP_ID, EXPENSE_ID)
@@ -570,7 +565,7 @@ class ExternalExpenseControllerIT(
         }
         should("return forbidden if user is not a group member") {
             // given
-            stubGroupManagerMembers(createGroupMembers(OTHER_USER_ID), GROUP_ID)
+            stubGroupManagerUserGroups(createUserGroupsResponse(OTHER_GROUP_ID), USER_ID)
 
             // when
             val response = service.delete(createGemUser(USER_ID, EMAIL), GROUP_ID, EXPENSE_ID)
@@ -585,7 +580,7 @@ class ExternalExpenseControllerIT(
 
         should("return not found when expense is not present") {
             // given
-            stubGroupManagerMembers(createGroupMembers(USER_ID, OTHER_USER_ID), GROUP_ID)
+            stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), USER_ID)
 
             // when
             val response = service.delete(createGemUser(USER_ID, EMAIL), GROUP_ID, EXPENSE_ID)
@@ -602,7 +597,7 @@ class ExternalExpenseControllerIT(
             // given
             val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = OTHER_USER_ID)
             repository.save(expense)
-            stubGroupManagerMembers(createGroupMembers(USER_ID, OTHER_USER_ID), GROUP_ID)
+            stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), USER_ID)
 
             // when
             val response = service.delete(createGemUser(USER_ID, EMAIL), GROUP_ID, EXPENSE_ID)
@@ -651,7 +646,7 @@ class ExternalExpenseControllerIT(
             // given
             val user = createGemUser()
             val expenseUpdateRequest = createExpenseUpdateRequest()
-            stubGroupManagerGroup(createGroupResponse(members = createMembersDTO(OTHER_USER_ID)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(members = createMembersDTO(OTHER_USER_ID)), GROUP_ID)
 
             // when
             val response = service.updateExpense(expenseUpdateRequest, user, GROUP_ID, EXPENSE_ID)
@@ -663,7 +658,7 @@ class ExternalExpenseControllerIT(
         should("return not found when updating expense and expense is not present") {
             // given
             val expenseUpdateRequest = createExpenseUpdateRequest()
-            stubGroupManagerGroup(createGroupResponse(members = createMembersDTO(USER_ID, OTHER_USER_ID)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(members = createMembersDTO(USER_ID, OTHER_USER_ID)), GROUP_ID)
 
             // when
             val response = service.updateExpense(expenseUpdateRequest, createGemUser(USER_ID), GROUP_ID, EXPENSE_ID)
@@ -681,7 +676,7 @@ class ExternalExpenseControllerIT(
             val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = OTHER_USER_ID)
             val expenseUpdateRequest = createExpenseUpdateRequest()
             repository.save(expense)
-            stubGroupManagerGroup(createGroupResponse(members = createMembersDTO(USER_ID, OTHER_USER_ID)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(members = createMembersDTO(USER_ID, OTHER_USER_ID)), GROUP_ID)
 
             // when
             val response = service.updateExpense(expenseUpdateRequest, createGemUser(USER_ID), GROUP_ID, EXPENSE_ID)
@@ -755,7 +750,7 @@ class ExternalExpenseControllerIT(
                 // given
                 val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
                 repository.save(expense)
-                stubGroupManagerGroup(
+                stubGroupManagerGroupData(
                     createGroupResponse(createMembersDTO(USER_ID, OTHER_USER_ID), groupCurrencies = groupCurrencies.map { CurrencyDTO(it) }),
                     GROUP_ID,
                 )
@@ -774,7 +769,7 @@ class ExternalExpenseControllerIT(
             val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
             val expenseUpdateRequest = createExpenseUpdateRequestFromExpense(expense)
             repository.save(expense)
-            stubGroupManagerGroup(createGroupResponse(members = createMembersDTO(USER_ID, OTHER_USER_ID)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(members = createMembersDTO(USER_ID, OTHER_USER_ID)), GROUP_ID)
 
             // when
             val response = service.updateExpense(expenseUpdateRequest, createGemUser(USER_ID), GROUP_ID, EXPENSE_ID)
@@ -799,7 +794,7 @@ class ExternalExpenseControllerIT(
                 ),
             )
             repository.save(expense)
-            stubGroupManagerGroup(createGroupResponse(members = createMembersDTO(USER_ID, OTHER_USER_ID, ANOTHER_USER_ID)), GROUP_ID)
+            stubGroupManagerGroupData(createGroupResponse(members = createMembersDTO(USER_ID, OTHER_USER_ID, ANOTHER_USER_ID)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
             stubCurrencyManagerExchangeRate(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
