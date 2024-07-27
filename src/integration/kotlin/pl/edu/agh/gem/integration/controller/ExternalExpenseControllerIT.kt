@@ -19,7 +19,6 @@ import pl.edu.agh.gem.assertion.shouldHaveValidatorError
 import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
 import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseUpdateResponse
-import pl.edu.agh.gem.external.dto.expense.ExternalGroupExpensesResponse
 import pl.edu.agh.gem.external.dto.group.CurrencyDTO
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.group.DummyGroup.OTHER_GROUP_ID
@@ -404,48 +403,6 @@ class ExternalExpenseControllerIT(
 
             // then
             response shouldHaveHttpStatus NOT_FOUND
-        }
-
-        should("get external expenses") {
-            // given
-            stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), USER_ID)
-            val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant()))
-            repository.save(expense)
-
-            // when
-            val response = service.getExternalGroupExpenses(createGemUser(USER_ID), GROUP_ID)
-
-            // then
-            response shouldHaveHttpStatus OK
-            response.shouldBody<ExternalGroupExpensesResponse> {
-                expenses shouldHaveSize 1
-                expenses.first().also {
-                    it.expenseId shouldBe expense.id
-                    it.creatorId shouldBe expense.creatorId
-                    it.title shouldBe expense.title
-                    it.cost shouldBe expense.cost
-                    it.baseCurrency shouldBe expense.baseCurrency
-                    it.status shouldBe expense.status.name
-                    it.participantIds.shouldHaveSize(1)
-                    it.participantIds.first() shouldBe expense.expenseParticipants.first().participantId
-                    it.expenseDate shouldBe expense.expenseDate
-                }
-            }
-        }
-
-        should("return forbidden if user is not a group member") {
-            // given
-            stubGroupManagerUserGroups(createUserGroupsResponse(OTHER_GROUP_ID), USER_ID)
-
-            // when
-            val response = service.getExternalGroupExpenses(createGemUser(USER_ID), GROUP_ID)
-
-            // then
-            response shouldHaveHttpStatus FORBIDDEN
-            response shouldHaveErrors {
-                errors shouldHaveSize 1
-                errors.first().code shouldBe UserWithoutGroupAccessException::class.simpleName
-            }
         }
 
         context("return validation exception cause:") {

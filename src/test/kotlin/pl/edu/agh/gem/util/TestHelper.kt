@@ -32,6 +32,11 @@ import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
 import pl.edu.agh.gem.internal.model.expense.ExpenseUpdateParticipant
 import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.UserExpense
+import pl.edu.agh.gem.internal.model.expense.filter.FilterOptions
+import pl.edu.agh.gem.internal.model.expense.filter.SortOrder
+import pl.edu.agh.gem.internal.model.expense.filter.SortOrder.ASCENDING
+import pl.edu.agh.gem.internal.model.expense.filter.SortedBy
+import pl.edu.agh.gem.internal.model.expense.filter.SortedBy.DATE
 import pl.edu.agh.gem.internal.model.expense.toExpenseUpdateParticipant
 import pl.edu.agh.gem.internal.model.group.Currencies
 import pl.edu.agh.gem.internal.model.group.GroupData
@@ -304,6 +309,20 @@ fun createExpenseUpdateParticipant(
 fun createUserGroupsResponse(
     vararg groups: String = arrayOf(GROUP_ID, OTHER_GROUP_ID),
 ) = UserGroupsResponse(groups = groups.map { GroupDto(it) })
+
+fun createFilterOptions(
+    title: String? = null,
+    status: ExpenseStatus? = null,
+    creatorId: String? = null,
+    sortedBy: SortedBy = DATE,
+    sortOrder: SortOrder = ASCENDING,
+) = FilterOptions(
+    title = title,
+    status = status,
+    creatorId = creatorId,
+    sortedBy = sortedBy,
+    sortOrder = sortOrder,
+)
 
 object DummyData {
     const val EXPENSE_ID = "expenseId"

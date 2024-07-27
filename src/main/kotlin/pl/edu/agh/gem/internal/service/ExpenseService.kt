@@ -14,6 +14,7 @@ import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
 import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.UserExpense
+import pl.edu.agh.gem.internal.model.expense.filter.FilterOptions
 import pl.edu.agh.gem.internal.model.expense.toExpenseUpdateParticipant
 import pl.edu.agh.gem.internal.model.group.GroupData
 import pl.edu.agh.gem.internal.persistence.ArchivedExpenseRepository
@@ -80,12 +81,12 @@ class ExpenseService(
         return expenseRepository.findByExpenseIdAndGroupId(expenseId, groupId) ?: throw MissingExpenseException(expenseId, groupId)
     }
 
-    fun getExternalGroupExpenses(groupId: String): List<Expense> {
-        return expenseRepository.findByGroupId(groupId)
-    }
-
     fun getInternalGroupExpenses(groupId: String): List<Expense> {
         return expenseRepository.findByGroupId(groupId).filter { it.status == ACCEPTED }
+    }
+
+    fun getGroupActivities(groupId: String, filterOptions: FilterOptions): List<Expense> {
+        return expenseRepository.findByGroupId(groupId, filterOptions)
     }
 
     fun decide(expenseDecision: ExpenseDecision) {
