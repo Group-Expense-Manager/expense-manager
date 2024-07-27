@@ -509,7 +509,8 @@ class ExpenseServiceTest : ShouldSpec({
             it.createdAt shouldBe expense.createdAt
             it.updatedAt.shouldNotBeNull()
             it.attachmentId shouldBe expense.attachmentId
-            it.expenseParticipants shouldContainExactly expenseUpdate.expenseParticipants.map { p -> p.toExpenseParticipant() }
+            it.expenseParticipants shouldContainExactly expenseUpdate.expenseParticipants
+                .map { p -> p.toExpenseParticipant(expenseUpdate.userId) }
             it.status shouldBe PENDING
             it.statusHistory shouldContainAll expense.statusHistory
             it.statusHistory.last().also { statusHistory ->
