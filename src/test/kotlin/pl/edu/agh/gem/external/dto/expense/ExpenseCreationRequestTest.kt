@@ -6,6 +6,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
+import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.CREATED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
@@ -51,6 +52,36 @@ class ExpenseCreationRequestTest : ShouldSpec({
                 entry.participantId shouldBe USER_ID
                 entry.comment shouldBe expenseCreationRequest.message
             }
+        }
+    }
+
+    should("map expense creator ExpenseParticipantRequestData to domain") {
+        // given
+        val expenseParticipantRequestData = createExpenseParticipantDto(USER_ID)
+
+        // when
+        val expenseParticipant = expenseParticipantRequestData.toDomain(USER_ID)
+
+        // then
+        expenseParticipant.also {
+            it.participantId shouldBe USER_ID
+            it.participantCost shouldBe expenseParticipantRequestData.participantCost
+            it.participantStatus shouldBe ACCEPTED
+        }
+    }
+
+    should("map expense participant ExpenseParticipantRequestData to domain") {
+        // given
+        val expenseParticipantRequestData = createExpenseParticipantDto(OTHER_USER_ID)
+
+        // when
+        val expenseParticipant = expenseParticipantRequestData.toDomain(USER_ID)
+
+        // then
+        expenseParticipant.also {
+            it.participantId shouldBe OTHER_USER_ID
+            it.participantCost shouldBe expenseParticipantRequestData.participantCost
+            it.participantStatus shouldBe PENDING
         }
     }
 },)
