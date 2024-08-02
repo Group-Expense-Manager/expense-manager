@@ -1,6 +1,7 @@
 package pl.edu.agh.gem.external.persistence
 
 import org.springframework.data.annotation.Id
+import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 import pl.edu.agh.gem.internal.model.currency.ExchangeRate
 import pl.edu.agh.gem.internal.model.expense.Expense
@@ -16,6 +17,7 @@ data class ExpenseEntity(
     val id: String,
     val groupId: String,
     val creatorId: String,
+    @Indexed
     val title: String,
     val cost: BigDecimal,
     val baseCurrency: String,
@@ -23,6 +25,7 @@ data class ExpenseEntity(
     val exchangeRate: BigDecimal?,
     val createdAt: Instant,
     val updatedAt: Instant,
+    @Indexed
     val expenseDate: Instant,
     val attachmentId: String,
     val expenseParticipants: List<ExpenseParticipant>,

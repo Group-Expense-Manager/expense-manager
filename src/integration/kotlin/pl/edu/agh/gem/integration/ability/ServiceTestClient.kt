@@ -17,7 +17,7 @@ import pl.edu.agh.gem.paths.Paths.EXTERNAL
 import pl.edu.agh.gem.paths.Paths.INTERNAL
 import pl.edu.agh.gem.security.GemUser
 import java.net.URI
-import java.util.*
+import java.util.Optional
 
 @Component
 @Lazy
