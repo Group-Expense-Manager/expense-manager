@@ -20,9 +20,7 @@ import pl.edu.agh.gem.external.dto.expense.ExpenseDecisionRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseUpdateRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseUpdateResponse
-import pl.edu.agh.gem.external.dto.expense.ExternalGroupExpensesResponse
 import pl.edu.agh.gem.external.dto.expense.toExpenseUpdateResponse
-import pl.edu.agh.gem.external.dto.expense.toExternalGroupExpensesResponse
 import pl.edu.agh.gem.internal.client.GroupManagerClient
 import pl.edu.agh.gem.internal.service.ExpenseService
 import pl.edu.agh.gem.media.InternalApiMediaType.APPLICATION_JSON_INTERNAL_VER_1
@@ -61,16 +59,6 @@ class ExternalExpenseController(
     ): ExpenseResponse {
         userId.checkIfUserHaveAccess(groupId)
         return ExpenseResponse.fromExpense(expenseService.getExpense(expenseId, groupId))
-    }
-
-    @GetMapping(produces = [APPLICATION_JSON_INTERNAL_VER_1])
-    @ResponseStatus(OK)
-    fun getExternalGroupExpenses(
-        @GemUserId userId: String,
-        @RequestParam groupId: String,
-    ): ExternalGroupExpensesResponse {
-        userId.checkIfUserHaveAccess(groupId)
-        return expenseService.getExternalGroupExpenses(groupId).toExternalGroupExpensesResponse()
     }
 
     @PostMapping("decide", consumes = [APPLICATION_JSON_INTERNAL_VER_1])

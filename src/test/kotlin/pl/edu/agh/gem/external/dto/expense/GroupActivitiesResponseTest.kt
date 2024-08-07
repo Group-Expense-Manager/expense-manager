@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
@@ -13,37 +14,39 @@ import pl.edu.agh.gem.util.createExpenseParticipant
 import java.math.BigDecimal
 import java.time.Instant
 
-class ExternalGroupExpensesResponseTest : ShouldSpec({
+class GroupActivitiesResponseTest : ShouldSpec({
 
-    should("map Expense to ExternalGroupExpensesResponse") {
+    should("map Expense to GroupActivitiesResponse") {
         // given
         val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant()))
 
         // when
-        val groupExpensesResponse = listOf(expense).toExternalGroupExpensesResponse()
+        val groupActivitiesResponse = listOf(expense).toGroupActivitiesResponse(GROUP_ID)
 
         // then
-        groupExpensesResponse.expenses shouldHaveSize 1
-        groupExpensesResponse.expenses.first().also {
+        groupActivitiesResponse.expenses shouldHaveSize 1
+        groupActivitiesResponse.expenses.first().also {
             it.expenseId shouldBe expense.id
             it.creatorId shouldBe expense.creatorId
             it.title shouldBe expense.title
             it.cost shouldBe expense.cost
             it.baseCurrency shouldBe expense.baseCurrency
-            it.status shouldBe expense.status.name
+            it.targetCurrency shouldBe expense.targetCurrency
+            it.status shouldBe expense.status
             it.participantIds.shouldHaveSize(1)
             it.participantIds.first() shouldBe expense.expenseParticipants.first().participantId
             it.expenseDate shouldBe expense.expenseDate
         }
     }
 
-    should("map multiple Expenses to ExternalGroupExpensesResponse") {
+    should("map multiple Expenses to GroupActivitiesResponse") {
         // given
         val expenseIds = listOf("expenseId1", "expenseId2", "expenseId3")
         val creatorIds = listOf("creatorId1", "creatorId2", "creatorId3")
         val titles = listOf("title1", "title2", "title3")
         val costs = listOf(BigDecimal.ONE, BigDecimal.TWO, BigDecimal.TEN)
         val baseCurrencies = listOf("PLN", "EUR", "USD")
+        val targetCurrencies = listOf("EUR", null, "PLN")
         val statuses = listOf(PENDING, ACCEPTED, REJECTED)
         val participantIds = listOf(
             listOf("participant1", "participant2"),
@@ -62,6 +65,7 @@ class ExternalGroupExpensesResponseTest : ShouldSpec({
                 title = titles[index],
                 cost = costs[index],
                 baseCurrency = baseCurrencies[index],
+                targetCurrency = targetCurrencies[index],
                 status = statuses[index],
                 expenseParticipants = participantIds[index].map { createExpenseParticipant(participantId = it) },
                 expenseDate = expenseDates[index],
@@ -69,17 +73,19 @@ class ExternalGroupExpensesResponseTest : ShouldSpec({
         }
 
         // when
-        val groupExpensesResponse = expenses.toExternalGroupExpensesResponse()
+        val groupActivitiesResponse = expenses.toGroupActivitiesResponse(GROUP_ID)
 
         // then
-        groupExpensesResponse.expenses.also {
+        groupActivitiesResponse.groupId shouldBe GROUP_ID
+        groupActivitiesResponse.expenses.also {
             it shouldHaveSize 3
             it.map { groupExpensesDto -> groupExpensesDto.expenseId } shouldContainExactly expenseIds
             it.map { groupExpensesDto -> groupExpensesDto.creatorId } shouldContainExactly creatorIds
             it.map { groupExpensesDto -> groupExpensesDto.title } shouldContainExactly titles
             it.map { groupExpensesDto -> groupExpensesDto.cost } shouldContainExactly costs
             it.map { groupExpensesDto -> groupExpensesDto.baseCurrency } shouldContainExactly baseCurrencies
-            it.map { groupExpensesDto -> groupExpensesDto.status } shouldContainExactly statuses.map { status -> status.name }
+            it.map { groupExpensesDto -> groupExpensesDto.targetCurrency } shouldContainExactly targetCurrencies
+            it.map { groupExpensesDto -> groupExpensesDto.status } shouldContainExactly statuses
             it.map { groupExpensesDto -> groupExpensesDto.participantIds } shouldContainExactly participantIds
             it.map { groupExpensesDto -> groupExpensesDto.expenseDate } shouldContainExactly expenseDates
         }
@@ -90,9 +96,12 @@ class ExternalGroupExpensesResponseTest : ShouldSpec({
         val expenses = listOf<Expense>()
 
         // when
-        val groupExpensesResponse = expenses.toExternalGroupExpensesResponse()
+        val groupActivitiesResponse = expenses.toGroupActivitiesResponse(GROUP_ID)
 
         // then
-        groupExpensesResponse.expenses shouldBe listOf()
+        groupActivitiesResponse.also {
+            it.groupId shouldBe GROUP_ID
+            it.expenses shouldBe listOf()
+        }
     }
 },)

@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldBe
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_ACCEPTABLE
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
+import pl.edu.agh.gem.helper.group.DummyGroup.OTHER_GROUP_ID
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.integration.BaseIntegrationSpec
@@ -16,7 +17,6 @@ import pl.edu.agh.gem.internal.client.GroupManagerClientException
 import pl.edu.agh.gem.internal.client.RetryableGroupManagerClientException
 import pl.edu.agh.gem.internal.model.currency.Currency
 import pl.edu.agh.gem.model.GroupMember
-import pl.edu.agh.gem.util.DummyData.ANOTHER_USER_ID
 import pl.edu.agh.gem.util.createCurrenciesDTO
 import pl.edu.agh.gem.util.createGroupResponse
 import pl.edu.agh.gem.util.createMembersDTO
@@ -68,8 +68,8 @@ class GroupManagerClientIT(
 
     should("get user groups") {
         // given
-        val userGroups = arrayOf(GROUP_ID, ANOTHER_USER_ID)
-        val userGroupsResponse = createUserGroupsResponse(GROUP_ID, ANOTHER_USER_ID)
+        val userGroups = arrayOf(GROUP_ID, OTHER_GROUP_ID)
+        val userGroupsResponse = createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID)
         stubGroupManagerUserGroups(userGroupsResponse, USER_ID)
 
         // when

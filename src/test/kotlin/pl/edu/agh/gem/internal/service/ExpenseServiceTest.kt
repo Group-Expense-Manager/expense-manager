@@ -53,6 +53,7 @@ import pl.edu.agh.gem.util.createExpenseParticipants
 import pl.edu.agh.gem.util.createExpenseUpdate
 import pl.edu.agh.gem.util.createExpenseUpdateFromExpense
 import pl.edu.agh.gem.util.createExpenseUpdateParticipant
+import pl.edu.agh.gem.util.createFilterOptions
 import pl.edu.agh.gem.util.createGroup
 import pl.edu.agh.gem.validator.ValidatorsException
 import java.math.BigDecimal
@@ -163,29 +164,32 @@ class ExpenseServiceTest : ShouldSpec({
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
     }
 
-    should("get external expenses") {
+    should("get group activities") {
         // given
         val expenses = listOf(createExpense())
-        whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(expenses)
+        val filterOptions = createFilterOptions()
+        whenever(expenseRepository.findByGroupId(GROUP_ID, filterOptions)).thenReturn(expenses)
 
         // when
-        val result = expenseService.getExternalGroupExpenses(GROUP_ID)
+        val result = expenseService.getGroupActivities(GROUP_ID, filterOptions)
 
         // then
         result shouldBe expenses
-        verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
+        verify(expenseRepository, times(1)).findByGroupId(GROUP_ID, filterOptions)
     }
 
     should("return empty list when group has no expenses") {
         // given
-        whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(listOf())
+        val filterOptions = createFilterOptions()
+
+        whenever(expenseRepository.findByGroupId(GROUP_ID, filterOptions)).thenReturn(listOf())
 
         // when
-        val result = expenseService.getExternalGroupExpenses(GROUP_ID)
+        val result = expenseService.getGroupActivities(GROUP_ID, filterOptions)
 
         // then
         result shouldBe listOf()
-        verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
+        verify(expenseRepository, times(1)).findByGroupId(GROUP_ID, filterOptions)
     }
 
     should("decide") {
