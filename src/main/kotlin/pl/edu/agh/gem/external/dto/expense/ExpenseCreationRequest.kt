@@ -67,7 +67,7 @@ data class ExpenseCreationRequest(
             updatedAt = now(),
             expenseDate = expenseDate,
             attachmentId = attachmentId,
-            expenseParticipants = expenseParticipants.map { it.toDomain(it.participantId == userId) },
+            expenseParticipants = expenseParticipants.map { it.toDomain(userId) },
             status = PENDING,
             statusHistory = arrayListOf(StatusHistoryEntry(userId, ExpenseAction.CREATED, comment = message)),
         )
@@ -79,10 +79,10 @@ data class ExpenseParticipantRequestData(
     @field:Positive(message = POSITIVE_PARTICIPANT_COST)
     val participantCost: BigDecimal,
 ) {
-    fun toDomain(isCreator: Boolean = false) =
+    fun toDomain(creatorId: String) =
         ExpenseParticipant(
             participantId = participantId,
             participantCost = participantCost,
-            participantStatus = if (isCreator) ACCEPTED else PENDING,
+            participantStatus = if (creatorId == participantId) ACCEPTED else PENDING,
         )
 }

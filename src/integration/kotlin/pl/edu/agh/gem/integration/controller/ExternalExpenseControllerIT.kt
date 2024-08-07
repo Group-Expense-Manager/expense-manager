@@ -19,6 +19,7 @@ import pl.edu.agh.gem.assertion.shouldHaveValidatorError
 import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
 import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseUpdateResponse
+import pl.edu.agh.gem.external.dto.expense.toExpenseUpdateParticipant
 import pl.edu.agh.gem.external.dto.group.CurrencyDTO
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.group.DummyGroup.OTHER_GROUP_ID
@@ -781,7 +782,7 @@ class ExternalExpenseControllerIT(
                 it.updatedAt.shouldNotBeNull()
                 it.attachmentId shouldBe expense.attachmentId
                 it.expenseParticipants shouldContainExactly expenseUpdateRequest.expenseParticipants
-                    .map { p -> p.toExpenseUpdateParticipant().toExpenseParticipant() }
+                    .map { p -> p.toExpenseUpdateParticipant().toExpenseParticipant(USER_ID) }
                 it.status shouldBe PENDING
                 it.statusHistory.last().also { statusHistory ->
                     statusHistory.participantId shouldBe USER_ID
