@@ -27,4 +27,7 @@ object ValidationMessage {
     const val MESSAGE_NULL_OR_NOT_BLANK = "Message can not be blank and not null at the same time"
 
     const val CREATOR_DECISION = "Expense creator can not accept or reject expense"
+
+    const val NO_MODIFICATION = "Update does not change anything"
+    const val USER_NOT_CREATOR = "Only creator can update payment"
 }
