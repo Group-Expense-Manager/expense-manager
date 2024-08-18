@@ -1,4 +1,4 @@
-package pl.edu.agh.gem.external.dto.expense
+package pl.edu.agh.gem.internal.model
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
@@ -7,38 +7,55 @@ import io.kotest.matchers.shouldBe
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
+import pl.edu.agh.gem.internal.model.expense.ExpenseAction.CREATED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
-import pl.edu.agh.gem.util.createExpenseCreationRequest
+import pl.edu.agh.gem.util.DummyData.ATTACHMENT_ID
+import pl.edu.agh.gem.util.createExchangeRate
+import pl.edu.agh.gem.util.createExpenseCreation
+import pl.edu.agh.gem.util.createExpenseParticipantCost
 import pl.edu.agh.gem.util.createExpenseParticipantDto
 
-class ExpenseCreationRequestTest : ShouldSpec({
+class ExpenseCreationTest : ShouldSpec({
 
-    should("Map to domain") {
+    should("Map to Expense") {
         // given
-        val expenseParticipants = arrayListOf(createExpenseParticipantDto(participantId = USER_ID))
-        val expenseCreationRequest = createExpenseCreationRequest(expenseParticipants = expenseParticipants)
+        val expenseParticipants = arrayListOf(createExpenseParticipantCost(participantId = USER_ID))
+        val expenseCreation = createExpenseCreation(expenseParticipantsCost = expenseParticipants)
+        val exchangeRate = createExchangeRate()
 
         // when
-        val expenseCreation = expenseCreationRequest.toDomain(USER_ID, GROUP_ID)
+        val expense = expenseCreation.toExpense(exchangeRate, ATTACHMENT_ID)
 
         // then
-        expenseCreation.shouldNotBeNull()
-        expenseCreation.also {
+        expense.shouldNotBeNull()
+        expense.also {
+            it.id.shouldNotBeNull()
             it.groupId shouldBe GROUP_ID
             it.creatorId shouldBe USER_ID
-            it.title shouldBe expenseCreationRequest.title
-            it.cost shouldBe expenseCreationRequest.cost
-            it.baseCurrency shouldBe expenseCreationRequest.baseCurrency
-            it.targetCurrency shouldBe expenseCreationRequest.targetCurrency
-            it.expenseDate shouldBe expenseCreationRequest.expenseDate
-            it.attachmentId shouldBe expenseCreationRequest.attachmentId
-            it.expenseParticipantsCost shouldHaveSize 1
-            it.expenseParticipantsCost.first().also { participant ->
+            it.title shouldBe expenseCreation.title
+            it.cost shouldBe expenseCreation.cost
+            it.baseCurrency shouldBe expenseCreation.baseCurrency
+            it.targetCurrency shouldBe expenseCreation.targetCurrency
+            it.exchangeRate shouldBe exchangeRate
+            it.createdAt.shouldNotBeNull()
+            it.updatedAt.shouldNotBeNull()
+            it.expenseDate shouldBe expenseCreation.expenseDate
+            it.attachmentId shouldBe expenseCreation.attachmentId
+            it.expenseParticipants shouldHaveSize 1
+            it.expenseParticipants.first().also { participant ->
                 participant.participantId shouldBe expenseParticipants.first().participantId
                 participant.participantCost shouldBe expenseParticipants.first().participantCost
+                participant.participantStatus shouldBe ACCEPTED
             }
-            it.message shouldBe expenseCreationRequest.message
+            it.status shouldBe PENDING
+            it.statusHistory shouldHaveSize 1
+            it.statusHistory.first().also { entry ->
+                entry.createdAt.shouldNotBeNull()
+                entry.expenseAction shouldBe CREATED
+                entry.participantId shouldBe USER_ID
+                entry.comment shouldBe expenseCreation.message
+            }
         }
     }
 

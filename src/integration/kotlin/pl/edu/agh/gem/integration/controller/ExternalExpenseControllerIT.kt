@@ -19,7 +19,7 @@ import pl.edu.agh.gem.assertion.shouldHaveValidatorError
 import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
 import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseUpdateResponse
-import pl.edu.agh.gem.external.dto.expense.toExpenseUpdateParticipant
+import pl.edu.agh.gem.external.dto.expense.toExpenseParticipantCost
 import pl.edu.agh.gem.external.dto.group.CurrencyDTO
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.group.DummyGroup.OTHER_GROUP_ID
@@ -29,13 +29,13 @@ import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.helper.user.createGemUser
 import pl.edu.agh.gem.integration.BaseIntegrationSpec
 import pl.edu.agh.gem.integration.ability.ServiceTestClient
+import pl.edu.agh.gem.integration.ability.stubAttachmentStoreGenerateBlankAttachment
 import pl.edu.agh.gem.integration.ability.stubCurrencyManagerAvailableCurrencies
 import pl.edu.agh.gem.integration.ability.stubCurrencyManagerExchangeRate
 import pl.edu.agh.gem.integration.ability.stubGroupManagerGroupData
 import pl.edu.agh.gem.integration.ability.stubGroupManagerUserGroups
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.EDITED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
-import pl.edu.agh.gem.internal.model.expense.toExpenseUpdateParticipant
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.internal.service.ExpenseDeletionAccessException
 import pl.edu.agh.gem.internal.service.ExpenseUpdateAccessException
@@ -43,7 +43,7 @@ import pl.edu.agh.gem.internal.service.MissingExpenseException
 import pl.edu.agh.gem.internal.service.NoExpenseUpdateException
 import pl.edu.agh.gem.internal.service.Quadruple
 import pl.edu.agh.gem.internal.service.UserNotParticipantException
-import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NOT_BLANK
+import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NULL_OR_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_AVAILABLE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_BLANK
@@ -82,6 +82,7 @@ import pl.edu.agh.gem.util.createExpenseParticipant
 import pl.edu.agh.gem.util.createExpenseParticipantDto
 import pl.edu.agh.gem.util.createExpenseUpdateRequest
 import pl.edu.agh.gem.util.createExpenseUpdateRequestFromExpense
+import pl.edu.agh.gem.util.createGroupAttachmentResponse
 import pl.edu.agh.gem.util.createGroupResponse
 import pl.edu.agh.gem.util.createMembersDTO
 import pl.edu.agh.gem.util.createUserGroupsResponse
@@ -106,7 +107,7 @@ class ExternalExpenseControllerIT(
                 Pair(BASE_CURRENCY_PATTERN, createExpenseCreationRequest(baseCurrency = "pln")),
                 Pair(TARGET_CURRENCY_PATTERN, createExpenseCreationRequest(targetCurrency = "pln")),
                 Pair(EXPENSE_PARTICIPANTS_NOT_EMPTY, createExpenseCreationRequest(expenseParticipants = emptyList())),
-                Pair(ATTACHMENT_ID_NOT_BLANK, createExpenseCreationRequest(attachmentId = "")),
+                Pair(ATTACHMENT_ID_NULL_OR_NOT_BLANK, createExpenseCreationRequest(attachmentId = "")),
                 Pair(
                     PARTICIPANT_ID_NOT_BLANK,
                     createExpenseCreationRequest(expenseParticipants = listOf(createExpenseParticipantDto(participantId = ""))),
@@ -126,7 +127,7 @@ class ExternalExpenseControllerIT(
             }
         }
 
-        should("create expense") {
+        should("create expense when attachmentId is provided") {
             // given
             val createExpenseRequest = createExpenseCreationRequest()
             stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
@@ -137,6 +138,28 @@ class ExternalExpenseControllerIT(
                 CURRENCY_2,
                 Instant.ofEpochSecond(0L),
             )
+
+            // when
+            val response = service.createExpense(createExpenseRequest, createGemUser(USER_ID), GROUP_ID)
+
+            // then
+            response shouldHaveHttpStatus CREATED
+        }
+
+        should("create expense when attachmentId is not provided") {
+            // given
+            val createExpenseRequest = createExpenseCreationRequest()
+            val attachment = createGroupAttachmentResponse()
+
+            stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
+            stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
+            stubCurrencyManagerExchangeRate(
+                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
+                CURRENCY_1,
+                CURRENCY_2,
+                Instant.ofEpochSecond(0L),
+            )
+            stubAttachmentStoreGenerateBlankAttachment(attachment, GROUP_ID, USER_ID)
 
             // when
             val response = service.createExpense(createExpenseRequest, createGemUser(USER_ID), GROUP_ID)
@@ -782,7 +805,7 @@ class ExternalExpenseControllerIT(
                 it.updatedAt.shouldNotBeNull()
                 it.attachmentId shouldBe expense.attachmentId
                 it.expenseParticipants shouldContainExactly expenseUpdateRequest.expenseParticipants
-                    .map { p -> p.toExpenseUpdateParticipant().toExpenseParticipant(USER_ID) }
+                    .map { p -> p.toExpenseParticipantCost().toExpenseParticipant(USER_ID) }
                 it.status shouldBe PENDING
                 it.statusHistory.last().also { statusHistory ->
                     statusHistory.participantId shouldBe USER_ID

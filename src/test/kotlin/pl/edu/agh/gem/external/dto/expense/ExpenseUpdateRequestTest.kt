@@ -29,8 +29,8 @@ class ExpenseUpdateRequestTest : ShouldSpec({
             it.baseCurrency shouldBe expenseUpdateRequest.baseCurrency
             it.targetCurrency shouldBe expenseUpdateRequest.targetCurrency
             it.expenseDate shouldBe expenseUpdateRequest.expenseDate
-            it.expenseParticipants shouldHaveSize 1
-            it.expenseParticipants.first().also { participant ->
+            it.expenseParticipantsCost shouldHaveSize 1
+            it.expenseParticipantsCost.first().also { participant ->
                 participant.participantId shouldBe expenseParticipants.first().participantId
                 participant.participantCost shouldBe expenseParticipants.first().participantCost
             }
