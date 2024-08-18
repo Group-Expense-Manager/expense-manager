@@ -24,11 +24,7 @@ import pl.edu.agh.gem.internal.client.GroupManagerClientException
 import pl.edu.agh.gem.internal.client.RetryableAttachmentStoreClientException
 import pl.edu.agh.gem.internal.client.RetryableCurrencyManagerClientException
 import pl.edu.agh.gem.internal.client.RetryableGroupManagerClientException
-import pl.edu.agh.gem.internal.service.ExpenseDeletionAccessException
-import pl.edu.agh.gem.internal.service.ExpenseUpdateAccessException
 import pl.edu.agh.gem.internal.service.MissingExpenseException
-import pl.edu.agh.gem.internal.service.NoExpenseUpdateException
-import pl.edu.agh.gem.internal.service.UserNotParticipantException
 import pl.edu.agh.gem.validator.ValidatorsException
 
 @ControllerAdvice
@@ -49,27 +45,6 @@ class ApiExceptionHandler {
         return ResponseEntity(handleError(exception), FORBIDDEN)
     }
 
-    @ExceptionHandler(ExpenseDeletionAccessException::class)
-    fun handleExpenseDeletionAccessException(
-        exception: ExpenseDeletionAccessException,
-    ): ResponseEntity<SimpleErrorsHolder> {
-        return ResponseEntity(handleError(exception), FORBIDDEN)
-    }
-
-    @ExceptionHandler(ExpenseUpdateAccessException::class)
-    fun handleExpenseUpdateAccessException(
-        exception: ExpenseUpdateAccessException,
-    ): ResponseEntity<SimpleErrorsHolder> {
-        return ResponseEntity(handleError(exception), FORBIDDEN)
-    }
-
-    @ExceptionHandler(NoExpenseUpdateException::class)
-    fun handleNoExpenseUpdateException(
-        exception: NoExpenseUpdateException,
-    ): ResponseEntity<SimpleErrorsHolder> {
-        return ResponseEntity(handleError(exception), BAD_REQUEST)
-    }
-
     @ExceptionHandler(ValidatorsException::class)
     fun handleValidatorsException(exception: ValidatorsException): ResponseEntity<SimpleErrorsHolder> {
         return ResponseEntity(handleValidatorException(exception), BAD_REQUEST)
@@ -78,11 +53,6 @@ class ApiExceptionHandler {
     @ExceptionHandler(MissingExpenseException::class)
     fun handleMissingExpenseException(exception: MissingExpenseException): ResponseEntity<SimpleErrorsHolder> {
         return ResponseEntity(handleError(exception), NOT_FOUND)
-    }
-
-    @ExceptionHandler(UserNotParticipantException::class)
-    fun handleUserNotParticipantException(exception: UserNotParticipantException): ResponseEntity<SimpleErrorsHolder> {
-        return ResponseEntity(handleError(exception), FORBIDDEN)
     }
 
     @ExceptionHandler(CurrencyManagerClientException::class)
