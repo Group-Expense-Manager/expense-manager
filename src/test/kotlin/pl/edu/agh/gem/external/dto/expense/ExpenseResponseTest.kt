@@ -35,12 +35,12 @@ class ExpenseResponseTest : ShouldSpec({
                 participant.participantStatus shouldBe expense.expenseParticipants.first().participantStatus.name
             }
             it.status shouldBe expense.status.name
-            it.statusHistory shouldHaveSize 1
-            it.statusHistory.first().also { entry ->
-                entry.createdAt shouldBe expense.statusHistory.first().createdAt
-                entry.expenseAction shouldBe expense.statusHistory.first().expenseAction.name
-                entry.participantId shouldBe expense.statusHistory.first().participantId
-                entry.comment shouldBe expense.statusHistory.first().comment
+            it.history shouldHaveSize 1
+            it.history.first().also { entry ->
+                entry.createdAt shouldBe expense.history.first().createdAt
+                entry.expenseAction shouldBe expense.history.first().expenseAction.name
+                entry.participantId shouldBe expense.history.first().participantId
+                entry.comment shouldBe expense.history.first().comment
             }
         }
     }

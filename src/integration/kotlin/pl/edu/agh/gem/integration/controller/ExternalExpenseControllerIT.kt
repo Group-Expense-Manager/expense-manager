@@ -397,12 +397,12 @@ class ExternalExpenseControllerIT(
                     participant.participantStatus shouldBe expense.expenseParticipants.first().participantStatus.name
                 }
                 status shouldBe expense.status.name
-                statusHistory shouldHaveSize 1
-                statusHistory.first().also { entry ->
+                history shouldHaveSize 1
+                history.first().also { entry ->
                     entry.createdAt.shouldNotBeNull()
-                    entry.expenseAction shouldBe expense.statusHistory.first().expenseAction.name
-                    entry.participantId shouldBe expense.statusHistory.first().participantId
-                    entry.comment shouldBe expense.statusHistory.first().comment
+                    entry.expenseAction shouldBe expense.history.first().expenseAction.name
+                    entry.participantId shouldBe expense.history.first().participantId
+                    entry.comment shouldBe expense.history.first().comment
                 }
             }
         }
@@ -807,11 +807,11 @@ class ExternalExpenseControllerIT(
                 it.expenseParticipants shouldContainExactly expenseUpdateRequest.expenseParticipants
                     .map { p -> p.toExpenseParticipantCost().toExpenseParticipant(USER_ID) }
                 it.status shouldBe PENDING
-                it.statusHistory.last().also { statusHistory ->
-                    statusHistory.participantId shouldBe USER_ID
-                    statusHistory.createdAt.shouldNotBeNull()
-                    statusHistory.expenseAction shouldBe EDITED
-                    statusHistory.comment shouldBe expenseUpdateRequest.message
+                it.history.last().also { entry ->
+                    entry.participantId shouldBe USER_ID
+                    entry.createdAt.shouldNotBeNull()
+                    entry.expenseAction shouldBe EDITED
+                    entry.comment shouldBe expenseUpdateRequest.message
                 }
             }
         }

@@ -49,8 +49,8 @@ class ExpenseCreationTest : ShouldSpec({
                 participant.participantStatus shouldBe ACCEPTED
             }
             it.status shouldBe PENDING
-            it.statusHistory shouldHaveSize 1
-            it.statusHistory.first().also { entry ->
+            it.history shouldHaveSize 1
+            it.history.first().also { entry ->
                 entry.createdAt.shouldNotBeNull()
                 entry.expenseAction shouldBe CREATED
                 entry.participantId shouldBe USER_ID

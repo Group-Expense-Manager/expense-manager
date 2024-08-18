@@ -35,7 +35,7 @@ data class ExpenseCreation(
         expenseParticipants = expenseParticipantsCost.map { it.toExpenseParticipant(creatorId) },
         attachmentId = attachmentId,
         status = PENDING,
-        statusHistory = arrayListOf(StatusHistoryEntry(creatorId, CREATED, comment = message)),
+        history = arrayListOf(ExpenseHistoryEntry(creatorId, CREATED, comment = message)),
 
     )
 }

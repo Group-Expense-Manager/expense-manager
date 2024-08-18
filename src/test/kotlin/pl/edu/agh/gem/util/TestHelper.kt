@@ -26,13 +26,13 @@ import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction
 import pl.edu.agh.gem.internal.model.expense.ExpenseCreation
 import pl.edu.agh.gem.internal.model.expense.ExpenseDecision
+import pl.edu.agh.gem.internal.model.expense.ExpenseHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.ExpenseParticipant
 import pl.edu.agh.gem.internal.model.expense.ExpenseParticipantCost
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
-import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.UserExpense
 import pl.edu.agh.gem.internal.model.expense.filter.FilterOptions
 import pl.edu.agh.gem.internal.model.expense.filter.SortOrder
@@ -122,7 +122,7 @@ fun createExpense(
     attachmentId: String = ATTACHMENT_ID,
     expenseParticipants: List<ExpenseParticipant> = listOf(createExpenseParticipant(USER_ID), createExpenseParticipant(OTHER_USER_ID)),
     status: ExpenseStatus = PENDING,
-    statusHistory: List<StatusHistoryEntry> = arrayListOf(StatusHistoryEntry(USER_ID, ExpenseAction.CREATED)),
+    history: List<ExpenseHistoryEntry> = arrayListOf(ExpenseHistoryEntry(USER_ID, ExpenseAction.CREATED)),
 ) = Expense(
     id = id,
     groupId = groupId,
@@ -138,7 +138,7 @@ fun createExpense(
     attachmentId = attachmentId,
     expenseParticipants = expenseParticipants,
     status = status,
-    statusHistory = statusHistory,
+    history = history,
 )
 
 fun createExpenseCreation(

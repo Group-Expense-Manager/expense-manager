@@ -10,11 +10,11 @@ import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.EDITED
 import pl.edu.agh.gem.internal.model.expense.ExpenseCreation
 import pl.edu.agh.gem.internal.model.expense.ExpenseDecision
+import pl.edu.agh.gem.internal.model.expense.ExpenseHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
-import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.UserExpense
 import pl.edu.agh.gem.internal.model.expense.filter.FilterOptions
 import pl.edu.agh.gem.internal.model.expense.toExpenseParticipantCost
@@ -135,18 +135,18 @@ class ExpenseService(
             it.takeIf { it.participantId == expenseDecision.userId }?.copy(participantStatus = expenseDecision.decision.toExpenseStatus()) ?: it
         }
 
-        val statusHistoryEntry = StatusHistoryEntry(
+        val expenseHistoryEntry = ExpenseHistoryEntry(
             participantId = expenseDecision.userId,
             expenseAction = expenseDecision.decision.toExpenseAction(),
             comment = expenseDecision.message,
         )
-        val updatedStatusHistory = statusHistory + statusHistoryEntry
+        val updatedHistory = history + expenseHistoryEntry
 
         return copy(
             updatedAt = now(),
             expenseParticipants = updatedExpenseParticipants,
             status = ExpenseStatus.reduce(updatedExpenseParticipants.map { it.participantStatus }),
-            statusHistory = updatedStatusHistory,
+            history = updatedHistory,
 
         )
     }
@@ -251,7 +251,7 @@ class ExpenseService(
             expenseDate = expenseUpdate.expenseDate,
             expenseParticipants = expenseUpdate.expenseParticipantsCost.map { it.toExpenseParticipant(expenseUpdate.userId) },
             status = PENDING,
-            statusHistory = statusHistory + StatusHistoryEntry(creatorId, EDITED, now(), expenseUpdate.message),
+            history = history + ExpenseHistoryEntry(creatorId, EDITED, now(), expenseUpdate.message),
 
         )
     }

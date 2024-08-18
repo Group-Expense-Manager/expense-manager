@@ -1,8 +1,8 @@
 package pl.edu.agh.gem.external.dto.expense
 
 import pl.edu.agh.gem.internal.model.expense.Expense
+import pl.edu.agh.gem.internal.model.expense.ExpenseHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.ExpenseParticipant
-import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -19,7 +19,7 @@ data class ExpenseResponse(
     val attachmentId: String?,
     val expenseParticipants: List<ExpenseParticipantResponseData>,
     val status: String,
-    val statusHistory: List<StatusHistoryEntryResponseData>,
+    val history: List<ExpenseHistoryEntryResponseData>,
 ) {
     companion object {
         fun fromExpense(expense: Expense) = ExpenseResponse(
@@ -35,7 +35,7 @@ data class ExpenseResponse(
             attachmentId = expense.attachmentId,
             expenseParticipants = expense.expenseParticipants.map { ExpenseParticipantResponseData.fromExpenseParticipant(it) },
             status = expense.status.name,
-            statusHistory = expense.statusHistory.map { StatusHistoryEntryResponseData.fromStatusHistoryEntry(it) },
+            history = expense.history.map { ExpenseHistoryEntryResponseData.fromExpenseHistoryEntry(it) },
         )
     }
 }
@@ -54,18 +54,18 @@ data class ExpenseParticipantResponseData(
     }
 }
 
-data class StatusHistoryEntryResponseData(
+data class ExpenseHistoryEntryResponseData(
     val participantId: String,
     val expenseAction: String,
     val createdAt: Instant,
     val comment: String?,
 ) {
     companion object {
-        fun fromStatusHistoryEntry(statusHistoryEntry: StatusHistoryEntry) = StatusHistoryEntryResponseData(
-            participantId = statusHistoryEntry.participantId,
-            expenseAction = statusHistoryEntry.expenseAction.name,
-            createdAt = statusHistoryEntry.createdAt,
-            comment = statusHistoryEntry.comment,
+        fun fromExpenseHistoryEntry(expenseHistoryEntry: ExpenseHistoryEntry) = ExpenseHistoryEntryResponseData(
+            participantId = expenseHistoryEntry.participantId,
+            expenseAction = expenseHistoryEntry.expenseAction.name,
+            createdAt = expenseHistoryEntry.createdAt,
+            comment = expenseHistoryEntry.comment,
         )
     }
 }

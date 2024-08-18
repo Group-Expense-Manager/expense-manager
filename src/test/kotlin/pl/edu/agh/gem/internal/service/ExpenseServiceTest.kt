@@ -104,8 +104,8 @@ class ExpenseServiceTest : ShouldSpec({
             it.updatedAt.shouldNotBeNull()
             it.attachmentId shouldBe expenseCreation.attachmentId
             it.status shouldBe PENDING
-            it.statusHistory shouldHaveSize 1
-            it.statusHistory.first().also { entry ->
+            it.history shouldHaveSize 1
+            it.history.first().also { entry ->
                 entry.createdAt.shouldNotBeNull()
                 entry.expenseAction shouldBe CREATED
                 entry.participantId shouldBe USER_ID
@@ -146,8 +146,8 @@ class ExpenseServiceTest : ShouldSpec({
             it.updatedAt.shouldNotBeNull()
             it.attachmentId shouldBe ATTACHMENT_ID
             it.status shouldBe PENDING
-            it.statusHistory shouldHaveSize 1
-            it.statusHistory.first().also { entry ->
+            it.history shouldHaveSize 1
+            it.history.first().also { entry ->
                 entry.createdAt.shouldNotBeNull()
                 entry.expenseAction shouldBe CREATED
                 entry.participantId shouldBe USER_ID
@@ -601,12 +601,12 @@ class ExpenseServiceTest : ShouldSpec({
             it.expenseParticipants shouldContainExactly expenseUpdate.expenseParticipantsCost
                 .map { p -> p.toExpenseParticipant(expenseUpdate.userId) }
             it.status shouldBe PENDING
-            it.statusHistory shouldContainAll expense.statusHistory
-            it.statusHistory.last().also { statusHistory ->
-                statusHistory.participantId shouldBe USER_ID
-                statusHistory.createdAt.shouldNotBeNull()
-                statusHistory.expenseAction shouldBe EDITED
-                statusHistory.comment shouldBe expenseUpdate.message
+            it.history shouldContainAll expense.history
+            it.history.last().also { entry ->
+                entry.participantId shouldBe USER_ID
+                entry.createdAt.shouldNotBeNull()
+                entry.expenseAction shouldBe EDITED
+                entry.comment shouldBe expenseUpdate.message
             }
         }
     }

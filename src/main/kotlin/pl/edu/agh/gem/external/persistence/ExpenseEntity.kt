@@ -5,9 +5,9 @@ import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 import pl.edu.agh.gem.internal.model.currency.ExchangeRate
 import pl.edu.agh.gem.internal.model.expense.Expense
+import pl.edu.agh.gem.internal.model.expense.ExpenseHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.ExpenseParticipant
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
-import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -30,7 +30,7 @@ data class ExpenseEntity(
     val attachmentId: String,
     val expenseParticipants: List<ExpenseParticipant>,
     val status: ExpenseStatus,
-    val statusHistory: List<StatusHistoryEntry>,
+    val history: List<ExpenseHistoryEntry>,
 ) {
     fun toDomain() =
         Expense(
@@ -48,6 +48,6 @@ data class ExpenseEntity(
             attachmentId = attachmentId,
             expenseParticipants = expenseParticipants,
             status = status,
-            statusHistory = statusHistory,
+            history = history,
         )
 }
