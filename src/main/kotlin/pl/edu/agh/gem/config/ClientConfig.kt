@@ -2,7 +2,6 @@ package pl.edu.agh.gem.config
 
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.client.RestTemplate
@@ -18,10 +17,10 @@ class ClientConfig {
         gemRestTemplateFactory: GemRestTemplateFactory,
     ): RestTemplate {
         return gemRestTemplateFactory
-                .builder()
-                .withReadTimeout(groupManagerProperties.readTimeout)
-                .withConnectTimeout(groupManagerProperties.connectTimeout)
-                .build()
+            .builder()
+            .withReadTimeout(groupManagerProperties.readTimeout)
+            .withConnectTimeout(groupManagerProperties.connectTimeout)
+            .build()
     }
 
     @Bean
@@ -31,10 +30,10 @@ class ClientConfig {
         gemRestTemplateFactory: GemRestTemplateFactory,
     ): RestTemplate {
         return gemRestTemplateFactory
-                .builder()
-                .withReadTimeout(currencyManagerProperties.readTimeout)
-                .withConnectTimeout(currencyManagerProperties.connectTimeout)
-                .build()
+            .builder()
+            .withReadTimeout(currencyManagerProperties.readTimeout)
+            .withConnectTimeout(currencyManagerProperties.connectTimeout)
+            .build()
     }
 
     @Bean
@@ -44,10 +43,10 @@ class ClientConfig {
         gemRestTemplateFactory: GemRestTemplateFactory,
     ): RestTemplate {
         return gemRestTemplateFactory
-                .builder()
-                .withReadTimeout(attachmentStoreProperties.readTimeout)
-                .withConnectTimeout(attachmentStoreProperties.connectTimeout)
-                .build()
+            .builder()
+            .withReadTimeout(attachmentStoreProperties.readTimeout)
+            .withConnectTimeout(attachmentStoreProperties.connectTimeout)
+            .build()
     }
 }
 
