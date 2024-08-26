@@ -48,15 +48,6 @@ class ClientConfig {
             .withConnectTimeout(attachmentStoreProperties.connectTimeout)
             .build()
     }
-
-    @Bean
-    @Qualifier("AttachmentStoreRestTemplate")
-    fun attachmentStoreRestTemplate(attachmentStoreProperties: AttachmentStoreProperties): RestTemplate {
-        return RestTemplateBuilder()
-            .setConnectTimeout(attachmentStoreProperties.connectTimeout)
-            .setReadTimeout(attachmentStoreProperties.readTimeout)
-            .build()
-    }
 }
 
 @ConfigurationProperties(prefix = "group-manager")
