@@ -2,18 +2,18 @@ package pl.edu.agh.gem.internal.model
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import pl.edu.agh.gem.external.dto.expense.toExpenseUpdateParticipant
+import pl.edu.agh.gem.external.dto.expense.toExpenseParticipantCost
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
-import pl.edu.agh.gem.internal.model.expense.toExpenseUpdateParticipant
+import pl.edu.agh.gem.internal.model.expense.toExpenseParticipantCost
 import pl.edu.agh.gem.util.createExpenseParticipant
+import pl.edu.agh.gem.util.createExpenseParticipantCost
 import pl.edu.agh.gem.util.createExpenseParticipantDto
-import pl.edu.agh.gem.util.createExpenseUpdateParticipant
 
 class ExpenseUpdateTest : ShouldSpec({
-    should("map ExpenseUpdateParticipant to ExpenseParticipant") {
+    should("map ExpenseParticipantCost to ExpenseParticipant") {
         // given
-        val expenseUpdateParticipant = createExpenseUpdateParticipant()
+        val expenseUpdateParticipant = createExpenseParticipantCost()
 
         // when
         val expenseParticipant = expenseUpdateParticipant.toExpenseParticipant(USER_ID)
@@ -26,12 +26,12 @@ class ExpenseUpdateTest : ShouldSpec({
         }
     }
 
-    should("map ExpenseParticipant to ExpenseUpdateParticipant") {
+    should("map ExpenseParticipant to ExpenseParticipantCost") {
         // given
         val expenseParticipant = createExpenseParticipant()
 
         // when
-        val expenseUpdateParticipant = expenseParticipant.toExpenseUpdateParticipant()
+        val expenseUpdateParticipant = expenseParticipant.toExpenseParticipantCost()
 
         // then
         expenseUpdateParticipant.also {
@@ -40,12 +40,12 @@ class ExpenseUpdateTest : ShouldSpec({
         }
     }
 
-    should("map ExpenseParticipantRequestData to ExpenseUpdateParticipant") {
+    should("map ExpenseParticipantRequestData to ExpenseParticipantCost") {
         // given
         val expenseParticipantRequestData = createExpenseParticipantDto()
 
         // when
-        val expenseUpdateParticipant = expenseParticipantRequestData.toExpenseUpdateParticipant()
+        val expenseUpdateParticipant = expenseParticipantRequestData.toExpenseParticipantCost()
 
         // then
         expenseUpdateParticipant.also {

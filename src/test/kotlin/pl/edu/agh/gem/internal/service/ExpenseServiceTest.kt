@@ -20,9 +20,12 @@ import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.group.createGroupMembers
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
+import pl.edu.agh.gem.internal.client.AttachmentStoreClient
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
+import pl.edu.agh.gem.internal.model.attachment.GroupAttachment
 import pl.edu.agh.gem.internal.model.expense.Expense
+import pl.edu.agh.gem.internal.model.expense.ExpenseAction.CREATED
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.EDITED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
@@ -40,6 +43,7 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_NOT_GROU
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES
 import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_PARTICIPANT
 import pl.edu.agh.gem.util.DummyData.ANOTHER_USER_ID
+import pl.edu.agh.gem.util.DummyData.ATTACHMENT_ID
 import pl.edu.agh.gem.util.DummyData.CURRENCY_1
 import pl.edu.agh.gem.util.DummyData.CURRENCY_2
 import pl.edu.agh.gem.util.DummyData.EXCHANGE_RATE_VALUE
@@ -47,12 +51,12 @@ import pl.edu.agh.gem.util.DummyData.EXPENSE_ID
 import pl.edu.agh.gem.util.createCurrencies
 import pl.edu.agh.gem.util.createExchangeRate
 import pl.edu.agh.gem.util.createExpense
+import pl.edu.agh.gem.util.createExpenseCreation
 import pl.edu.agh.gem.util.createExpenseDecision
-import pl.edu.agh.gem.util.createExpenseParticipant
+import pl.edu.agh.gem.util.createExpenseParticipantCost
 import pl.edu.agh.gem.util.createExpenseParticipants
 import pl.edu.agh.gem.util.createExpenseUpdate
 import pl.edu.agh.gem.util.createExpenseUpdateFromExpense
-import pl.edu.agh.gem.util.createExpenseUpdateParticipant
 import pl.edu.agh.gem.util.createFilterOptions
 import pl.edu.agh.gem.util.createGroup
 import pl.edu.agh.gem.validator.ValidatorsException
@@ -62,82 +66,165 @@ import java.time.Instant
 class ExpenseServiceTest : ShouldSpec({
     val groupManagerClient = mock<GroupManagerClient> { }
     val currencyManagerClient = mock<CurrencyManagerClient> {}
+    val attachmentStoreClient = mock<AttachmentStoreClient> {}
     val expenseRepository = mock<ExpenseRepository> {}
     val archivedExpenseRepository = mock<ArchivedExpenseRepository> {}
     val expenseService = ExpenseService(
         groupManagerClient = groupManagerClient,
         currencyManagerClient = currencyManagerClient,
+        attachmentStoreClient = attachmentStoreClient,
         expenseRepository = expenseRepository,
         archivedExpenseRepository = archivedExpenseRepository,
     )
 
-    should("create expense") {
+    should("create expense when attachmentId is provided") {
         // given
-        val expense = createExpense()
+        val expenseCreation = createExpenseCreation()
         val group = createGroup(currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
         val exchangeRate = createExchangeRate()
-        val expected = expense.copy(exchangeRate = exchangeRate)
         whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
         whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(exchangeRate)
-        whenever(expenseRepository.save(anyVararg(Expense::class))).thenReturn(expected)
+        whenever(expenseRepository.save(anyVararg(Expense::class))).thenAnswer { it.arguments[0] }
 
         // when
-        val result = expenseService.create(group, expense)
+        val result = expenseService.create(group, expenseCreation)
 
         // then
-        result shouldBe expected
+        result.also {
+            it.id.shouldNotBeNull()
+            it.groupId shouldBe GROUP_ID
+            it.creatorId shouldBe USER_ID
+            it.title shouldBe expenseCreation.title
+            it.cost shouldBe expenseCreation.cost
+
+            it.targetCurrency shouldBe expenseCreation.targetCurrency
+            it.exchangeRate shouldBe exchangeRate
+
+            it.createdAt.shouldNotBeNull()
+            it.updatedAt.shouldNotBeNull()
+            it.attachmentId shouldBe expenseCreation.attachmentId
+            it.status shouldBe PENDING
+            it.history shouldHaveSize 1
+            it.history.first().also { entry ->
+                entry.createdAt.shouldNotBeNull()
+                entry.expenseAction shouldBe CREATED
+                entry.participantId shouldBe USER_ID
+                entry.comment shouldBe expenseCreation.message
+            }
+        }
 
         verify(currencyManagerClient, times(1)).getAvailableCurrencies()
         verify(currencyManagerClient, times(1)).getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))
         verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
     }
 
+    should("create expense when attachmentId is not provided") {
+        // given
+        val expenseCreation = createExpenseCreation(attachmentId = null)
+        val group = createGroup(currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
+        val exchangeRate = createExchangeRate()
+        whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
+        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(exchangeRate)
+        whenever(attachmentStoreClient.generateBlankAttachment(GROUP_ID, USER_ID)).thenReturn(GroupAttachment(ATTACHMENT_ID))
+        whenever(expenseRepository.save(anyVararg(Expense::class))).thenAnswer { it.arguments[0] }
+
+        // when
+        val result = expenseService.create(group, expenseCreation)
+
+        // then
+        result.also {
+            it.id.shouldNotBeNull()
+            it.groupId shouldBe GROUP_ID
+            it.creatorId shouldBe USER_ID
+            it.title shouldBe expenseCreation.title
+            it.cost shouldBe expenseCreation.cost
+
+            it.targetCurrency shouldBe expenseCreation.targetCurrency
+            it.exchangeRate shouldBe exchangeRate
+
+            it.createdAt.shouldNotBeNull()
+            it.updatedAt.shouldNotBeNull()
+            it.attachmentId shouldBe ATTACHMENT_ID
+            it.status shouldBe PENDING
+            it.history shouldHaveSize 1
+            it.history.first().also { entry ->
+                entry.createdAt.shouldNotBeNull()
+                entry.expenseAction shouldBe CREATED
+                entry.participantId shouldBe USER_ID
+                entry.comment shouldBe expenseCreation.message
+            }
+        }
+
+        verify(currencyManagerClient, times(1)).getAvailableCurrencies()
+        verify(currencyManagerClient, times(1)).getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))
+        verify(attachmentStoreClient, times(1)).generateBlankAttachment(GROUP_ID, USER_ID)
+        verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
+    }
+
     context("throw ValidatorsException cause:") {
         withData(
             nameFn = { it.first },
-            Quadruple(COST_NOT_SUM_UP, createExpense(cost = BigDecimal.TEN), arrayOf(CURRENCY_1, CURRENCY_2), arrayOf(CURRENCY_1, CURRENCY_2)),
+            Quadruple(
+                COST_NOT_SUM_UP,
+                createExpenseCreation(cost = BigDecimal.TEN),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+            ),
             Quadruple(
                 USER_NOT_PARTICIPANT,
-                createExpense(creatorId = "nonGroupMember"),
+                createExpenseCreation(creatorId = "nonGroupMember"),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
             Quadruple(
                 DUPLICATED_PARTICIPANT,
-                createExpense(expenseParticipants = listOf(createExpenseParticipant(), createExpenseParticipant())),
+                createExpenseCreation(expenseParticipantsCost = listOf(createExpenseParticipantCost(), createExpenseParticipantCost())),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
             Quadruple(
                 PARTICIPANT_MIN_SIZE,
-                createExpense(cost = BigDecimal.TWO, expenseParticipants = listOf(createExpenseParticipant())),
+                createExpenseCreation(cost = BigDecimal.TWO, expenseParticipantsCost = listOf(createExpenseParticipantCost())),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
             Quadruple(
                 PARTICIPANT_NOT_GROUP_MEMBER,
-                createExpense(expenseParticipants = listOf(createExpenseParticipant(), createExpenseParticipant("notGroupMember"))),
+                createExpenseCreation(
+                    expenseParticipantsCost = listOf(
+                        createExpenseParticipantCost(),
+                        createExpenseParticipantCost("notGroupMember"),
+                    ),
+                ),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
-            Quadruple(BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES, createExpense(targetCurrency = null), arrayOf(), arrayOf(CURRENCY_1, CURRENCY_2)),
+            Quadruple(
+                BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES,
+                createExpenseCreation(targetCurrency = null),
+                arrayOf(),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+            ),
             Quadruple(
                 BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY,
-                createExpense(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_1),
+                createExpenseCreation(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_1),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
-            Quadruple(TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES, createExpense(), arrayOf(CURRENCY_1), arrayOf(CURRENCY_1, CURRENCY_2)),
-            Quadruple(BASE_CURRENCY_NOT_AVAILABLE, createExpense(), arrayOf(CURRENCY_1, CURRENCY_2), arrayOf(CURRENCY_2)),
+            Quadruple(TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES, createExpenseCreation(), arrayOf(CURRENCY_1), arrayOf(CURRENCY_1, CURRENCY_2)),
+            Quadruple(BASE_CURRENCY_NOT_AVAILABLE, createExpenseCreation(), arrayOf(CURRENCY_1, CURRENCY_2), arrayOf(CURRENCY_2)),
 
-        ) { (expectedMessage, expense, groupCurrencies, availableCurrencies) ->
+        ) { (expectedMessage, expenseCreation, groupCurrencies, availableCurrencies) ->
             // given
             val group = createGroup(currencies = createCurrencies(*groupCurrencies))
             whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(*availableCurrencies))
-            whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(createExchangeRate())
+            whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L)))
+                .thenReturn(createExchangeRate())
 
             // when & then
-            shouldThrowWithMessage<ValidatorsException>("Failed validations: $expectedMessage") { expenseService.create(group, expense) }
+            shouldThrowWithMessage<ValidatorsException>("Failed validations: $expectedMessage") {
+                expenseService.create(group, expenseCreation)
+            }
             verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
         }
     }
@@ -409,8 +496,8 @@ class ExpenseServiceTest : ShouldSpec({
                 USER_NOT_PARTICIPANT,
                 createExpenseUpdate(
                     expenseParticipants = listOf(
-                        createExpenseUpdateParticipant(OTHER_USER_ID),
-                        createExpenseUpdateParticipant(ANOTHER_USER_ID),
+                        createExpenseParticipantCost(OTHER_USER_ID),
+                        createExpenseParticipantCost(ANOTHER_USER_ID),
 
                     ),
                 ),
@@ -419,19 +506,19 @@ class ExpenseServiceTest : ShouldSpec({
             ),
             Quadruple(
                 DUPLICATED_PARTICIPANT,
-                createExpenseUpdate(expenseParticipants = listOf(createExpenseUpdateParticipant(), createExpenseUpdateParticipant())),
+                createExpenseUpdate(expenseParticipants = listOf(createExpenseParticipantCost(), createExpenseParticipantCost())),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
             Quadruple(
                 PARTICIPANT_MIN_SIZE,
-                createExpenseUpdate(cost = BigDecimal.TWO, expenseParticipants = listOf(createExpenseUpdateParticipant())),
+                createExpenseUpdate(cost = BigDecimal.TWO, expenseParticipants = listOf(createExpenseParticipantCost())),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
             Quadruple(
                 PARTICIPANT_NOT_GROUP_MEMBER,
-                createExpenseUpdate(expenseParticipants = listOf(createExpenseUpdateParticipant(), createExpenseUpdateParticipant("notGroupMember"))),
+                createExpenseUpdate(expenseParticipants = listOf(createExpenseParticipantCost(), createExpenseParticipantCost("notGroupMember"))),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
@@ -454,7 +541,9 @@ class ExpenseServiceTest : ShouldSpec({
             whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
 
             // when & then
-            shouldThrowWithMessage<ValidatorsException>("Failed validations: $expectedMessage") { expenseService.updateExpense(group, expenseUpdate) }
+            shouldThrowWithMessage<ValidatorsException>("Failed validations: $expectedMessage") {
+                expenseService.updateExpense(group, expenseUpdate)
+            }
             verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
         }
     }
@@ -479,9 +568,9 @@ class ExpenseServiceTest : ShouldSpec({
         val expenseUpdate = createExpenseUpdate(
             cost = BigDecimal(6),
             expenseParticipants = listOf(
-                createExpenseUpdateParticipant(USER_ID, BigDecimal.ONE),
-                createExpenseUpdateParticipant(OTHER_USER_ID, BigDecimal.ONE),
-                createExpenseUpdateParticipant(ANOTHER_USER_ID, BigDecimal(4)),
+                createExpenseParticipantCost(USER_ID, BigDecimal.ONE),
+                createExpenseParticipantCost(OTHER_USER_ID, BigDecimal.ONE),
+                createExpenseParticipantCost(ANOTHER_USER_ID, BigDecimal(4)),
             ),
         )
 
@@ -509,15 +598,15 @@ class ExpenseServiceTest : ShouldSpec({
             it.createdAt shouldBe expense.createdAt
             it.updatedAt.shouldNotBeNull()
             it.attachmentId shouldBe expense.attachmentId
-            it.expenseParticipants shouldContainExactly expenseUpdate.expenseParticipants
+            it.expenseParticipants shouldContainExactly expenseUpdate.expenseParticipantsCost
                 .map { p -> p.toExpenseParticipant(expenseUpdate.userId) }
             it.status shouldBe PENDING
-            it.statusHistory shouldContainAll expense.statusHistory
-            it.statusHistory.last().also { statusHistory ->
-                statusHistory.participantId shouldBe USER_ID
-                statusHistory.createdAt.shouldNotBeNull()
-                statusHistory.expenseAction shouldBe EDITED
-                statusHistory.comment shouldBe expenseUpdate.message
+            it.history shouldContainAll expense.history
+            it.history.last().also { entry ->
+                entry.participantId shouldBe USER_ID
+                entry.createdAt.shouldNotBeNull()
+                entry.expenseAction shouldBe EDITED
+                entry.comment shouldBe expenseUpdate.message
             }
         }
     }

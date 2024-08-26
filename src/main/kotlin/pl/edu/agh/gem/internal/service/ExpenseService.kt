@@ -1,32 +1,40 @@
 package pl.edu.agh.gem.internal.service
 
 import org.springframework.stereotype.Service
+import pl.edu.agh.gem.internal.client.AttachmentStoreClient
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
 import pl.edu.agh.gem.internal.mapper.CreditorUserExpenseMapper
 import pl.edu.agh.gem.internal.mapper.DebtorUserExpenseMapper
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.EDITED
+import pl.edu.agh.gem.internal.model.expense.ExpenseCreation
 import pl.edu.agh.gem.internal.model.expense.ExpenseDecision
+import pl.edu.agh.gem.internal.model.expense.ExpenseHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
-import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.UserExpense
 import pl.edu.agh.gem.internal.model.expense.filter.FilterOptions
-import pl.edu.agh.gem.internal.model.expense.toExpenseUpdateParticipant
+import pl.edu.agh.gem.internal.model.expense.toExpenseParticipantCost
 import pl.edu.agh.gem.internal.model.group.GroupData
 import pl.edu.agh.gem.internal.persistence.ArchivedExpenseRepository
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
-import pl.edu.agh.gem.internal.validation.creation.CostValidator
-import pl.edu.agh.gem.internal.validation.creation.CurrenciesValidator
+import pl.edu.agh.gem.internal.validation.cost.CostData
+import pl.edu.agh.gem.internal.validation.cost.CostValidator
 import pl.edu.agh.gem.internal.validation.creation.ExpenseCreationDataWrapper
-import pl.edu.agh.gem.internal.validation.creation.ParticipantValidator
+import pl.edu.agh.gem.internal.validation.currency.CurrenciesValidator
+import pl.edu.agh.gem.internal.validation.currency.CurrencyData
 import pl.edu.agh.gem.internal.validation.decision.ExpenseDecisionDataWrapper
 import pl.edu.agh.gem.internal.validation.decision.ExpenseDecisionValidator
+import pl.edu.agh.gem.internal.validation.participant.ParticipantData
+import pl.edu.agh.gem.internal.validation.participant.ParticipantValidator
+import pl.edu.agh.gem.internal.validation.update.ExpenseUpdateDataWrapper
 import pl.edu.agh.gem.validator.ValidatorList.Companion.validatorsOf
 import pl.edu.agh.gem.validator.ValidatorsException
+import pl.edu.agh.gem.validator.alsoValidate
+import pl.edu.agh.gem.validator.validate
 import java.time.Instant
 import java.time.Instant.now
 
@@ -34,14 +42,14 @@ import java.time.Instant.now
 class ExpenseService(
     private val groupManagerClient: GroupManagerClient,
     private val currencyManagerClient: CurrencyManagerClient,
+    private val attachmentStoreClient: AttachmentStoreClient,
     private val expenseRepository: ExpenseRepository,
     private val archivedExpenseRepository: ArchivedExpenseRepository,
 ) {
-    private val expenseCreationValidators = validatorsOf(
-        CostValidator(),
-        ParticipantValidator(),
-        CurrenciesValidator(),
-    )
+
+    val costValidator = CostValidator()
+    val participantValidator = ParticipantValidator()
+    val currenciesValidator = CurrenciesValidator()
 
     private val expenseDecisionValidators = validatorsOf(
         ExpenseDecisionValidator(),
@@ -54,14 +62,22 @@ class ExpenseService(
         return groupManagerClient.getGroup(groupId)
     }
 
-    fun create(groupData: GroupData, expense: Expense): Expense {
-        expenseCreationValidators
-            .getFailedValidations(createExpenseCreationDataWrapper(groupData, expense))
+    fun create(groupData: GroupData, expenseCreation: ExpenseCreation): Expense {
+        val dataWrapper = createExpenseCreationDataWrapper(groupData, expenseCreation)
+
+        validate(dataWrapper, costValidator)
+            .alsoValidate(dataWrapper, participantValidator)
+            .alsoValidate(dataWrapper, currenciesValidator)
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
+
+        val attachmentId = expenseCreation.attachmentId
+            ?: attachmentStoreClient.generateBlankAttachment(expenseCreation.groupId, expenseCreation.creatorId).id
+
         return expenseRepository.save(
-            expense.copy(
-                exchangeRate = getExchangeRate(expense.baseCurrency, expense.targetCurrency, expense.expenseDate),
+            expenseCreation.toExpense(
+                exchangeRate = getExchangeRate(expenseCreation.baseCurrency, expenseCreation.targetCurrency, expenseCreation.expenseDate),
+                attachmentId = attachmentId,
             ),
         )
     }
@@ -69,11 +85,23 @@ class ExpenseService(
     private fun getExchangeRate(baseCurrency: String, targetCurrency: String?, date: Instant) =
         targetCurrency?.let { currencyManagerClient.getExchangeRate(baseCurrency, targetCurrency, date) }
 
-    private fun createExpenseCreationDataWrapper(groupData: GroupData, expense: Expense): ExpenseCreationDataWrapper {
+    private fun createExpenseCreationDataWrapper(groupData: GroupData, expenseCreation: ExpenseCreation): ExpenseCreationDataWrapper {
         return ExpenseCreationDataWrapper(
-            groupData,
-            expense,
-            currencyManagerClient.getAvailableCurrencies(),
+            currencyData = CurrencyData(
+                groupCurrencies = groupData.currencies,
+                currencyManagerClient.getAvailableCurrencies(),
+                baseCurrency = expenseCreation.baseCurrency,
+                targetCurrency = expenseCreation.targetCurrency,
+            ),
+            costData = CostData(
+                fullCost = expenseCreation.cost,
+                partialCosts = expenseCreation.expenseParticipantsCost.map { it.participantCost },
+            ),
+            participantData = ParticipantData(
+                creatorId = expenseCreation.creatorId,
+                participantsId = expenseCreation.expenseParticipantsCost.map { it.participantId },
+                groupMembers = groupData.members,
+            ),
         )
     }
 
@@ -107,18 +135,18 @@ class ExpenseService(
             it.takeIf { it.participantId == expenseDecision.userId }?.copy(participantStatus = expenseDecision.decision.toExpenseStatus()) ?: it
         }
 
-        val statusHistoryEntry = StatusHistoryEntry(
+        val expenseHistoryEntry = ExpenseHistoryEntry(
             participantId = expenseDecision.userId,
             expenseAction = expenseDecision.decision.toExpenseAction(),
             comment = expenseDecision.message,
         )
-        val updatedStatusHistory = statusHistory + statusHistoryEntry
+        val updatedHistory = history + expenseHistoryEntry
 
         return copy(
             updatedAt = now(),
             expenseParticipants = updatedExpenseParticipants,
             status = ExpenseStatus.reduce(updatedExpenseParticipants.map { it.participantStatus }),
-            statusHistory = updatedStatusHistory,
+            history = updatedHistory,
 
         )
     }
@@ -167,8 +195,11 @@ class ExpenseService(
 
         val partiallyUpdatedExpense = originalExpense.update(update)
 
-        expenseCreationValidators
-            .getFailedValidations(createExpenseCreationDataWrapper(groupData, partiallyUpdatedExpense))
+        val dataWrapper = createExpenseUpdateDataWrapper(groupData, update)
+
+        validate(dataWrapper, costValidator)
+            .alsoValidate(dataWrapper, participantValidator)
+            .alsoValidate(dataWrapper, currenciesValidator)
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
 
@@ -182,6 +213,24 @@ class ExpenseService(
             ),
         )
     }
+    private fun createExpenseUpdateDataWrapper(groupData: GroupData, expenseUpdate: ExpenseUpdate) =
+        ExpenseUpdateDataWrapper(
+            currencyData = CurrencyData(
+                groupCurrencies = groupData.currencies,
+                currencyManagerClient.getAvailableCurrencies(),
+                baseCurrency = expenseUpdate.baseCurrency,
+                targetCurrency = expenseUpdate.targetCurrency,
+            ),
+            costData = CostData(
+                fullCost = expenseUpdate.cost,
+                partialCosts = expenseUpdate.expenseParticipantsCost.map { it.participantCost },
+            ),
+            participantData = ParticipantData(
+                creatorId = expenseUpdate.userId,
+                participantsId = expenseUpdate.expenseParticipantsCost.map { it.participantId },
+                groupMembers = groupData.members,
+            ),
+        )
 
     private fun ExpenseUpdate.modifies(expense: Expense): Boolean {
         return expense.title != this.title ||
@@ -189,7 +238,7 @@ class ExpenseService(
             expense.baseCurrency != this.baseCurrency ||
             expense.targetCurrency != this.targetCurrency ||
             expense.expenseDate != this.expenseDate ||
-            expense.expenseParticipants.map { it.toExpenseUpdateParticipant() }.toSet() != this.expenseParticipants.toSet()
+            expense.expenseParticipants.map { it.toExpenseParticipantCost() }.toSet() != this.expenseParticipantsCost.toSet()
     }
 
     private fun Expense.update(expenseUpdate: ExpenseUpdate): Expense {
@@ -200,9 +249,9 @@ class ExpenseService(
             targetCurrency = expenseUpdate.targetCurrency,
             updatedAt = now(),
             expenseDate = expenseUpdate.expenseDate,
-            expenseParticipants = expenseUpdate.expenseParticipants.map { it.toExpenseParticipant(expenseUpdate.userId) },
+            expenseParticipants = expenseUpdate.expenseParticipantsCost.map { it.toExpenseParticipant(expenseUpdate.userId) },
             status = PENDING,
-            statusHistory = statusHistory + StatusHistoryEntry(creatorId, EDITED, now(), expenseUpdate.message),
+            history = history + ExpenseHistoryEntry(creatorId, EDITED, now(), expenseUpdate.message),
 
         )
     }

@@ -10,8 +10,8 @@ import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME
 import pl.edu.agh.gem.annotation.nullorblank.NullOrNotBlank
 import pl.edu.agh.gem.annotation.nullorpattern.NullOrPattern
+import pl.edu.agh.gem.internal.model.expense.ExpenseParticipantCost
 import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
-import pl.edu.agh.gem.internal.model.expense.ExpenseUpdateParticipant
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_PATTERN
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_PARTICIPANTS_NOT_EMPTY
@@ -52,12 +52,12 @@ data class ExpenseUpdateRequest(
             baseCurrency = baseCurrency,
             targetCurrency = targetCurrency,
             expenseDate = expenseDate,
-            expenseParticipants = expenseParticipants.map { it.toExpenseUpdateParticipant() },
+            expenseParticipantsCost = expenseParticipants.map { it.toExpenseParticipantCost() },
             message = message,
         )
 }
 
-fun ExpenseParticipantRequestData.toExpenseUpdateParticipant() = ExpenseUpdateParticipant(
+fun ExpenseParticipantRequestData.toExpenseParticipantCost() = ExpenseParticipantCost(
     participantId = participantId,
     participantCost = participantCost,
 )

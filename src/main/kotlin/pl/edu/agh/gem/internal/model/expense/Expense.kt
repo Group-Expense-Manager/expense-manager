@@ -19,5 +19,5 @@ data class Expense(
     val attachmentId: String,
     val expenseParticipants: List<ExpenseParticipant>,
     val status: ExpenseStatus,
-    val statusHistory: List<StatusHistoryEntry>,
+    val history: List<ExpenseHistoryEntry>,
 )

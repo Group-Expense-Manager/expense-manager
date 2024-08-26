@@ -14,11 +14,11 @@ data class ExpenseUpdate(
     val baseCurrency: String,
     val targetCurrency: String?,
     val expenseDate: Instant,
-    val expenseParticipants: List<ExpenseUpdateParticipant>,
+    val expenseParticipantsCost: List<ExpenseParticipantCost>,
     val message: String?,
 )
 
-data class ExpenseUpdateParticipant(
+data class ExpenseParticipantCost(
     val participantId: String,
     val participantCost: BigDecimal,
 ) {
@@ -28,8 +28,8 @@ data class ExpenseUpdateParticipant(
         participantStatus = if (creatorId == participantId) ACCEPTED else PENDING,
     )
 }
-fun ExpenseParticipant.toExpenseUpdateParticipant() =
-    ExpenseUpdateParticipant(
+fun ExpenseParticipant.toExpenseParticipantCost() =
+    ExpenseParticipantCost(
         participantId = participantId,
         participantCost = participantCost,
     )

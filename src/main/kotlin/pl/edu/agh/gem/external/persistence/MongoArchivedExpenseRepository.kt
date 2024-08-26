@@ -29,6 +29,6 @@ class MongoArchivedExpenseRepository(
             attachmentId = attachmentId,
             expenseParticipants = expenseParticipants,
             status = status,
-            statusHistory = statusHistory,
+            history = history,
         )
 }

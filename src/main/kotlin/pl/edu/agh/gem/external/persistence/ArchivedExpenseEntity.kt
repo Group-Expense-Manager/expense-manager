@@ -2,9 +2,9 @@ package pl.edu.agh.gem.external.persistence
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import pl.edu.agh.gem.internal.model.expense.ExpenseHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.ExpenseParticipant
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
-import pl.edu.agh.gem.internal.model.expense.StatusHistoryEntry
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -25,5 +25,5 @@ data class ArchivedExpenseEntity(
     val attachmentId: String?,
     val expenseParticipants: List<ExpenseParticipant>,
     val status: ExpenseStatus,
-    val statusHistory: List<StatusHistoryEntry>,
+    val history: List<ExpenseHistoryEntry>,
 )
