@@ -17,21 +17,23 @@ import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
 import pl.edu.agh.gem.internal.model.expense.UserExpense
 import pl.edu.agh.gem.internal.model.expense.filter.FilterOptions
-import pl.edu.agh.gem.internal.model.expense.toExpenseParticipantCost
 import pl.edu.agh.gem.internal.model.group.GroupData
 import pl.edu.agh.gem.internal.persistence.ArchivedExpenseRepository
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.internal.validation.cost.CostData
 import pl.edu.agh.gem.internal.validation.cost.CostValidator
 import pl.edu.agh.gem.internal.validation.creation.ExpenseCreationDataWrapper
+import pl.edu.agh.gem.internal.validation.creator.CreatorData
+import pl.edu.agh.gem.internal.validation.creator.CreatorValidator
 import pl.edu.agh.gem.internal.validation.currency.CurrenciesValidator
 import pl.edu.agh.gem.internal.validation.currency.CurrencyData
 import pl.edu.agh.gem.internal.validation.decision.ExpenseDecisionDataWrapper
 import pl.edu.agh.gem.internal.validation.decision.ExpenseDecisionValidator
+import pl.edu.agh.gem.internal.validation.deletion.ExpenseDeletionWrapper
 import pl.edu.agh.gem.internal.validation.participant.ParticipantData
 import pl.edu.agh.gem.internal.validation.participant.ParticipantValidator
 import pl.edu.agh.gem.internal.validation.update.ExpenseUpdateDataWrapper
-import pl.edu.agh.gem.validator.ValidatorList.Companion.validatorsOf
+import pl.edu.agh.gem.internal.validation.update.ModificationValidator
 import pl.edu.agh.gem.validator.ValidatorsException
 import pl.edu.agh.gem.validator.alsoValidate
 import pl.edu.agh.gem.validator.validate
@@ -50,10 +52,10 @@ class ExpenseService(
     val costValidator = CostValidator()
     val participantValidator = ParticipantValidator()
     val currenciesValidator = CurrenciesValidator()
+    val creatorValidator = CreatorValidator()
+    val modificationValidator = ModificationValidator()
 
-    private val expenseDecisionValidators = validatorsOf(
-        ExpenseDecisionValidator(),
-    )
+    private val expenseDecisionValidator = ExpenseDecisionValidator()
 
     private val creditorUserExpenseMapper = CreditorUserExpenseMapper()
     private val debtorUserExpenseMapper = DebtorUserExpenseMapper()
@@ -121,8 +123,8 @@ class ExpenseService(
         val expense = expenseRepository.findByExpenseIdAndGroupId(expenseDecision.expenseId, expenseDecision.groupId)
             ?: throw MissingExpenseException(expenseDecision.expenseId, expenseDecision.groupId)
 
-        expenseDecisionValidators
-            .getFailedValidations(createExpenseDecisionDataWrapper(expense, expenseDecision))
+        val dataWrapper = createExpenseDecisionDataWrapper(expense, expenseDecision)
+        validate(dataWrapper, expenseDecisionValidator)
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
 
@@ -130,7 +132,6 @@ class ExpenseService(
     }
 
     private fun Expense.addDecision(expenseDecision: ExpenseDecision): Expense {
-        expenseParticipants.find { it.participantId == expenseDecision.userId } ?: throw UserNotParticipantException(expenseDecision.userId, id)
         val updatedExpenseParticipants = expenseParticipants.map {
             it.takeIf { it.participantId == expenseDecision.userId }?.copy(participantStatus = expenseDecision.decision.toExpenseStatus()) ?: it
         }
@@ -161,14 +162,20 @@ class ExpenseService(
     fun deleteExpense(expenseId: String, groupId: String, userId: String) {
         val expenseToDelete = expenseRepository.findByExpenseIdAndGroupId(expenseId, groupId) ?: throw MissingExpenseException(expenseId, groupId)
 
-        if (!userId.isCreator(expenseToDelete)) {
-            throw ExpenseDeletionAccessException(userId, expenseId)
-        }
+        val dataWrapper = ExpenseDeletionWrapper(
+            creatorData = CreatorData(
+                creatorId = expenseToDelete.creatorId,
+                userId = userId,
+            ),
+        )
+
+        validate(dataWrapper, creatorValidator)
+            .takeIf { it.isNotEmpty() }
+            ?.also { throw ValidatorsException(it) }
 
         expenseRepository.delete(expenseToDelete)
         archivedExpenseRepository.add(expenseToDelete)
     }
-    private fun String.isCreator(expense: Expense) = expense.creatorId == this
 
     fun getUserExpenses(groupId: String, userId: String): List<UserExpense> {
         val expenses = expenseRepository.findByGroupId(groupId)
@@ -185,35 +192,40 @@ class ExpenseService(
         val originalExpense = expenseRepository.findByExpenseIdAndGroupId(update.id, update.groupId)
             ?: throw MissingExpenseException(update.id, update.groupId)
 
-        if (!update.userId.isCreator(originalExpense)) {
-            throw ExpenseUpdateAccessException(update.userId, update.id)
-        }
-
-        if (!update.modifies(originalExpense)) {
-            throw NoExpenseUpdateException(update.userId, update.id)
-        }
-
-        val partiallyUpdatedExpense = originalExpense.update(update)
-
-        val dataWrapper = createExpenseUpdateDataWrapper(groupData, update)
+        val dataWrapper = createExpenseUpdateDataWrapper(groupData, update, originalExpense)
 
         validate(dataWrapper, costValidator)
             .alsoValidate(dataWrapper, participantValidator)
             .alsoValidate(dataWrapper, currenciesValidator)
+            .alsoValidate(dataWrapper, creatorValidator)
+            .alsoValidate(dataWrapper, modificationValidator)
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
 
         return expenseRepository.save(
-            partiallyUpdatedExpense.copy(
+            originalExpense.copy(
                 exchangeRate = getExchangeRate(
-                    partiallyUpdatedExpense.baseCurrency,
-                    partiallyUpdatedExpense.targetCurrency,
-                    partiallyUpdatedExpense.expenseDate,
+                    update.baseCurrency,
+                    update.targetCurrency,
+                    update.expenseDate,
                 ),
+                title = update.title,
+                cost = update.cost,
+                baseCurrency = update.baseCurrency,
+                targetCurrency = update.targetCurrency,
+                updatedAt = now(),
+                expenseDate = update.expenseDate,
+                expenseParticipants = update.expenseParticipantsCost.map { it.toExpenseParticipant(update.userId) },
+                status = PENDING,
+                history = originalExpense.history + ExpenseHistoryEntry(originalExpense.creatorId, EDITED, now(), update.message),
             ),
         )
     }
-    private fun createExpenseUpdateDataWrapper(groupData: GroupData, expenseUpdate: ExpenseUpdate) =
+    private fun createExpenseUpdateDataWrapper(
+        groupData: GroupData,
+        expenseUpdate: ExpenseUpdate,
+        originalExpense: Expense,
+    ) =
         ExpenseUpdateDataWrapper(
             currencyData = CurrencyData(
                 groupCurrencies = groupData.currencies,
@@ -230,44 +242,14 @@ class ExpenseService(
                 participantsId = expenseUpdate.expenseParticipantsCost.map { it.participantId },
                 groupMembers = groupData.members,
             ),
+            creatorData = CreatorData(
+                creatorId = originalExpense.creatorId,
+                userId = expenseUpdate.userId,
+            ),
+            originalExpense = originalExpense,
+            expenseUpdate = expenseUpdate,
         )
-
-    private fun ExpenseUpdate.modifies(expense: Expense): Boolean {
-        return expense.title != this.title ||
-            expense.cost != this.cost ||
-            expense.baseCurrency != this.baseCurrency ||
-            expense.targetCurrency != this.targetCurrency ||
-            expense.expenseDate != this.expenseDate ||
-            expense.expenseParticipants.map { it.toExpenseParticipantCost() }.toSet() != this.expenseParticipantsCost.toSet()
-    }
-
-    private fun Expense.update(expenseUpdate: ExpenseUpdate): Expense {
-        return this.copy(
-            title = expenseUpdate.title,
-            cost = expenseUpdate.cost,
-            baseCurrency = expenseUpdate.baseCurrency,
-            targetCurrency = expenseUpdate.targetCurrency,
-            updatedAt = now(),
-            expenseDate = expenseUpdate.expenseDate,
-            expenseParticipants = expenseUpdate.expenseParticipantsCost.map { it.toExpenseParticipant(expenseUpdate.userId) },
-            status = PENDING,
-            history = history + ExpenseHistoryEntry(creatorId, EDITED, now(), expenseUpdate.message),
-
-        )
-    }
 }
 
 class MissingExpenseException(expenseId: String, groupId: String) :
     RuntimeException("Failed to find expense with id: $expenseId and groupId: $groupId")
-
-class UserNotParticipantException(userId: String, expenseId: String) :
-    RuntimeException("User with id: $userId is not a participant of expense with id: $expenseId")
-
-class ExpenseDeletionAccessException(userId: String, expenseId: String) :
-    RuntimeException("User with id: $userId can not delete expense with id: $expenseId")
-
-class ExpenseUpdateAccessException(userId: String, expenseId: String) :
-    RuntimeException("User with id: $userId can not update expense with id: $expenseId")
-
-class NoExpenseUpdateException(userId: String, expenseId: String) :
-    RuntimeException("No update occurred for expense with id: $expenseId by user with id: $userId")

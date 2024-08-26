@@ -38,9 +38,11 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_IN
 import pl.edu.agh.gem.internal.validation.ValidationMessage.COST_NOT_SUM_UP
 import pl.edu.agh.gem.internal.validation.ValidationMessage.CREATOR_DECISION
 import pl.edu.agh.gem.internal.validation.ValidationMessage.DUPLICATED_PARTICIPANT
+import pl.edu.agh.gem.internal.validation.ValidationMessage.NO_MODIFICATION
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_MIN_SIZE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_NOT_GROUP_MEMBER
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES
+import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_CREATOR
 import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_PARTICIPANT
 import pl.edu.agh.gem.util.DummyData.ANOTHER_USER_ID
 import pl.edu.agh.gem.util.DummyData.ATTACHMENT_ID
@@ -318,7 +320,7 @@ class ExpenseServiceTest : ShouldSpec({
         verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
     }
 
-    should("throw UserNotParticipantException when user is not participant") {
+    should("throw ValidatorsException when user is not participant") {
         // given
         val expense = createExpense()
         whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
@@ -326,7 +328,7 @@ class ExpenseServiceTest : ShouldSpec({
         val expenseDecision = createExpenseDecision(userId = "notParticipant")
 
         // when & then
-        shouldThrowExactly<UserNotParticipantException> { expenseService.decide(expenseDecision) }
+        shouldThrowWithMessage<ValidatorsException>("Failed validations: $USER_NOT_PARTICIPANT") { expenseService.decide(expenseDecision) }
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
     }
@@ -357,13 +359,15 @@ class ExpenseServiceTest : ShouldSpec({
         verify(archivedExpenseRepository, times(0)).add(expense)
     }
 
-    should("throw ExpenseDeletionAccessException when user is not expense Creator") {
+    should("throw ValidatorsException when user is not expense Creator") {
         // given
         val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = OTHER_USER_ID)
         whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
 
         // when & then
-        shouldThrowExactly<ExpenseDeletionAccessException> { expenseService.deleteExpense(EXPENSE_ID, GROUP_ID, USER_ID) }
+        shouldThrowWithMessage<ValidatorsException>("Failed validations: $USER_NOT_CREATOR") {
+            expenseService.deleteExpense(EXPENSE_ID, GROUP_ID, USER_ID)
+        }
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(expenseRepository, times(0)).delete(expense)
         verify(archivedExpenseRepository, times(0)).add(expense)
@@ -474,20 +478,6 @@ class ExpenseServiceTest : ShouldSpec({
         verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
     }
 
-    should("throw ExpenseUpdateAccessException when updating expense and user is not expense Creator") {
-        // given
-        val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = OTHER_USER_ID)
-        val expenseUpdate = createExpenseUpdate(id = EXPENSE_ID, groupId = GROUP_ID, userId = USER_ID)
-        val group = createGroup(currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
-
-        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
-
-        // when & then
-        shouldThrowExactly<ExpenseUpdateAccessException> { expenseService.updateExpense(group, expenseUpdate) }
-        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
-        verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
-    }
-
     context("throw ValidatorsException when updating exception cause:") {
         withData(
             nameFn = { it.first },
@@ -531,7 +521,18 @@ class ExpenseServiceTest : ShouldSpec({
             ),
             Quadruple(TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES, createExpenseUpdate(), arrayOf(CURRENCY_1), arrayOf(CURRENCY_1, CURRENCY_2)),
             Quadruple(BASE_CURRENCY_NOT_AVAILABLE, createExpenseUpdate(), arrayOf(CURRENCY_1, CURRENCY_2), arrayOf(CURRENCY_2)),
-
+            Quadruple(
+                USER_NOT_CREATOR,
+                createExpenseUpdate(userId = OTHER_USER_ID),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+            ),
+            Quadruple(
+                NO_MODIFICATION,
+                createExpenseUpdateFromExpense(createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+            ),
         ) { (expectedMessage, expenseUpdate, groupCurrencies, availableCurrencies) ->
             // given
             val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
@@ -546,20 +547,6 @@ class ExpenseServiceTest : ShouldSpec({
             }
             verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
         }
-    }
-
-    should("throw NoExpenseUpdateException when updating expense and update doesn't change anything") {
-        // given
-        val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
-        val expenseUpdate = createExpenseUpdateFromExpense(expense)
-        val group = createGroup(currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
-
-        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
-
-        // when & then
-        shouldThrowExactly<NoExpenseUpdateException> { expenseService.updateExpense(group, expenseUpdate) }
-        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
-        verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
     }
 
     should("update expense") {

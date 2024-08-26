@@ -37,12 +37,7 @@ import pl.edu.agh.gem.integration.ability.stubGroupManagerUserGroups
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.EDITED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
-import pl.edu.agh.gem.internal.service.ExpenseDeletionAccessException
-import pl.edu.agh.gem.internal.service.ExpenseUpdateAccessException
 import pl.edu.agh.gem.internal.service.MissingExpenseException
-import pl.edu.agh.gem.internal.service.NoExpenseUpdateException
-import pl.edu.agh.gem.internal.service.Quadruple
-import pl.edu.agh.gem.internal.service.UserNotParticipantException
 import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NULL_OR_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_AVAILABLE
@@ -56,6 +51,7 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_PARTICIPANTS_NOT_EMPTY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.GROUP_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.MESSAGE_NULL_OR_NOT_BLANK
+import pl.edu.agh.gem.internal.validation.ValidationMessage.NO_MODIFICATION
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_MIN_SIZE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_NOT_GROUP_MEMBER
@@ -65,6 +61,7 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.TARGET_CURRENCY_NOT_
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TARGET_CURRENCY_PATTERN
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TITLE_MAX_LENGTH
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TITLE_NOT_BLANK
+import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_CREATOR
 import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_PARTICIPANT
 import pl.edu.agh.gem.util.DummyData.ANOTHER_USER_ID
 import pl.edu.agh.gem.util.DummyData.CURRENCY_1
@@ -509,7 +506,7 @@ class ExternalExpenseControllerIT(
             response shouldHaveValidatorError CREATOR_DECISION
         }
 
-        should("return forbidden when group member is not expense participant") {
+        should("return bad request when group member is not expense participant") {
             // given
             val decisionRequest = createExpenseDecisionRequest()
             val anotherUserId = "AnotherUserId"
@@ -522,11 +519,8 @@ class ExternalExpenseControllerIT(
             val response = service.decide(decisionRequest, createGemUser(id = anotherUserId))
 
             // then
-            response shouldHaveHttpStatus FORBIDDEN
-            response shouldHaveErrors {
-                errors shouldHaveSize 1
-                errors.first().code shouldBe UserNotParticipantException::class.simpleName
-            }
+            response shouldHaveHttpStatus BAD_REQUEST
+            response shouldHaveValidatorError USER_NOT_PARTICIPANT
         }
 
         should("delete expense") {
@@ -574,7 +568,7 @@ class ExternalExpenseControllerIT(
             }
         }
 
-        should("return forbidden when user is not expense creator") {
+        should("return bad request when user is not expense creator") {
             // given
             val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = OTHER_USER_ID)
             repository.save(expense)
@@ -584,11 +578,8 @@ class ExternalExpenseControllerIT(
             val response = service.delete(createGemUser(USER_ID, EMAIL), GROUP_ID, EXPENSE_ID)
 
             // then
-            response shouldHaveHttpStatus FORBIDDEN
-            response shouldHaveErrors {
-                errors shouldHaveSize 1
-                errors.first().code shouldBe ExpenseDeletionAccessException::class.simpleName
-            }
+            response shouldHaveHttpStatus BAD_REQUEST
+            response shouldHaveValidatorError USER_NOT_CREATOR
         }
 
         context("return validation exception when updating expense cause:") {
@@ -652,34 +643,17 @@ class ExternalExpenseControllerIT(
             }
         }
 
-        should("return forbidden when updating expense and user is not expense creator") {
-            // given
-            val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = OTHER_USER_ID)
-            val expenseUpdateRequest = createExpenseUpdateRequest()
-            repository.save(expense)
-            stubGroupManagerGroupData(createGroupResponse(members = createMembersDTO(USER_ID, OTHER_USER_ID)), GROUP_ID)
-
-            // when
-            val response = service.updateExpense(expenseUpdateRequest, createGemUser(USER_ID), GROUP_ID, EXPENSE_ID)
-
-            // then
-            response shouldHaveHttpStatus FORBIDDEN
-            response shouldHaveErrors {
-                errors shouldHaveSize 1
-                errors.first().code shouldBe ExpenseUpdateAccessException::class.simpleName
-            }
-        }
-
         context("return validator exception when updating exception cause:") {
             withData(
                 nameFn = { it.first },
-                Quadruple(
+                Quintuple(
                     COST_NOT_SUM_UP,
                     createExpenseUpdateRequest(cost = BigDecimal.TWO),
                     listOf(CURRENCY_1, CURRENCY_2),
                     arrayOf(CURRENCY_1, CURRENCY_2),
+                    USER_ID,
                 ),
-                Quadruple(
+                Quintuple(
                     USER_NOT_PARTICIPANT,
                     createExpenseUpdateRequest(
                         expenseParticipants = listOf(
@@ -690,46 +664,78 @@ class ExternalExpenseControllerIT(
                     ),
                     listOf(CURRENCY_1, CURRENCY_2),
                     arrayOf(CURRENCY_1, CURRENCY_2),
+                    USER_ID,
                 ),
-                Quadruple(
+                Quintuple(
                     DUPLICATED_PARTICIPANT,
                     createExpenseUpdateRequest(expenseParticipants = listOf(createExpenseParticipantDto(), createExpenseParticipantDto())),
                     listOf(CURRENCY_1, CURRENCY_2),
                     arrayOf(CURRENCY_1, CURRENCY_2),
+                    USER_ID,
                 ),
-                Quadruple(
+                Quintuple(
                     PARTICIPANT_MIN_SIZE,
                     createExpenseUpdateRequest(cost = BigDecimal.TWO, expenseParticipants = listOf(createExpenseParticipantDto())),
                     listOf(CURRENCY_1, CURRENCY_2),
                     arrayOf(CURRENCY_1, CURRENCY_2),
+                    USER_ID,
                 ),
-                Quadruple(
+                Quintuple(
                     PARTICIPANT_NOT_GROUP_MEMBER,
                     createExpenseUpdateRequest(
                         expenseParticipants = listOf(createExpenseParticipantDto(), createExpenseParticipantDto("notGroupMember")),
                     ),
                     listOf(CURRENCY_1, CURRENCY_2),
                     arrayOf(CURRENCY_1, CURRENCY_2),
+                    USER_ID,
                 ),
-                Quadruple(
+                Quintuple(
                     BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES,
                     createExpenseUpdateRequest(targetCurrency = null),
                     listOf(),
                     arrayOf(CURRENCY_1, CURRENCY_2),
+                    USER_ID,
                 ),
-                Quadruple(
+                Quintuple(
                     BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY,
                     createExpenseUpdateRequest(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_1),
                     listOf(CURRENCY_1, CURRENCY_2),
                     arrayOf(CURRENCY_1, CURRENCY_2),
+                    USER_ID,
                 ),
-                Quadruple(TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES, createExpenseUpdateRequest(), listOf(CURRENCY_1), arrayOf(CURRENCY_1, CURRENCY_2)),
-                Quadruple(BASE_CURRENCY_NOT_AVAILABLE, createExpenseUpdateRequest(), listOf(CURRENCY_1, CURRENCY_2), arrayOf(CURRENCY_2)),
+                Quintuple(
+                    TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES,
+                    createExpenseUpdateRequest(),
+                    listOf(CURRENCY_1),
+                    arrayOf(CURRENCY_1, CURRENCY_2),
+                    USER_ID,
+                ),
+                Quintuple(
+                    BASE_CURRENCY_NOT_AVAILABLE,
+                    createExpenseUpdateRequest(),
+                    listOf(CURRENCY_1, CURRENCY_2),
+                    arrayOf(CURRENCY_2),
+                    USER_ID,
+                ),
+                Quintuple(
+                    NO_MODIFICATION,
+                    createExpenseUpdateRequestFromExpense(createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)),
+                    listOf(CURRENCY_1, CURRENCY_2),
+                    arrayOf(CURRENCY_1, CURRENCY_2),
+                    USER_ID,
+                ),
+                Quintuple(
+                    USER_NOT_CREATOR,
+                    createExpenseUpdateRequest(),
+                    listOf(CURRENCY_1, CURRENCY_2),
+                    arrayOf(CURRENCY_2),
+                    OTHER_USER_ID,
+                ),
 
-            ) { (expectedMessage, updateExpenseRequest, groupCurrencies, availableCurrencies) ->
+            ) { (expectedMessage, updateExpenseRequest, groupCurrencies, availableCurrencies, creatorId) ->
 
                 // given
-                val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
+                val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = creatorId)
                 repository.save(expense)
                 stubGroupManagerGroupData(
                     createGroupResponse(createMembersDTO(USER_ID, OTHER_USER_ID), groupCurrencies = groupCurrencies.map { CurrencyDTO(it) }),
@@ -743,23 +749,6 @@ class ExternalExpenseControllerIT(
                 // then
                 response shouldHaveHttpStatus BAD_REQUEST
                 response shouldHaveValidatorError expectedMessage
-            }
-        }
-        should("return bad request when updating expense and update doesn't change anything") {
-            // given
-            val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
-            val expenseUpdateRequest = createExpenseUpdateRequestFromExpense(expense)
-            repository.save(expense)
-            stubGroupManagerGroupData(createGroupResponse(members = createMembersDTO(USER_ID, OTHER_USER_ID)), GROUP_ID)
-
-            // when
-            val response = service.updateExpense(expenseUpdateRequest, createGemUser(USER_ID), GROUP_ID, EXPENSE_ID)
-
-            // then
-            response shouldHaveHttpStatus BAD_REQUEST
-            response shouldHaveErrors {
-                errors shouldHaveSize 1
-                errors.first().code shouldBe NoExpenseUpdateException::class.simpleName
             }
         }
 
@@ -817,4 +806,12 @@ class ExternalExpenseControllerIT(
         }
     },
 
+)
+
+data class Quintuple<A, B, C, D, E>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D,
+    val fifth: E,
 )
