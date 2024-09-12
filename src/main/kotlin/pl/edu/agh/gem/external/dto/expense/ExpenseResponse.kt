@@ -7,6 +7,7 @@ import java.math.BigDecimal
 import java.time.Instant
 
 data class ExpenseResponse(
+    val expenseId: String,
     val creatorId: String,
     val title: String,
     val cost: BigDecimal,
@@ -23,6 +24,7 @@ data class ExpenseResponse(
 ) {
     companion object {
         fun fromExpense(expense: Expense) = ExpenseResponse(
+            expenseId = expense.id,
             creatorId = expense.creatorId,
             title = expense.title,
             cost = expense.cost,
