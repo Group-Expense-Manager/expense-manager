@@ -28,6 +28,5 @@ object ValidationMessage {
 
     const val CREATOR_DECISION = "Expense creator can not accept or reject expense"
 
-    const val NO_MODIFICATION = "Update does not change anything"
     const val USER_NOT_CREATOR = "Only creator can update payment"
 }

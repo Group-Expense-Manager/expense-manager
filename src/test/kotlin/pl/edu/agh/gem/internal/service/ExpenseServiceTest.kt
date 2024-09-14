@@ -38,7 +38,6 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_IN
 import pl.edu.agh.gem.internal.validation.ValidationMessage.COST_NOT_SUM_UP
 import pl.edu.agh.gem.internal.validation.ValidationMessage.CREATOR_DECISION
 import pl.edu.agh.gem.internal.validation.ValidationMessage.DUPLICATED_PARTICIPANT
-import pl.edu.agh.gem.internal.validation.ValidationMessage.NO_MODIFICATION
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_MIN_SIZE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_NOT_GROUP_MEMBER
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES
@@ -527,12 +526,6 @@ class ExpenseServiceTest : ShouldSpec({
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
-            Quadruple(
-                NO_MODIFICATION,
-                createExpenseUpdateFromExpense(createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)),
-                arrayOf(CURRENCY_1, CURRENCY_2),
-                arrayOf(CURRENCY_1, CURRENCY_2),
-            ),
         ) { (expectedMessage, expenseUpdate, groupCurrencies, availableCurrencies) ->
             // given
             val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
@@ -559,6 +552,50 @@ class ExpenseServiceTest : ShouldSpec({
                 createExpenseParticipantCost(OTHER_USER_ID, BigDecimal.ONE),
                 createExpenseParticipantCost(ANOTHER_USER_ID, BigDecimal(4)),
             ),
+        )
+
+        val exchangeRate = createExchangeRate(EXCHANGE_RATE_VALUE)
+        val group = createGroup(createGroupMembers(USER_ID, OTHER_USER_ID, ANOTHER_USER_ID), currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
+        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
+        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(exchangeRate)
+        whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
+        whenever(expenseRepository.save(anyVararg(Expense::class))).doAnswer { it.arguments[0] as? Expense }
+        // when & then
+        val result = expenseService.updateExpense(group, expenseUpdate)
+        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
+        verify(currencyManagerClient, times(1)).getAvailableCurrencies()
+        verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
+
+        result.also {
+            it.id shouldBe EXPENSE_ID
+            it.groupId shouldBe GROUP_ID
+            it.creatorId shouldBe USER_ID
+            it.title shouldBe expenseUpdate.title
+            it.cost shouldBe expenseUpdate.cost
+            it.baseCurrency shouldBe expenseUpdate.baseCurrency
+            it.targetCurrency shouldBe expense.targetCurrency
+            it.exchangeRate shouldBe exchangeRate
+            it.createdAt shouldBe expense.createdAt
+            it.updatedAt.shouldNotBeNull()
+            it.attachmentId shouldBe expense.attachmentId
+            it.expenseParticipants shouldContainExactly expenseUpdate.expenseParticipantsCost
+                .map { p -> p.toExpenseParticipant(expenseUpdate.userId) }
+            it.status shouldBe PENDING
+            it.history shouldContainAll expense.history
+            it.history.last().also { entry ->
+                entry.participantId shouldBe USER_ID
+                entry.createdAt.shouldNotBeNull()
+                entry.expenseAction shouldBe EDITED
+                entry.comment shouldBe expenseUpdate.message
+            }
+        }
+    }
+
+    should("update expense when data did not changed") {
+        // given
+        val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
+        val expenseUpdate = createExpenseUpdateFromExpense(
+            expense,
         )
 
         val exchangeRate = createExchangeRate(EXCHANGE_RATE_VALUE)

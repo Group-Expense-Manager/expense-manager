@@ -33,7 +33,6 @@ import pl.edu.agh.gem.internal.validation.deletion.ExpenseDeletionWrapper
 import pl.edu.agh.gem.internal.validation.participant.ParticipantData
 import pl.edu.agh.gem.internal.validation.participant.ParticipantValidator
 import pl.edu.agh.gem.internal.validation.update.ExpenseUpdateDataWrapper
-import pl.edu.agh.gem.internal.validation.update.ModificationValidator
 import pl.edu.agh.gem.validator.ValidatorsException
 import pl.edu.agh.gem.validator.alsoValidate
 import pl.edu.agh.gem.validator.validate
@@ -53,7 +52,6 @@ class ExpenseService(
     val participantValidator = ParticipantValidator()
     val currenciesValidator = CurrenciesValidator()
     val creatorValidator = CreatorValidator()
-    val modificationValidator = ModificationValidator()
 
     private val expenseDecisionValidator = ExpenseDecisionValidator()
 
@@ -198,7 +196,6 @@ class ExpenseService(
             .alsoValidate(dataWrapper, participantValidator)
             .alsoValidate(dataWrapper, currenciesValidator)
             .alsoValidate(dataWrapper, creatorValidator)
-            .alsoValidate(dataWrapper, modificationValidator)
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
 
