@@ -878,9 +878,28 @@ class ExternalExpenseControllerIT(
 
             // then
             response shouldHaveHttpStatus OK
-            response.shouldBody<ExpenseUpdateResponse> {
+            response.shouldBody<ExpenseResponse> {
                 expenseId shouldBe EXPENSE_ID
+                creatorId shouldBe USER_ID
+                cost shouldBe expenseUpdateRequest.cost
+                baseCurrency shouldBe expenseUpdateRequest.baseCurrency
+                targetCurrency shouldBe expenseUpdateRequest.targetCurrency
+                exchangeRate.shouldNotBeNull()
+                createdAt.shouldNotBeNull()
+                updatedAt.shouldNotBeNull()
+                expenseDate.shouldNotBeNull()
+                attachmentId shouldBe expense.attachmentId
+                expenseParticipants shouldHaveSize 2
+                status shouldBe PENDING.name
+                history shouldHaveSize 2
+                history.last().also { entry ->
+                    entry.createdAt.shouldNotBeNull()
+                    entry.expenseAction shouldBe EDITED.name
+                    entry.participantId shouldBe USER_ID
+                    entry.comment shouldBe expenseUpdateRequest.message
+                }
             }
+
             repository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID).also {
                 it.shouldNotBeNull()
                 it.id shouldBe EXPENSE_ID

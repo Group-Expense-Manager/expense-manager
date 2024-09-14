@@ -281,7 +281,7 @@ fun createExpenseUpdateRequestFromExpense(
     targetCurrency = expense.targetCurrency,
     expenseDate = expense.expenseDate,
     expenseParticipants = expense.expenseParticipants.map { createExpenseParticipantDto(it.participantId, it.participantCost) },
-    message = null,
+    message = "Something",
 )
 
 fun createExpenseUpdate(
