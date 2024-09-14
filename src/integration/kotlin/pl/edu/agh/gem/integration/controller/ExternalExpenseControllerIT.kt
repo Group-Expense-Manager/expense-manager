@@ -51,7 +51,6 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_PARTICIPANTS_NOT_EMPTY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.GROUP_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.MESSAGE_NULL_OR_NOT_BLANK
-import pl.edu.agh.gem.internal.validation.ValidationMessage.NO_MODIFICATION
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_MIN_SIZE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_NOT_GROUP_MEMBER
@@ -718,13 +717,6 @@ class ExternalExpenseControllerIT(
                     USER_ID,
                 ),
                 Quintuple(
-                    NO_MODIFICATION,
-                    createExpenseUpdateRequestFromExpense(createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)),
-                    listOf(CURRENCY_1, CURRENCY_2),
-                    arrayOf(CURRENCY_1, CURRENCY_2),
-                    USER_ID,
-                ),
-                Quintuple(
                     USER_NOT_CREATOR,
                     createExpenseUpdateRequest(),
                     listOf(CURRENCY_1, CURRENCY_2),
@@ -762,6 +754,54 @@ class ExternalExpenseControllerIT(
                     createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.ONE),
                     createExpenseParticipantDto(ANOTHER_USER_ID, BigDecimal(4)),
                 ),
+            )
+            repository.save(expense)
+            stubGroupManagerGroupData(createGroupResponse(members = createMembersDTO(USER_ID, OTHER_USER_ID, ANOTHER_USER_ID)), GROUP_ID)
+            stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
+            stubCurrencyManagerExchangeRate(
+                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
+                CURRENCY_1,
+                CURRENCY_2,
+                Instant.ofEpochSecond(0L),
+            )
+            // when
+            val response = service.updateExpense(expenseUpdateRequest, createGemUser(USER_ID), GROUP_ID, EXPENSE_ID)
+
+            // then
+            response shouldHaveHttpStatus OK
+            response.shouldBody<ExpenseUpdateResponse> {
+                expenseId shouldBe EXPENSE_ID
+            }
+            repository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID).also {
+                it.shouldNotBeNull()
+                it.id shouldBe EXPENSE_ID
+                it.groupId shouldBe GROUP_ID
+                it.creatorId shouldBe USER_ID
+                it.title shouldBe expenseUpdateRequest.title
+                it.cost shouldBe expenseUpdateRequest.cost
+                it.baseCurrency shouldBe expenseUpdateRequest.baseCurrency
+                it.targetCurrency shouldBe expenseUpdateRequest.targetCurrency
+                it.exchangeRate shouldBe createExchangeRate(EXCHANGE_RATE_VALUE)
+                it.createdAt.shouldNotBeNull()
+                it.updatedAt.shouldNotBeNull()
+                it.attachmentId shouldBe expense.attachmentId
+                it.expenseParticipants shouldContainExactly expenseUpdateRequest.expenseParticipants
+                    .map { p -> p.toExpenseParticipantCost().toExpenseParticipant(USER_ID) }
+                it.status shouldBe PENDING
+                it.history.last().also { entry ->
+                    entry.participantId shouldBe USER_ID
+                    entry.createdAt.shouldNotBeNull()
+                    entry.expenseAction shouldBe EDITED
+                    entry.comment shouldBe expenseUpdateRequest.message
+                }
+            }
+        }
+
+        should("update expense when data did not changed") {
+            // given
+            val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
+            val expenseUpdateRequest = createExpenseUpdateRequestFromExpense(
+                expense,
             )
             repository.save(expense)
             stubGroupManagerGroupData(createGroupResponse(members = createMembersDTO(USER_ID, OTHER_USER_ID, ANOTHER_USER_ID)), GROUP_ID)
