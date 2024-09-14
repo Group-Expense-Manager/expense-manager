@@ -15,12 +15,9 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
 import pl.edu.agh.gem.external.dto.expense.ExpenseCreationRequest
-import pl.edu.agh.gem.external.dto.expense.ExpenseCreationResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseDecisionRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
 import pl.edu.agh.gem.external.dto.expense.ExpenseUpdateRequest
-import pl.edu.agh.gem.external.dto.expense.ExpenseUpdateResponse
-import pl.edu.agh.gem.external.dto.expense.toExpenseUpdateResponse
 import pl.edu.agh.gem.internal.client.GroupManagerClient
 import pl.edu.agh.gem.internal.service.ExpenseService
 import pl.edu.agh.gem.media.InternalApiMediaType.APPLICATION_JSON_INTERNAL_VER_1
@@ -41,12 +38,12 @@ class ExternalExpenseController(
         @RequestParam groupId: String,
         @Valid @RequestBody
         expenseCreationRequest: ExpenseCreationRequest,
-    ): ExpenseCreationResponse {
+    ): ExpenseResponse {
         val group = expenseService.getGroup(groupId)
         userId.checkIfUserHaveAccess(group.members)
 
-        return ExpenseCreationResponse(
-            expenseService.create(group, expenseCreationRequest.toDomain(userId, groupId)).id,
+        return ExpenseResponse.fromExpense(
+            expenseService.create(group, expenseCreationRequest.toDomain(userId, groupId)),
         )
     }
 
@@ -91,10 +88,10 @@ class ExternalExpenseController(
         @PathVariable groupId: String,
         @Valid @RequestBody
         expenseUpdateRequest: ExpenseUpdateRequest,
-    ): ExpenseUpdateResponse {
+    ): ExpenseResponse {
         val group = expenseService.getGroup(groupId)
         userId.checkIfUserHaveAccess(group.members)
-        return expenseService.updateExpense(group, expenseUpdateRequest.toDomain(expenseId, groupId, userId)).toExpenseUpdateResponse()
+        return ExpenseResponse.fromExpense(expenseService.updateExpense(group, expenseUpdateRequest.toDomain(expenseId, groupId, userId)))
     }
 
     private fun String.checkIfUserHaveAccess(groupMembers: GroupMembers) {

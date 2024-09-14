@@ -18,7 +18,6 @@ import pl.edu.agh.gem.assertion.shouldHaveValidationError
 import pl.edu.agh.gem.assertion.shouldHaveValidatorError
 import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
 import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
-import pl.edu.agh.gem.external.dto.expense.ExpenseUpdateResponse
 import pl.edu.agh.gem.external.dto.expense.toExpenseParticipantCost
 import pl.edu.agh.gem.external.dto.group.CurrencyDTO
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
@@ -34,6 +33,7 @@ import pl.edu.agh.gem.integration.ability.stubCurrencyManagerAvailableCurrencies
 import pl.edu.agh.gem.integration.ability.stubCurrencyManagerExchangeRate
 import pl.edu.agh.gem.integration.ability.stubGroupManagerGroupData
 import pl.edu.agh.gem.integration.ability.stubGroupManagerUserGroups
+import pl.edu.agh.gem.internal.model.expense.ExpenseAction
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.EDITED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
@@ -140,6 +140,27 @@ class ExternalExpenseControllerIT(
 
             // then
             response shouldHaveHttpStatus CREATED
+            response.shouldBody<ExpenseResponse> {
+                expenseId.shouldNotBeNull()
+                creatorId shouldBe USER_ID
+                cost shouldBe createExpenseRequest.cost
+                baseCurrency shouldBe createExpenseRequest.baseCurrency
+                targetCurrency shouldBe createExpenseRequest.targetCurrency
+                exchangeRate.shouldNotBeNull()
+                createdAt.shouldNotBeNull()
+                updatedAt.shouldNotBeNull()
+                expenseDate.shouldNotBeNull()
+                attachmentId shouldBe createExpenseRequest.attachmentId
+                expenseParticipants shouldHaveSize 2
+                status shouldBe PENDING.name
+                history shouldHaveSize 1
+                history.first().also { entry ->
+                    entry.createdAt.shouldNotBeNull()
+                    entry.expenseAction shouldBe ExpenseAction.CREATED.name
+                    entry.participantId shouldBe USER_ID
+                    entry.comment.shouldNotBeNull()
+                }
+            }
         }
 
         should("create expense when attachmentId is not provided") {
@@ -162,6 +183,27 @@ class ExternalExpenseControllerIT(
 
             // then
             response shouldHaveHttpStatus CREATED
+            response.shouldBody<ExpenseResponse> {
+                expenseId.shouldNotBeNull()
+                creatorId shouldBe USER_ID
+                cost shouldBe createExpenseRequest.cost
+                baseCurrency shouldBe createExpenseRequest.baseCurrency
+                targetCurrency shouldBe createExpenseRequest.targetCurrency
+                exchangeRate.shouldNotBeNull()
+                createdAt.shouldNotBeNull()
+                updatedAt.shouldNotBeNull()
+                expenseDate.shouldNotBeNull()
+                attachmentId.shouldNotBeNull()
+                expenseParticipants shouldHaveSize 2
+                status shouldBe PENDING.name
+                history shouldHaveSize 1
+                history.first().also { entry ->
+                    entry.createdAt.shouldNotBeNull()
+                    entry.expenseAction shouldBe ExpenseAction.CREATED.name
+                    entry.participantId shouldBe USER_ID
+                    entry.comment.shouldNotBeNull()
+                }
+            }
         }
 
         should("not create expense when user dont have access") {
@@ -377,6 +419,7 @@ class ExternalExpenseControllerIT(
             // then
             response shouldHaveHttpStatus OK
             response.shouldBody<ExpenseResponse> {
+                expenseId shouldBe expense.id
                 creatorId shouldBe expense.creatorId
                 cost shouldBe expense.cost
                 baseCurrency shouldBe expense.baseCurrency
@@ -769,8 +812,26 @@ class ExternalExpenseControllerIT(
 
             // then
             response shouldHaveHttpStatus OK
-            response.shouldBody<ExpenseUpdateResponse> {
+            response.shouldBody<ExpenseResponse> {
                 expenseId shouldBe EXPENSE_ID
+                creatorId shouldBe USER_ID
+                cost shouldBe expenseUpdateRequest.cost
+                baseCurrency shouldBe expenseUpdateRequest.baseCurrency
+                targetCurrency shouldBe expenseUpdateRequest.targetCurrency
+                exchangeRate.shouldNotBeNull()
+                createdAt.shouldNotBeNull()
+                updatedAt.shouldNotBeNull()
+                expenseDate.shouldNotBeNull()
+                attachmentId shouldBe expense.attachmentId
+                expenseParticipants shouldHaveSize 3
+                status shouldBe PENDING.name
+                history shouldHaveSize 2
+                history.last().also { entry ->
+                    entry.createdAt.shouldNotBeNull()
+                    entry.expenseAction shouldBe EDITED.name
+                    entry.participantId shouldBe USER_ID
+                    entry.comment.shouldNotBeNull()
+                }
             }
             repository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID).also {
                 it.shouldNotBeNull()
@@ -817,9 +878,28 @@ class ExternalExpenseControllerIT(
 
             // then
             response shouldHaveHttpStatus OK
-            response.shouldBody<ExpenseUpdateResponse> {
+            response.shouldBody<ExpenseResponse> {
                 expenseId shouldBe EXPENSE_ID
+                creatorId shouldBe USER_ID
+                cost shouldBe expenseUpdateRequest.cost
+                baseCurrency shouldBe expenseUpdateRequest.baseCurrency
+                targetCurrency shouldBe expenseUpdateRequest.targetCurrency
+                exchangeRate.shouldNotBeNull()
+                createdAt.shouldNotBeNull()
+                updatedAt.shouldNotBeNull()
+                expenseDate.shouldNotBeNull()
+                attachmentId shouldBe expense.attachmentId
+                expenseParticipants shouldHaveSize 2
+                status shouldBe PENDING.name
+                history shouldHaveSize 2
+                history.last().also { entry ->
+                    entry.createdAt.shouldNotBeNull()
+                    entry.expenseAction shouldBe EDITED.name
+                    entry.participantId shouldBe USER_ID
+                    entry.comment shouldBe expenseUpdateRequest.message
+                }
             }
+
             repository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID).also {
                 it.shouldNotBeNull()
                 it.id shouldBe EXPENSE_ID
