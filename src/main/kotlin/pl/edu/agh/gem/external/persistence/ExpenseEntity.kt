@@ -19,7 +19,7 @@ data class ExpenseEntity(
     val creatorId: String,
     @Indexed(background = true)
     val title: String,
-    val cost: BigDecimal,
+    val totalCost: BigDecimal,
     val baseCurrency: String,
     val targetCurrency: String?,
     val exchangeRate: BigDecimal?,
@@ -38,7 +38,7 @@ data class ExpenseEntity(
             groupId = groupId,
             creatorId = creatorId,
             title = title,
-            cost = cost,
+            totalCost = totalCost,
             baseCurrency = baseCurrency,
             targetCurrency = targetCurrency,
             exchangeRate = exchangeRate?.let { ExchangeRate(it) },

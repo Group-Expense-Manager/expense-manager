@@ -27,7 +27,7 @@ class InternalGroupExpensesResponseTest : ShouldSpec({
         groupExpensesResponse.expenses.first().also {
             it.creatorId shouldBe expense.creatorId
             it.title shouldBe expense.title
-            it.cost shouldBe expense.cost
+            it.totalCost shouldBe expense.totalCost
             it.baseCurrency shouldBe expense.baseCurrency
             it.targetCurrency shouldBe expense.targetCurrency
             it.exchangeRate shouldBe expense.exchangeRate?.value
@@ -71,7 +71,7 @@ class InternalGroupExpensesResponseTest : ShouldSpec({
             createExpense(
                 creatorId = creatorId,
                 title = titles[index],
-                cost = costs[index],
+                totalCost = costs[index],
                 baseCurrency = baseCurrencies[index],
                 targetCurrency = targetCurrencies[index],
                 exchangeRate = exchangeRates[index],
@@ -89,7 +89,7 @@ class InternalGroupExpensesResponseTest : ShouldSpec({
             it shouldHaveSize 3
             it.map { groupExpensesDto -> groupExpensesDto.creatorId } shouldContainExactly creatorIds
             it.map { groupExpensesDto -> groupExpensesDto.title } shouldContainExactly titles
-            it.map { groupExpensesDto -> groupExpensesDto.cost } shouldContainExactly costs
+            it.map { groupExpensesDto -> groupExpensesDto.totalCost } shouldContainExactly costs
             it.map { groupExpensesDto -> groupExpensesDto.baseCurrency } shouldContainExactly baseCurrencies
             it.map { groupExpensesDto -> groupExpensesDto.targetCurrency } shouldContainExactly targetCurrencies
             it.map { groupExpensesDto -> groupExpensesDto.exchangeRate } shouldContainExactly exchangeRates

@@ -10,7 +10,7 @@ data class ExpenseUpdate(
     val groupId: String,
     val userId: String,
     val title: String,
-    val cost: BigDecimal,
+    val totalCost: BigDecimal,
     val baseCurrency: String,
     val targetCurrency: String?,
     val expenseDate: Instant,

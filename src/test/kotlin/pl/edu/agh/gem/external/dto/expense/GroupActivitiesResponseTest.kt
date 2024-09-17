@@ -29,7 +29,7 @@ class GroupActivitiesResponseTest : ShouldSpec({
             it.expenseId shouldBe expense.id
             it.creatorId shouldBe expense.creatorId
             it.title shouldBe expense.title
-            it.cost shouldBe expense.cost
+            it.totalCost shouldBe expense.totalCost
             it.baseCurrency shouldBe expense.baseCurrency
             it.targetCurrency shouldBe expense.targetCurrency
             it.status shouldBe expense.status
@@ -63,7 +63,7 @@ class GroupActivitiesResponseTest : ShouldSpec({
                 id = expenseId,
                 creatorId = creatorIds[index],
                 title = titles[index],
-                cost = costs[index],
+                totalCost = costs[index],
                 baseCurrency = baseCurrencies[index],
                 targetCurrency = targetCurrencies[index],
                 status = statuses[index],
@@ -82,7 +82,7 @@ class GroupActivitiesResponseTest : ShouldSpec({
             it.map { groupExpensesDto -> groupExpensesDto.expenseId } shouldContainExactly expenseIds
             it.map { groupExpensesDto -> groupExpensesDto.creatorId } shouldContainExactly creatorIds
             it.map { groupExpensesDto -> groupExpensesDto.title } shouldContainExactly titles
-            it.map { groupExpensesDto -> groupExpensesDto.cost } shouldContainExactly costs
+            it.map { groupExpensesDto -> groupExpensesDto.totalCost } shouldContainExactly costs
             it.map { groupExpensesDto -> groupExpensesDto.baseCurrency } shouldContainExactly baseCurrencies
             it.map { groupExpensesDto -> groupExpensesDto.targetCurrency } shouldContainExactly targetCurrencies
             it.map { groupExpensesDto -> groupExpensesDto.status } shouldContainExactly statuses

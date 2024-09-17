@@ -34,7 +34,7 @@ class ExpenseCreationTest : ShouldSpec({
             it.groupId shouldBe GROUP_ID
             it.creatorId shouldBe USER_ID
             it.title shouldBe expenseCreation.title
-            it.cost shouldBe expenseCreation.cost
+            it.totalCost shouldBe expenseCreation.totalCost
             it.baseCurrency shouldBe expenseCreation.baseCurrency
             it.targetCurrency shouldBe expenseCreation.targetCurrency
             it.exchangeRate shouldBe exchangeRate

@@ -49,7 +49,7 @@ class InternalExpenseControllerIT(
             createExpense(
                 id = "1",
                 creatorId = USER_ID,
-                cost = BigDecimal("60"),
+                totalCost = BigDecimal("60"),
                 baseCurrency = CURRENCY_1,
                 targetCurrency = null,
                 exchangeRate = null,
@@ -63,7 +63,7 @@ class InternalExpenseControllerIT(
             createExpense(
                 id = "2",
                 creatorId = OTHER_USER_ID,
-                cost = BigDecimal("60"),
+                totalCost = BigDecimal("60"),
                 baseCurrency = CURRENCY_1,
                 targetCurrency = CURRENCY_2,
                 exchangeRate = EXCHANGE_RATE_VALUE,
@@ -118,7 +118,7 @@ class InternalExpenseControllerIT(
             expenses.first().also {
                 it.creatorId shouldBe expense.creatorId
                 it.title shouldBe expense.title
-                it.cost shouldBe expense.cost
+                it.totalCost shouldBe expense.totalCost
                 it.baseCurrency shouldBe expense.baseCurrency
                 it.targetCurrency shouldBe expense.targetCurrency
                 it.exchangeRate shouldBe expense.exchangeRate?.value
@@ -146,7 +146,7 @@ class InternalExpenseControllerIT(
                 it.expenseId shouldBe expense.id
                 it.creatorId shouldBe expense.creatorId
                 it.title shouldBe expense.title
-                it.cost shouldBe expense.cost
+                it.totalCost shouldBe expense.totalCost
                 it.baseCurrency shouldBe expense.baseCurrency
                 it.targetCurrency shouldBe expense.targetCurrency
                 it.status shouldBe expense.status

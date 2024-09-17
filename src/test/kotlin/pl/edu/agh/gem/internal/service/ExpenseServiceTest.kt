@@ -96,7 +96,7 @@ class ExpenseServiceTest : ShouldSpec({
             it.groupId shouldBe GROUP_ID
             it.creatorId shouldBe USER_ID
             it.title shouldBe expenseCreation.title
-            it.cost shouldBe expenseCreation.cost
+            it.totalCost shouldBe expenseCreation.totalCost
 
             it.targetCurrency shouldBe expenseCreation.targetCurrency
             it.exchangeRate shouldBe exchangeRate
@@ -138,7 +138,7 @@ class ExpenseServiceTest : ShouldSpec({
             it.groupId shouldBe GROUP_ID
             it.creatorId shouldBe USER_ID
             it.title shouldBe expenseCreation.title
-            it.cost shouldBe expenseCreation.cost
+            it.totalCost shouldBe expenseCreation.totalCost
 
             it.targetCurrency shouldBe expenseCreation.targetCurrency
             it.exchangeRate shouldBe exchangeRate
@@ -167,7 +167,7 @@ class ExpenseServiceTest : ShouldSpec({
             nameFn = { it.first },
             Quadruple(
                 COST_NOT_SUM_UP,
-                createExpenseCreation(cost = BigDecimal.TEN),
+                createExpenseCreation(totalCost = BigDecimal.TEN),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
@@ -185,7 +185,7 @@ class ExpenseServiceTest : ShouldSpec({
             ),
             Quadruple(
                 PARTICIPANT_MIN_SIZE,
-                createExpenseCreation(cost = BigDecimal.TWO, expenseParticipantsCost = listOf(createExpenseParticipantCost())),
+                createExpenseCreation(totalCost = BigDecimal.TWO, expenseParticipantsCost = listOf(createExpenseParticipantCost())),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
@@ -377,7 +377,7 @@ class ExpenseServiceTest : ShouldSpec({
         val expenses = listOf(
             createExpense(
                 creatorId = USER_ID,
-                cost = BigDecimal("60"),
+                totalCost = BigDecimal("60"),
                 baseCurrency = CURRENCY_1,
                 targetCurrency = null,
                 exchangeRate = null,
@@ -390,7 +390,7 @@ class ExpenseServiceTest : ShouldSpec({
 
             createExpense(
                 creatorId = OTHER_USER_ID,
-                cost = BigDecimal("60"),
+                totalCost = BigDecimal("60"),
                 baseCurrency = CURRENCY_1,
                 targetCurrency = CURRENCY_2,
                 exchangeRate = EXCHANGE_RATE_VALUE,
@@ -480,7 +480,12 @@ class ExpenseServiceTest : ShouldSpec({
     context("throw ValidatorsException when updating exception cause:") {
         withData(
             nameFn = { it.first },
-            Quadruple(COST_NOT_SUM_UP, createExpenseUpdate(cost = BigDecimal.TEN), arrayOf(CURRENCY_1, CURRENCY_2), arrayOf(CURRENCY_1, CURRENCY_2)),
+            Quadruple(
+                COST_NOT_SUM_UP,
+                createExpenseUpdate(totalCost = BigDecimal.TEN),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+                arrayOf(CURRENCY_1, CURRENCY_2),
+            ),
             Quadruple(
                 USER_NOT_PARTICIPANT,
                 createExpenseUpdate(
@@ -501,7 +506,7 @@ class ExpenseServiceTest : ShouldSpec({
             ),
             Quadruple(
                 PARTICIPANT_MIN_SIZE,
-                createExpenseUpdate(cost = BigDecimal.TWO, expenseParticipants = listOf(createExpenseParticipantCost())),
+                createExpenseUpdate(totalCost = BigDecimal.TWO, expenseParticipants = listOf(createExpenseParticipantCost())),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
@@ -546,7 +551,7 @@ class ExpenseServiceTest : ShouldSpec({
         // given
         val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
         val expenseUpdate = createExpenseUpdate(
-            cost = BigDecimal(6),
+            totalCost = BigDecimal(6),
             expenseParticipants = listOf(
                 createExpenseParticipantCost(USER_ID, BigDecimal.ONE),
                 createExpenseParticipantCost(OTHER_USER_ID, BigDecimal.ONE),
@@ -571,7 +576,7 @@ class ExpenseServiceTest : ShouldSpec({
             it.groupId shouldBe GROUP_ID
             it.creatorId shouldBe USER_ID
             it.title shouldBe expenseUpdate.title
-            it.cost shouldBe expenseUpdate.cost
+            it.totalCost shouldBe expenseUpdate.totalCost
             it.baseCurrency shouldBe expenseUpdate.baseCurrency
             it.targetCurrency shouldBe expense.targetCurrency
             it.exchangeRate shouldBe exchangeRate
@@ -615,7 +620,7 @@ class ExpenseServiceTest : ShouldSpec({
             it.groupId shouldBe GROUP_ID
             it.creatorId shouldBe USER_ID
             it.title shouldBe expenseUpdate.title
-            it.cost shouldBe expenseUpdate.cost
+            it.totalCost shouldBe expenseUpdate.totalCost
             it.baseCurrency shouldBe expenseUpdate.baseCurrency
             it.targetCurrency shouldBe expense.targetCurrency
             it.exchangeRate shouldBe exchangeRate

@@ -50,16 +50,18 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.DUPLICATED_PARTICIPA
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_PARTICIPANTS_NOT_EMPTY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.GROUP_ID_NOT_BLANK
+import pl.edu.agh.gem.internal.validation.ValidationMessage.MAX_TOTAL_COST
 import pl.edu.agh.gem.internal.validation.ValidationMessage.MESSAGE_NULL_OR_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_MIN_SIZE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_NOT_GROUP_MEMBER
-import pl.edu.agh.gem.internal.validation.ValidationMessage.POSITIVE_COST
 import pl.edu.agh.gem.internal.validation.ValidationMessage.POSITIVE_PARTICIPANT_COST
+import pl.edu.agh.gem.internal.validation.ValidationMessage.POSITIVE_TOTAL_COST
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TARGET_CURRENCY_PATTERN
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TITLE_MAX_LENGTH
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TITLE_NOT_BLANK
+import pl.edu.agh.gem.internal.validation.ValidationMessage.TOTAL_COST_DECIMAL_PLACES
 import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_CREATOR
 import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_PARTICIPANT
 import pl.edu.agh.gem.util.DummyData.ANOTHER_USER_ID
@@ -98,7 +100,9 @@ class ExternalExpenseControllerIT(
                     TITLE_MAX_LENGTH,
                     createExpenseCreationRequest(title = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
                 ),
-                Pair(POSITIVE_COST, createExpenseCreationRequest(cost = BigDecimal.ZERO)),
+                Pair(POSITIVE_TOTAL_COST, createExpenseCreationRequest(totalCost = BigDecimal.ZERO)),
+                Pair(MAX_TOTAL_COST, createExpenseCreationRequest(totalCost = "100000".toBigDecimal())),
+                Pair(TOTAL_COST_DECIMAL_PLACES, createExpenseCreationRequest(totalCost = "1000.001".toBigDecimal())),
                 Pair(BASE_CURRENCY_NOT_BLANK, createExpenseCreationRequest(baseCurrency = "")),
                 Pair(BASE_CURRENCY_PATTERN, createExpenseCreationRequest(baseCurrency = "pln")),
                 Pair(TARGET_CURRENCY_PATTERN, createExpenseCreationRequest(targetCurrency = "pln")),
@@ -143,7 +147,7 @@ class ExternalExpenseControllerIT(
             response.shouldBody<ExpenseResponse> {
                 expenseId.shouldNotBeNull()
                 creatorId shouldBe USER_ID
-                cost shouldBe createExpenseRequest.cost
+                totalCost shouldBe createExpenseRequest.totalCost
                 baseCurrency shouldBe createExpenseRequest.baseCurrency
                 targetCurrency shouldBe createExpenseRequest.targetCurrency
                 exchangeRate.shouldNotBeNull()
@@ -186,7 +190,7 @@ class ExternalExpenseControllerIT(
             response.shouldBody<ExpenseResponse> {
                 expenseId.shouldNotBeNull()
                 creatorId shouldBe USER_ID
-                cost shouldBe createExpenseRequest.cost
+                totalCost shouldBe createExpenseRequest.totalCost
                 baseCurrency shouldBe createExpenseRequest.baseCurrency
                 targetCurrency shouldBe createExpenseRequest.targetCurrency
                 exchangeRate.shouldNotBeNull()
@@ -222,7 +226,7 @@ class ExternalExpenseControllerIT(
 
         should("return validator exception cause COST_NOT_SUM_UP") {
             // given
-            val createExpenseRequest = createExpenseCreationRequest(cost = BigDecimal.TWO)
+            val createExpenseRequest = createExpenseCreationRequest(totalCost = BigDecimal.TWO)
             stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
             stubCurrencyManagerExchangeRate(
@@ -421,7 +425,7 @@ class ExternalExpenseControllerIT(
             response.shouldBody<ExpenseResponse> {
                 expenseId shouldBe expense.id
                 creatorId shouldBe expense.creatorId
-                cost shouldBe expense.cost
+                totalCost shouldBe expense.totalCost
                 baseCurrency shouldBe expense.baseCurrency
                 targetCurrency shouldBe expense.targetCurrency
                 exchangeRate shouldBe expense.exchangeRate?.value
@@ -632,7 +636,10 @@ class ExternalExpenseControllerIT(
                     TITLE_MAX_LENGTH,
                     createExpenseUpdateRequest(title = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
                 ),
-                Pair(POSITIVE_COST, createExpenseUpdateRequest(cost = BigDecimal.ZERO)),
+                Pair(POSITIVE_TOTAL_COST, createExpenseUpdateRequest(totalCost = BigDecimal.ZERO)),
+                Pair(MAX_TOTAL_COST, createExpenseUpdateRequest(totalCost = "100000".toBigDecimal())),
+                Pair(TOTAL_COST_DECIMAL_PLACES, createExpenseUpdateRequest(totalCost = "1000.001".toBigDecimal())),
+
                 Pair(BASE_CURRENCY_NOT_BLANK, createExpenseUpdateRequest(baseCurrency = "")),
                 Pair(BASE_CURRENCY_PATTERN, createExpenseUpdateRequest(baseCurrency = "pln")),
                 Pair(TARGET_CURRENCY_PATTERN, createExpenseUpdateRequest(targetCurrency = "pln")),
@@ -690,7 +697,7 @@ class ExternalExpenseControllerIT(
                 nameFn = { it.first },
                 Quintuple(
                     COST_NOT_SUM_UP,
-                    createExpenseUpdateRequest(cost = BigDecimal.TWO),
+                    createExpenseUpdateRequest(totalCost = BigDecimal.TWO),
                     listOf(CURRENCY_1, CURRENCY_2),
                     arrayOf(CURRENCY_1, CURRENCY_2),
                     USER_ID,
@@ -717,7 +724,7 @@ class ExternalExpenseControllerIT(
                 ),
                 Quintuple(
                     PARTICIPANT_MIN_SIZE,
-                    createExpenseUpdateRequest(cost = BigDecimal.TWO, expenseParticipants = listOf(createExpenseParticipantDto())),
+                    createExpenseUpdateRequest(totalCost = BigDecimal.TWO, expenseParticipants = listOf(createExpenseParticipantDto())),
                     listOf(CURRENCY_1, CURRENCY_2),
                     arrayOf(CURRENCY_1, CURRENCY_2),
                     USER_ID,
@@ -791,7 +798,7 @@ class ExternalExpenseControllerIT(
             // given
             val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
             val expenseUpdateRequest = createExpenseUpdateRequest(
-                cost = BigDecimal(6),
+                totalCost = BigDecimal(6),
                 expenseParticipants = listOf(
                     createExpenseParticipantDto(USER_ID, BigDecimal.ONE),
                     createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.ONE),
@@ -815,7 +822,7 @@ class ExternalExpenseControllerIT(
             response.shouldBody<ExpenseResponse> {
                 expenseId shouldBe EXPENSE_ID
                 creatorId shouldBe USER_ID
-                cost shouldBe expenseUpdateRequest.cost
+                totalCost shouldBe expenseUpdateRequest.totalCost
                 baseCurrency shouldBe expenseUpdateRequest.baseCurrency
                 targetCurrency shouldBe expenseUpdateRequest.targetCurrency
                 exchangeRate.shouldNotBeNull()
@@ -839,7 +846,7 @@ class ExternalExpenseControllerIT(
                 it.groupId shouldBe GROUP_ID
                 it.creatorId shouldBe USER_ID
                 it.title shouldBe expenseUpdateRequest.title
-                it.cost shouldBe expenseUpdateRequest.cost
+                it.totalCost shouldBe expenseUpdateRequest.totalCost
                 it.baseCurrency shouldBe expenseUpdateRequest.baseCurrency
                 it.targetCurrency shouldBe expenseUpdateRequest.targetCurrency
                 it.exchangeRate shouldBe createExchangeRate(EXCHANGE_RATE_VALUE)
@@ -881,7 +888,7 @@ class ExternalExpenseControllerIT(
             response.shouldBody<ExpenseResponse> {
                 expenseId shouldBe EXPENSE_ID
                 creatorId shouldBe USER_ID
-                cost shouldBe expenseUpdateRequest.cost
+                totalCost shouldBe expenseUpdateRequest.totalCost
                 baseCurrency shouldBe expenseUpdateRequest.baseCurrency
                 targetCurrency shouldBe expenseUpdateRequest.targetCurrency
                 exchangeRate.shouldNotBeNull()
@@ -906,7 +913,7 @@ class ExternalExpenseControllerIT(
                 it.groupId shouldBe GROUP_ID
                 it.creatorId shouldBe USER_ID
                 it.title shouldBe expenseUpdateRequest.title
-                it.cost shouldBe expenseUpdateRequest.cost
+                it.totalCost shouldBe expenseUpdateRequest.totalCost
                 it.baseCurrency shouldBe expenseUpdateRequest.baseCurrency
                 it.targetCurrency shouldBe expenseUpdateRequest.targetCurrency
                 it.exchangeRate shouldBe createExchangeRate(EXCHANGE_RATE_VALUE)

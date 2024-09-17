@@ -25,7 +25,7 @@ class ExpenseUpdateRequestTest : ShouldSpec({
             it.groupId shouldBe GROUP_ID
             it.userId shouldBe USER_ID
             it.title shouldBe expenseUpdateRequest.title
-            it.cost shouldBe expenseUpdateRequest.cost
+            it.totalCost shouldBe expenseUpdateRequest.totalCost
             it.baseCurrency shouldBe expenseUpdateRequest.baseCurrency
             it.targetCurrency shouldBe expenseUpdateRequest.targetCurrency
             it.expenseDate shouldBe expenseUpdateRequest.expenseDate

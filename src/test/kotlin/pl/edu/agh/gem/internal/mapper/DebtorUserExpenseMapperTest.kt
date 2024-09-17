@@ -26,7 +26,7 @@ class DebtorUserExpenseMapperTest : ShouldSpec({
                 OTHER_USER_ID,
                 createExpense(
                     creatorId = USER_ID,
-                    cost = BigDecimal("60"),
+                    totalCost = BigDecimal("60"),
                     baseCurrency = CURRENCY_1,
                     targetCurrency = null,
                     exchangeRate = null,
@@ -42,7 +42,7 @@ class DebtorUserExpenseMapperTest : ShouldSpec({
                 OTHER_USER_ID,
                 createExpense(
                     creatorId = USER_ID,
-                    cost = BigDecimal("60"),
+                    totalCost = BigDecimal("60"),
                     baseCurrency = CURRENCY_1,
                     targetCurrency = CURRENCY_2,
                     exchangeRate = EXCHANGE_RATE_VALUE,
@@ -58,7 +58,7 @@ class DebtorUserExpenseMapperTest : ShouldSpec({
                 OTHER_USER_ID,
                 createExpense(
                     creatorId = USER_ID,
-                    cost = BigDecimal("60"),
+                    totalCost = BigDecimal("60"),
                     baseCurrency = CURRENCY_1,
                     targetCurrency = null,
                     exchangeRate = null,
@@ -74,7 +74,7 @@ class DebtorUserExpenseMapperTest : ShouldSpec({
                 USER_ID,
                 createExpense(
                     creatorId = USER_ID,
-                    cost = BigDecimal("60"),
+                    totalCost = BigDecimal("60"),
                     baseCurrency = CURRENCY_1,
                     targetCurrency = null,
                     exchangeRate = null,
@@ -90,7 +90,7 @@ class DebtorUserExpenseMapperTest : ShouldSpec({
                 "notExpenseParticipantId",
                 createExpense(
                     creatorId = USER_ID,
-                    cost = BigDecimal("60"),
+                    totalCost = BigDecimal("60"),
                     baseCurrency = CURRENCY_1,
                     targetCurrency = null,
                     exchangeRate = null,
