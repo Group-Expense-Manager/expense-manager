@@ -94,7 +94,7 @@ class ExpenseService(
                 targetCurrency = expenseCreation.targetCurrency,
             ),
             costData = CostData(
-                fullCost = expenseCreation.cost,
+                fullCost = expenseCreation.totalCost,
                 partialCosts = expenseCreation.expenseParticipantsCost.map { it.participantCost },
             ),
             participantData = ParticipantData(
@@ -207,7 +207,7 @@ class ExpenseService(
                     update.expenseDate,
                 ),
                 title = update.title,
-                cost = update.cost,
+                totalCost = update.totalCost,
                 baseCurrency = update.baseCurrency,
                 targetCurrency = update.targetCurrency,
                 updatedAt = now(),
@@ -231,7 +231,7 @@ class ExpenseService(
                 targetCurrency = expenseUpdate.targetCurrency,
             ),
             costData = CostData(
-                fullCost = expenseUpdate.cost,
+                fullCost = expenseUpdate.totalCost,
                 partialCosts = expenseUpdate.expenseParticipantsCost.map { it.participantCost },
             ),
             participantData = ParticipantData(

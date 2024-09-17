@@ -13,7 +13,7 @@ data class InternalGroupExpensesResponse(
 data class InternalGroupExpenseDto(
     val creatorId: String,
     val title: String,
-    val cost: BigDecimal,
+    val totalCost: BigDecimal,
     val baseCurrency: String,
     val targetCurrency: String?,
     val exchangeRate: BigDecimal?,
@@ -23,7 +23,7 @@ data class InternalGroupExpenseDto(
 fun Expense.toInternalGroupExpenseDto() = InternalGroupExpenseDto(
     creatorId = creatorId,
     title = title,
-    cost = cost,
+    totalCost = totalCost,
     baseCurrency = baseCurrency,
     targetCurrency = targetCurrency,
     exchangeRate = exchangeRate?.value,

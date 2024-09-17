@@ -71,7 +71,7 @@ class MongoExpenseRepository(
             groupId = groupId,
             creatorId = creatorId,
             title = title,
-            cost = cost,
+            totalCost = totalCost,
             baseCurrency = baseCurrency,
             targetCurrency = targetCurrency,
             exchangeRate = exchangeRate?.value,

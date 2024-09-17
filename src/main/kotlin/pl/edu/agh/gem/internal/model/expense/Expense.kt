@@ -9,7 +9,7 @@ data class Expense(
     val groupId: String,
     val creatorId: String,
     val title: String,
-    val cost: BigDecimal,
+    val totalCost: BigDecimal,
     val baseCurrency: String,
     val targetCurrency: String?,
     val exchangeRate: ExchangeRate?,
