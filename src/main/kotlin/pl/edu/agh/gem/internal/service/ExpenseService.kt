@@ -212,7 +212,7 @@ class ExpenseService(
                 targetCurrency = update.targetCurrency,
                 updatedAt = now(),
                 expenseDate = update.expenseDate,
-                expenseParticipants = update.expenseParticipantsCost.map { it.toExpenseParticipant(update.userId) },
+                expenseParticipants = update.expenseParticipantsCost.map { it.toExpenseParticipant() },
                 status = PENDING,
                 history = originalExpense.history + ExpenseHistoryEntry(originalExpense.creatorId, EDITED, now(), update.message),
             ),

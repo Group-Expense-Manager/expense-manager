@@ -44,16 +44,15 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_AV
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_PATTERN
-import pl.edu.agh.gem.internal.validation.ValidationMessage.COST_NOT_SUM_UP
-import pl.edu.agh.gem.internal.validation.ValidationMessage.CREATOR_DECISION
+import pl.edu.agh.gem.internal.validation.ValidationMessage.CREATOR_IN_PARTICIPANTS
 import pl.edu.agh.gem.internal.validation.ValidationMessage.DUPLICATED_PARTICIPANT
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_PARTICIPANTS_NOT_EMPTY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.GROUP_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.MAX_TOTAL_COST
 import pl.edu.agh.gem.internal.validation.ValidationMessage.MESSAGE_NULL_OR_NOT_BLANK
+import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_COSTS_HIGHER_THAN_TOTAL_COST
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_ID_NOT_BLANK
-import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_MIN_SIZE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_NOT_GROUP_MEMBER
 import pl.edu.agh.gem.internal.validation.ValidationMessage.POSITIVE_PARTICIPANT_COST
 import pl.edu.agh.gem.internal.validation.ValidationMessage.POSITIVE_TOTAL_COST
@@ -155,7 +154,7 @@ class ExternalExpenseControllerIT(
                 updatedAt.shouldNotBeNull()
                 expenseDate.shouldNotBeNull()
                 attachmentId shouldBe createExpenseRequest.attachmentId
-                expenseParticipants shouldHaveSize 2
+                expenseParticipants shouldHaveSize 1
                 status shouldBe PENDING.name
                 history shouldHaveSize 1
                 history.first().also { entry ->
@@ -198,7 +197,7 @@ class ExternalExpenseControllerIT(
                 updatedAt.shouldNotBeNull()
                 expenseDate.shouldNotBeNull()
                 attachmentId.shouldNotBeNull()
-                expenseParticipants shouldHaveSize 2
+                expenseParticipants shouldHaveSize 1
                 status shouldBe PENDING.name
                 history shouldHaveSize 1
                 history.first().also { entry ->
@@ -224,7 +223,7 @@ class ExternalExpenseControllerIT(
             response shouldHaveHttpStatus FORBIDDEN
         }
 
-        should("return validator exception cause COST_NOT_SUM_UP") {
+        should("return validator exception cause PARTICIPANT_COSTS_HIGHER_THAN_TOTAL_COST") {
             // given
             val createExpenseRequest = createExpenseCreationRequest(totalCost = BigDecimal.TWO)
             stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
@@ -241,13 +240,13 @@ class ExternalExpenseControllerIT(
 
             // then
             response shouldHaveHttpStatus BAD_REQUEST
-            response shouldHaveValidatorError COST_NOT_SUM_UP
+            response shouldHaveValidatorError PARTICIPANT_COSTS_HIGHER_THAN_TOTAL_COST
         }
 
-        should("return validator exception cause USER_NOT_PARTICIPANT") {
+        should("return validator exception cause CREATOR_IN_PARTICIPANTS") {
             // given
             val createExpenseRequest = createExpenseCreationRequest(
-                expenseParticipants = listOf(createExpenseParticipantDto(participantId = OTHER_USER_ID)),
+                expenseParticipants = listOf(createExpenseParticipantDto(participantId = USER_ID)),
             )
             stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
@@ -263,7 +262,7 @@ class ExternalExpenseControllerIT(
 
             // then
             response shouldHaveHttpStatus BAD_REQUEST
-            response shouldHaveValidatorError USER_NOT_PARTICIPANT
+            response shouldHaveValidatorError CREATOR_IN_PARTICIPANTS
         }
 
         should("return validator exception cause DUPLICATED_PARTICIPANT") {
@@ -286,26 +285,6 @@ class ExternalExpenseControllerIT(
             // then
             response shouldHaveHttpStatus BAD_REQUEST
             response shouldHaveValidatorError DUPLICATED_PARTICIPANT
-        }
-
-        should("return validator exception cause PARTICIPANT_MIN_SIZE") {
-            // given
-            val createExpenseRequest = createExpenseCreationRequest(expenseParticipants = listOf(createExpenseParticipantDto()))
-            stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
-            stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
-            stubCurrencyManagerExchangeRate(
-                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
-                CURRENCY_1,
-                CURRENCY_2,
-                Instant.ofEpochSecond(0L),
-            )
-
-            // when
-            val response = service.createExpense(createExpenseRequest, createGemUser(USER_ID), GROUP_ID)
-
-            // then
-            response shouldHaveHttpStatus BAD_REQUEST
-            response shouldHaveValidatorError PARTICIPANT_MIN_SIZE
         }
 
         should("return validator exception cause PARTICIPANT_NOT_GROUP_MEMBER") {
@@ -536,7 +515,7 @@ class ExternalExpenseControllerIT(
             }
         }
 
-        should("return bad request when user is expense creator") {
+        should("return bad request when user is not in participants") {
             // given
             val decisionRequest = createExpenseDecisionRequest()
             stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), USER_ID)
@@ -549,7 +528,7 @@ class ExternalExpenseControllerIT(
 
             // then
             response shouldHaveHttpStatus BAD_REQUEST
-            response shouldHaveValidatorError CREATOR_DECISION
+            response shouldHaveValidatorError USER_NOT_PARTICIPANT
         }
 
         should("return bad request when group member is not expense participant") {
@@ -696,17 +675,17 @@ class ExternalExpenseControllerIT(
             withData(
                 nameFn = { it.first },
                 Quintuple(
-                    COST_NOT_SUM_UP,
+                    PARTICIPANT_COSTS_HIGHER_THAN_TOTAL_COST,
                     createExpenseUpdateRequest(totalCost = BigDecimal.TWO),
                     listOf(CURRENCY_1, CURRENCY_2),
                     arrayOf(CURRENCY_1, CURRENCY_2),
                     USER_ID,
                 ),
                 Quintuple(
-                    USER_NOT_PARTICIPANT,
+                    CREATOR_IN_PARTICIPANTS,
                     createExpenseUpdateRequest(
                         expenseParticipants = listOf(
-                            createExpenseParticipantDto(OTHER_USER_ID),
+                            createExpenseParticipantDto(USER_ID),
                             createExpenseParticipantDto(ANOTHER_USER_ID),
 
                         ),
@@ -718,13 +697,6 @@ class ExternalExpenseControllerIT(
                 Quintuple(
                     DUPLICATED_PARTICIPANT,
                     createExpenseUpdateRequest(expenseParticipants = listOf(createExpenseParticipantDto(), createExpenseParticipantDto())),
-                    listOf(CURRENCY_1, CURRENCY_2),
-                    arrayOf(CURRENCY_1, CURRENCY_2),
-                    USER_ID,
-                ),
-                Quintuple(
-                    PARTICIPANT_MIN_SIZE,
-                    createExpenseUpdateRequest(totalCost = BigDecimal.TWO, expenseParticipants = listOf(createExpenseParticipantDto())),
                     listOf(CURRENCY_1, CURRENCY_2),
                     arrayOf(CURRENCY_1, CURRENCY_2),
                     USER_ID,
@@ -800,7 +772,6 @@ class ExternalExpenseControllerIT(
             val expenseUpdateRequest = createExpenseUpdateRequest(
                 totalCost = BigDecimal(6),
                 expenseParticipants = listOf(
-                    createExpenseParticipantDto(USER_ID, BigDecimal.ONE),
                     createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.ONE),
                     createExpenseParticipantDto(ANOTHER_USER_ID, BigDecimal(4)),
                 ),
@@ -830,7 +801,7 @@ class ExternalExpenseControllerIT(
                 updatedAt.shouldNotBeNull()
                 expenseDate.shouldNotBeNull()
                 attachmentId shouldBe expense.attachmentId
-                expenseParticipants shouldHaveSize 3
+                expenseParticipants shouldHaveSize 2
                 status shouldBe PENDING.name
                 history shouldHaveSize 2
                 history.last().also { entry ->
@@ -854,7 +825,7 @@ class ExternalExpenseControllerIT(
                 it.updatedAt.shouldNotBeNull()
                 it.attachmentId shouldBe expense.attachmentId
                 it.expenseParticipants shouldContainExactly expenseUpdateRequest.expenseParticipants
-                    .map { p -> p.toExpenseParticipantCost().toExpenseParticipant(USER_ID) }
+                    .map { p -> p.toExpenseParticipantCost().toExpenseParticipant() }
                 it.status shouldBe PENDING
                 it.history.last().also { entry ->
                     entry.participantId shouldBe USER_ID
@@ -896,7 +867,7 @@ class ExternalExpenseControllerIT(
                 updatedAt.shouldNotBeNull()
                 expenseDate.shouldNotBeNull()
                 attachmentId shouldBe expense.attachmentId
-                expenseParticipants shouldHaveSize 2
+                expenseParticipants shouldHaveSize 1
                 status shouldBe PENDING.name
                 history shouldHaveSize 2
                 history.last().also { entry ->
@@ -921,7 +892,7 @@ class ExternalExpenseControllerIT(
                 it.updatedAt.shouldNotBeNull()
                 it.attachmentId shouldBe expense.attachmentId
                 it.expenseParticipants shouldContainExactly expenseUpdateRequest.expenseParticipants
-                    .map { p -> p.toExpenseParticipantCost().toExpenseParticipant(USER_ID) }
+                    .map { p -> p.toExpenseParticipantCost().toExpenseParticipant() }
                 it.status shouldBe PENDING
                 it.history.last().also { entry ->
                     entry.participantId shouldBe USER_ID

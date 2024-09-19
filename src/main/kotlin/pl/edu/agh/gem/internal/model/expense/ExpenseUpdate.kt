@@ -1,6 +1,5 @@
 package pl.edu.agh.gem.internal.model.expense
 
-import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import java.math.BigDecimal
 import java.time.Instant
@@ -22,10 +21,10 @@ data class ExpenseParticipantCost(
     val participantId: String,
     val participantCost: BigDecimal,
 ) {
-    fun toExpenseParticipant(creatorId: String) = ExpenseParticipant(
+    fun toExpenseParticipant() = ExpenseParticipant(
         participantId = participantId,
         participantCost = participantCost,
-        participantStatus = if (creatorId == participantId) ACCEPTED else PENDING,
+        participantStatus = PENDING,
     )
 }
 fun ExpenseParticipant.toExpenseParticipantCost() =

@@ -3,8 +3,7 @@ package pl.edu.agh.gem.internal.model
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import pl.edu.agh.gem.external.dto.expense.toExpenseParticipantCost
-import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
-import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
+import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.toExpenseParticipantCost
 import pl.edu.agh.gem.util.createExpenseParticipant
 import pl.edu.agh.gem.util.createExpenseParticipantCost
@@ -16,13 +15,13 @@ class ExpenseUpdateTest : ShouldSpec({
         val expenseUpdateParticipant = createExpenseParticipantCost()
 
         // when
-        val expenseParticipant = expenseUpdateParticipant.toExpenseParticipant(USER_ID)
+        val expenseParticipant = expenseUpdateParticipant.toExpenseParticipant()
 
         // then
         expenseParticipant.also {
             it.participantId shouldBe expenseUpdateParticipant.participantId
             it.participantCost shouldBe expenseUpdateParticipant.participantCost
-            it.participantStatus shouldBe ACCEPTED
+            it.participantStatus shouldBe PENDING
         }
     }
 

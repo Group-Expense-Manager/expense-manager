@@ -35,10 +35,9 @@ import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_AVAILABLE
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES
-import pl.edu.agh.gem.internal.validation.ValidationMessage.COST_NOT_SUM_UP
-import pl.edu.agh.gem.internal.validation.ValidationMessage.CREATOR_DECISION
+import pl.edu.agh.gem.internal.validation.ValidationMessage.CREATOR_IN_PARTICIPANTS
 import pl.edu.agh.gem.internal.validation.ValidationMessage.DUPLICATED_PARTICIPANT
-import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_MIN_SIZE
+import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_COSTS_HIGHER_THAN_TOTAL_COST
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_NOT_GROUP_MEMBER
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES
 import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_CREATOR
@@ -166,26 +165,20 @@ class ExpenseServiceTest : ShouldSpec({
         withData(
             nameFn = { it.first },
             Quadruple(
-                COST_NOT_SUM_UP,
-                createExpenseCreation(totalCost = BigDecimal.TEN),
+                PARTICIPANT_COSTS_HIGHER_THAN_TOTAL_COST,
+                createExpenseCreation(totalCost = BigDecimal.ONE),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
             Quadruple(
-                USER_NOT_PARTICIPANT,
-                createExpenseCreation(creatorId = "nonGroupMember"),
+                CREATOR_IN_PARTICIPANTS,
+                createExpenseCreation(expenseParticipantsCost = listOf(createExpenseParticipantCost(participantId = USER_ID))),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
             Quadruple(
                 DUPLICATED_PARTICIPANT,
                 createExpenseCreation(expenseParticipantsCost = listOf(createExpenseParticipantCost(), createExpenseParticipantCost())),
-                arrayOf(CURRENCY_1, CURRENCY_2),
-                arrayOf(CURRENCY_1, CURRENCY_2),
-            ),
-            Quadruple(
-                PARTICIPANT_MIN_SIZE,
-                createExpenseCreation(totalCost = BigDecimal.TWO, expenseParticipantsCost = listOf(createExpenseParticipantCost())),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
@@ -302,19 +295,6 @@ class ExpenseServiceTest : ShouldSpec({
 
         // when & then
         shouldThrowExactly<MissingExpenseException> { expenseService.decide(expenseDecision) }
-        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
-        verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
-    }
-
-    should("throw ValidatorsException when user is expense creator") {
-        // given
-        val expense = createExpense()
-        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
-
-        val expenseDecision = createExpenseDecision()
-
-        // when & then
-        shouldThrowWithMessage<ValidatorsException>("Failed validations: $CREATOR_DECISION") { expenseService.decide(expenseDecision) }
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
     }
@@ -481,18 +461,16 @@ class ExpenseServiceTest : ShouldSpec({
         withData(
             nameFn = { it.first },
             Quadruple(
-                COST_NOT_SUM_UP,
-                createExpenseUpdate(totalCost = BigDecimal.TEN),
+                PARTICIPANT_COSTS_HIGHER_THAN_TOTAL_COST,
+                createExpenseUpdate(totalCost = BigDecimal.ONE),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
             Quadruple(
-                USER_NOT_PARTICIPANT,
+                CREATOR_IN_PARTICIPANTS,
                 createExpenseUpdate(
                     expenseParticipants = listOf(
-                        createExpenseParticipantCost(OTHER_USER_ID),
-                        createExpenseParticipantCost(ANOTHER_USER_ID),
-
+                        createExpenseParticipantCost(USER_ID),
                     ),
                 ),
                 arrayOf(CURRENCY_1, CURRENCY_2),
@@ -501,12 +479,6 @@ class ExpenseServiceTest : ShouldSpec({
             Quadruple(
                 DUPLICATED_PARTICIPANT,
                 createExpenseUpdate(expenseParticipants = listOf(createExpenseParticipantCost(), createExpenseParticipantCost())),
-                arrayOf(CURRENCY_1, CURRENCY_2),
-                arrayOf(CURRENCY_1, CURRENCY_2),
-            ),
-            Quadruple(
-                PARTICIPANT_MIN_SIZE,
-                createExpenseUpdate(totalCost = BigDecimal.TWO, expenseParticipants = listOf(createExpenseParticipantCost())),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
@@ -527,7 +499,7 @@ class ExpenseServiceTest : ShouldSpec({
             Quadruple(BASE_CURRENCY_NOT_AVAILABLE, createExpenseUpdate(), arrayOf(CURRENCY_1, CURRENCY_2), arrayOf(CURRENCY_2)),
             Quadruple(
                 USER_NOT_CREATOR,
-                createExpenseUpdate(userId = OTHER_USER_ID),
+                createExpenseUpdate(userId = ANOTHER_USER_ID),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
             ),
@@ -553,7 +525,6 @@ class ExpenseServiceTest : ShouldSpec({
         val expenseUpdate = createExpenseUpdate(
             totalCost = BigDecimal(6),
             expenseParticipants = listOf(
-                createExpenseParticipantCost(USER_ID, BigDecimal.ONE),
                 createExpenseParticipantCost(OTHER_USER_ID, BigDecimal.ONE),
                 createExpenseParticipantCost(ANOTHER_USER_ID, BigDecimal(4)),
             ),
@@ -584,7 +555,7 @@ class ExpenseServiceTest : ShouldSpec({
             it.updatedAt.shouldNotBeNull()
             it.attachmentId shouldBe expense.attachmentId
             it.expenseParticipants shouldContainExactly expenseUpdate.expenseParticipantsCost
-                .map { p -> p.toExpenseParticipant(expenseUpdate.userId) }
+                .map { p -> p.toExpenseParticipant() }
             it.status shouldBe PENDING
             it.history shouldContainAll expense.history
             it.history.last().also { entry ->
@@ -628,7 +599,7 @@ class ExpenseServiceTest : ShouldSpec({
             it.updatedAt.shouldNotBeNull()
             it.attachmentId shouldBe expense.attachmentId
             it.expenseParticipants shouldContainExactly expenseUpdate.expenseParticipantsCost
-                .map { p -> p.toExpenseParticipant(expenseUpdate.userId) }
+                .map { p -> p.toExpenseParticipant() }
             it.status shouldBe PENDING
             it.history shouldContainAll expense.history
             it.history.last().also { entry ->

@@ -32,7 +32,7 @@ data class ExpenseCreation(
         expenseDate = expenseDate,
         createdAt = now(),
         updatedAt = now(),
-        expenseParticipants = expenseParticipantsCost.map { it.toExpenseParticipant(creatorId) },
+        expenseParticipants = expenseParticipantsCost.map { it.toExpenseParticipant() },
         attachmentId = attachmentId,
         status = PENDING,
         history = arrayListOf(ExpenseHistoryEntry(creatorId, CREATED, comment = message)),
