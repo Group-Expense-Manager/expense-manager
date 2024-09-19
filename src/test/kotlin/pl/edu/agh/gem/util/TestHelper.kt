@@ -59,7 +59,6 @@ fun createExpenseCreationRequest(
     targetCurrency: String? = CURRENCY_2,
     expenseDate: Instant = Instant.ofEpochMilli(0L),
     expenseParticipants: List<ExpenseParticipantRequestData> = listOf(
-        createExpenseParticipantDto(USER_ID, BigDecimal.ONE),
         createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.valueOf(9L)),
     ),
     message: String? = "Something",
@@ -76,7 +75,7 @@ fun createExpenseCreationRequest(
 )
 
 fun createExpenseParticipantDto(
-    participantId: String = USER_ID,
+    participantId: String = OTHER_USER_ID,
     cost: BigDecimal = BigDecimal(1),
 ) = ExpenseParticipantRequestData(
     participantId = participantId,
@@ -120,7 +119,7 @@ fun createExpense(
     updatedAt: Instant = now(),
     expenseDate: Instant = Instant.ofEpochMilli(0L),
     attachmentId: String = ATTACHMENT_ID,
-    expenseParticipants: List<ExpenseParticipant> = listOf(createExpenseParticipant(USER_ID), createExpenseParticipant(OTHER_USER_ID)),
+    expenseParticipants: List<ExpenseParticipant> = listOf(createExpenseParticipant(OTHER_USER_ID)),
     status: ExpenseStatus = PENDING,
     history: List<ExpenseHistoryEntry> = arrayListOf(ExpenseHistoryEntry(USER_ID, ExpenseAction.CREATED)),
 ) = Expense(
@@ -151,7 +150,6 @@ fun createExpenseCreation(
     expenseDate: Instant = Instant.ofEpochMilli(0L),
     attachmentId: String? = ATTACHMENT_ID,
     expenseParticipantsCost: List<ExpenseParticipantCost> = listOf(
-        createExpenseParticipantCost(USER_ID),
         createExpenseParticipantCost(OTHER_USER_ID),
     ),
 ) = ExpenseCreation(
@@ -167,7 +165,7 @@ fun createExpenseCreation(
 )
 
 fun createExpenseParticipant(
-    participantId: String = USER_ID,
+    participantId: String = OTHER_USER_ID,
     participantCost: BigDecimal = BigDecimal.TWO,
     participantStatus: ExpenseStatus = PENDING,
 ) = ExpenseParticipant(
@@ -258,7 +256,6 @@ fun createExpenseUpdateRequest(
     targetCurrency: String? = CURRENCY_2,
     expenseDate: Instant = Instant.ofEpochMilli(0L),
     expenseParticipants: List<ExpenseParticipantRequestData> = listOf(
-        createExpenseParticipantDto(USER_ID, BigDecimal.ONE),
         createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.valueOf(9L)),
     ),
     message: String? = "Something",
@@ -294,7 +291,6 @@ fun createExpenseUpdate(
     targetCurrency: String? = CURRENCY_2,
     expenseDate: Instant = Instant.ofEpochMilli(0L),
     expenseParticipants: List<ExpenseParticipantCost> = listOf(
-        createExpenseParticipantCost(USER_ID),
         createExpenseParticipantCost(OTHER_USER_ID),
     ),
     message: String? = "Something",
@@ -326,7 +322,7 @@ fun createExpenseUpdateFromExpense(
     message = null,
 )
 fun createExpenseParticipantCost(
-    participantId: String = USER_ID,
+    participantId: String = OTHER_USER_ID,
     participantCost: BigDecimal = BigDecimal.TWO,
 ) = ExpenseParticipantCost(
     participantId = participantId,

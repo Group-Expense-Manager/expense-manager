@@ -14,7 +14,6 @@ import pl.edu.agh.gem.annotation.nullorblank.NullOrNotBlank
 import pl.edu.agh.gem.annotation.nullorpattern.NullOrPattern
 import pl.edu.agh.gem.internal.model.expense.ExpenseCreation
 import pl.edu.agh.gem.internal.model.expense.ExpenseParticipant
-import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NULL_OR_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_BLANK
@@ -76,10 +75,10 @@ data class ExpenseParticipantRequestData(
     @field:Positive(message = POSITIVE_PARTICIPANT_COST)
     val participantCost: BigDecimal,
 ) {
-    fun toDomain(creatorId: String) =
+    fun toDomain() =
         ExpenseParticipant(
             participantId = participantId,
             participantCost = participantCost,
-            participantStatus = if (creatorId == participantId) ACCEPTED else PENDING,
+            participantStatus = PENDING,
         )
 }

@@ -8,7 +8,6 @@ import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.CREATED
-import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.util.DummyData.ATTACHMENT_ID
 import pl.edu.agh.gem.util.createExchangeRate
@@ -46,7 +45,7 @@ class ExpenseCreationTest : ShouldSpec({
             it.expenseParticipants.first().also { participant ->
                 participant.participantId shouldBe expenseParticipants.first().participantId
                 participant.participantCost shouldBe expenseParticipants.first().participantCost
-                participant.participantStatus shouldBe ACCEPTED
+                participant.participantStatus shouldBe PENDING
             }
             it.status shouldBe PENDING
             it.history shouldHaveSize 1
@@ -59,32 +58,17 @@ class ExpenseCreationTest : ShouldSpec({
         }
     }
 
-    should("map expense creator ExpenseParticipantRequestData to domain") {
+    should("map expense createExpenseParticipantDto to domain") {
         // given
-        val expenseParticipantRequestData = createExpenseParticipantDto(USER_ID)
+        val expenseParticipantDto = createExpenseParticipantDto(OTHER_USER_ID)
 
         // when
-        val expenseParticipant = expenseParticipantRequestData.toDomain(USER_ID)
-
-        // then
-        expenseParticipant.also {
-            it.participantId shouldBe USER_ID
-            it.participantCost shouldBe expenseParticipantRequestData.participantCost
-            it.participantStatus shouldBe ACCEPTED
-        }
-    }
-
-    should("map expense participant ExpenseParticipantRequestData to domain") {
-        // given
-        val expenseParticipantRequestData = createExpenseParticipantDto(OTHER_USER_ID)
-
-        // when
-        val expenseParticipant = expenseParticipantRequestData.toDomain(USER_ID)
+        val expenseParticipant = expenseParticipantDto.toDomain()
 
         // then
         expenseParticipant.also {
             it.participantId shouldBe OTHER_USER_ID
-            it.participantCost shouldBe expenseParticipantRequestData.participantCost
+            it.participantCost shouldBe expenseParticipantDto.participantCost
             it.participantStatus shouldBe PENDING
         }
     }

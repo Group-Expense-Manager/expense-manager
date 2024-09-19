@@ -7,7 +7,6 @@ import io.kotest.matchers.shouldBe
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
-import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.util.createExpenseCreationRequest
 import pl.edu.agh.gem.util.createExpenseParticipantDto
@@ -42,27 +41,12 @@ class ExpenseCreationRequestTest : ShouldSpec({
         }
     }
 
-    should("map expense creator ExpenseParticipantRequestData to domain") {
-        // given
-        val expenseParticipantRequestData = createExpenseParticipantDto(USER_ID)
-
-        // when
-        val expenseParticipant = expenseParticipantRequestData.toDomain(USER_ID)
-
-        // then
-        expenseParticipant.also {
-            it.participantId shouldBe USER_ID
-            it.participantCost shouldBe expenseParticipantRequestData.participantCost
-            it.participantStatus shouldBe ACCEPTED
-        }
-    }
-
-    should("map expense participant ExpenseParticipantRequestData to domain") {
+    should("map ExpenseParticipantRequestData to domain") {
         // given
         val expenseParticipantRequestData = createExpenseParticipantDto(OTHER_USER_ID)
 
         // when
-        val expenseParticipant = expenseParticipantRequestData.toDomain(USER_ID)
+        val expenseParticipant = expenseParticipantRequestData.toDomain()
 
         // then
         expenseParticipant.also {
