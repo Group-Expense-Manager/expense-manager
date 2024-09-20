@@ -36,8 +36,9 @@ import pl.edu.agh.gem.internal.validation.update.ExpenseUpdateDataWrapper
 import pl.edu.agh.gem.validator.ValidatorsException
 import pl.edu.agh.gem.validator.alsoValidate
 import pl.edu.agh.gem.validator.validate
-import java.time.Instant
 import java.time.Instant.now
+import java.time.LocalDate
+import java.time.ZoneId
 
 @Service
 class ExpenseService(
@@ -71,18 +72,24 @@ class ExpenseService(
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
 
+        val exchangeRate = getExchangeRate(
+            expenseCreation.baseCurrency,
+            expenseCreation.targetCurrency,
+            expenseCreation.expenseDate.atZone(ZoneId.systemDefault()).toLocalDate(),
+        )
+
         val attachmentId = expenseCreation.attachmentId
             ?: attachmentStoreClient.generateBlankAttachment(expenseCreation.groupId, expenseCreation.creatorId).id
 
         return expenseRepository.save(
             expenseCreation.toExpense(
-                exchangeRate = getExchangeRate(expenseCreation.baseCurrency, expenseCreation.targetCurrency, expenseCreation.expenseDate),
+                exchangeRate = exchangeRate,
                 attachmentId = attachmentId,
             ),
         )
     }
 
-    private fun getExchangeRate(baseCurrency: String, targetCurrency: String?, date: Instant) =
+    private fun getExchangeRate(baseCurrency: String, targetCurrency: String?, date: LocalDate) =
         targetCurrency?.let { currencyManagerClient.getExchangeRate(baseCurrency, targetCurrency, date) }
 
     private fun createExpenseCreationDataWrapper(groupData: GroupData, expenseCreation: ExpenseCreation): ExpenseCreationDataWrapper {
@@ -204,7 +211,7 @@ class ExpenseService(
                 exchangeRate = getExchangeRate(
                     update.baseCurrency,
                     update.targetCurrency,
-                    update.expenseDate,
+                    update.expenseDate.atZone(ZoneId.systemDefault()).toLocalDate(),
                 ),
                 title = update.title,
                 totalCost = update.totalCost,

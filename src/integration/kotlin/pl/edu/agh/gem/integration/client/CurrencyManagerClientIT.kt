@@ -15,7 +15,7 @@ import pl.edu.agh.gem.util.DummyData.CURRENCY_2
 import pl.edu.agh.gem.util.DummyData.EXCHANGE_RATE_VALUE
 import pl.edu.agh.gem.util.createCurrenciesResponse
 import pl.edu.agh.gem.util.createExchangeRateResponse
-import java.time.Instant
+import java.time.LocalDate
 
 class CurrencyManagerClientIT(
     private val currencyManagerClient: CurrencyManagerClient,
@@ -59,7 +59,7 @@ class CurrencyManagerClientIT(
 
     should("get exchange rate") {
         // given
-        val date = Instant.ofEpochMilli(0L)
+        val date = LocalDate.MIN
         val exchangeRateResponse = createExchangeRateResponse(value = EXCHANGE_RATE_VALUE)
         stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, date)
 
@@ -72,7 +72,7 @@ class CurrencyManagerClientIT(
 
     should("throw CurrencyManagerClientException when we send bad request") {
         // given
-        val date = Instant.ofEpochMilli(0L)
+        val date = LocalDate.MIN
         val exchangeRateResponse = createExchangeRateResponse()
         stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, date, NOT_ACCEPTABLE)
 
@@ -84,7 +84,7 @@ class CurrencyManagerClientIT(
 
     should("throw RetryableCurrencyManagerClientException when client has internal error") {
         // given
-        val date = Instant.ofEpochMilli(0L)
+        val date = LocalDate.MIN
         val exchangeRateResponse = createExchangeRateResponse()
         stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, date, INTERNAL_SERVER_ERROR)
 

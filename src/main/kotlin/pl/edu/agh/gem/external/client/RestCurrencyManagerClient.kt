@@ -22,7 +22,7 @@ import pl.edu.agh.gem.internal.client.RetryableCurrencyManagerClientException
 import pl.edu.agh.gem.internal.model.currency.ExchangeRate
 import pl.edu.agh.gem.internal.model.group.Currencies
 import pl.edu.agh.gem.paths.Paths.INTERNAL
-import java.time.Instant
+import java.time.LocalDate
 
 @Component
 class RestCurrencyManagerClient(
@@ -54,7 +54,7 @@ class RestCurrencyManagerClient(
     }
 
     @Retry(name = "currencyManagerClient")
-    override fun getExchangeRate(baseCurrency: String, targetCurrency: String, date: Instant): ExchangeRate {
+    override fun getExchangeRate(baseCurrency: String, targetCurrency: String, date: LocalDate): ExchangeRate {
         return try {
             restTemplate.exchange(
                 resolveExchangeRateAddress(baseCurrency, targetCurrency, date),
@@ -79,9 +79,9 @@ class RestCurrencyManagerClient(
     private fun resolveAvailableCurrenciesAddress() =
         "${currencyManagerProperties.url}$INTERNAL/currencies"
 
-    private fun resolveExchangeRateAddress(baseCurrency: String, targetCurrency: String, date: Instant) =
+    private fun resolveExchangeRateAddress(baseCurrency: String, targetCurrency: String, date: LocalDate) =
         UriComponentsBuilder.fromUriString("${currencyManagerProperties.url}$INTERNAL/currencies/from/$baseCurrency/to/$targetCurrency/")
-            .queryParam("date", date.toString())
+            .queryParam("date", date)
             .build()
             .toUriString()
 

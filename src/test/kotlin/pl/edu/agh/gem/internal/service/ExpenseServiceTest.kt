@@ -12,6 +12,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.mockito.kotlin.anyVararg
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -61,7 +62,7 @@ import pl.edu.agh.gem.util.createFilterOptions
 import pl.edu.agh.gem.util.createGroup
 import pl.edu.agh.gem.validator.ValidatorsException
 import java.math.BigDecimal
-import java.time.Instant
+import java.time.LocalDate
 
 class ExpenseServiceTest : ShouldSpec({
     val groupManagerClient = mock<GroupManagerClient> { }
@@ -83,7 +84,7 @@ class ExpenseServiceTest : ShouldSpec({
         val group = createGroup(currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
         val exchangeRate = createExchangeRate()
         whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
-        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(exchangeRate)
+        whenever(currencyManagerClient.getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))).thenReturn(exchangeRate)
         whenever(expenseRepository.save(anyVararg(Expense::class))).thenAnswer { it.arguments[0] }
 
         // when
@@ -114,7 +115,7 @@ class ExpenseServiceTest : ShouldSpec({
         }
 
         verify(currencyManagerClient, times(1)).getAvailableCurrencies()
-        verify(currencyManagerClient, times(1)).getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))
+        verify(currencyManagerClient, times(1)).getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))
         verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
     }
 
@@ -124,7 +125,7 @@ class ExpenseServiceTest : ShouldSpec({
         val group = createGroup(currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
         val exchangeRate = createExchangeRate()
         whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
-        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(exchangeRate)
+        whenever(currencyManagerClient.getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))).thenReturn(exchangeRate)
         whenever(attachmentStoreClient.generateBlankAttachment(GROUP_ID, USER_ID)).thenReturn(GroupAttachment(ATTACHMENT_ID))
         whenever(expenseRepository.save(anyVararg(Expense::class))).thenAnswer { it.arguments[0] }
 
@@ -156,7 +157,7 @@ class ExpenseServiceTest : ShouldSpec({
         }
 
         verify(currencyManagerClient, times(1)).getAvailableCurrencies()
-        verify(currencyManagerClient, times(1)).getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))
+        verify(currencyManagerClient, times(1)).getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))
         verify(attachmentStoreClient, times(1)).generateBlankAttachment(GROUP_ID, USER_ID)
         verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
     }
@@ -212,8 +213,9 @@ class ExpenseServiceTest : ShouldSpec({
             // given
             val group = createGroup(currencies = createCurrencies(*groupCurrencies))
             whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(*availableCurrencies))
-            whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L)))
-                .thenReturn(createExchangeRate())
+            whenever(currencyManagerClient.getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))).thenReturn(
+                createExchangeRate(),
+            )
 
             // when & then
             shouldThrowWithMessage<ValidatorsException>("Failed validations: $expectedMessage") {
@@ -508,7 +510,9 @@ class ExpenseServiceTest : ShouldSpec({
             val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
             val group = createGroup(createGroupMembers(USER_ID, OTHER_USER_ID, ANOTHER_USER_ID), currencies = createCurrencies(*groupCurrencies))
             whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(*availableCurrencies))
-            whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(createExchangeRate())
+            whenever(currencyManagerClient.getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))).thenReturn(
+                createExchangeRate(),
+            )
             whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
 
             // when & then
@@ -533,13 +537,16 @@ class ExpenseServiceTest : ShouldSpec({
         val exchangeRate = createExchangeRate(EXCHANGE_RATE_VALUE)
         val group = createGroup(createGroupMembers(USER_ID, OTHER_USER_ID, ANOTHER_USER_ID), currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
         whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
-        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(exchangeRate)
+        whenever(currencyManagerClient.getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))).thenReturn(
+            createExchangeRate(),
+        )
         whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
         whenever(expenseRepository.save(anyVararg(Expense::class))).doAnswer { it.arguments[0] as? Expense }
         // when & then
         val result = expenseService.updateExpense(group, expenseUpdate)
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(currencyManagerClient, times(1)).getAvailableCurrencies()
+        verify(currencyManagerClient, times(1)).getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))
         verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
 
         result.also {
@@ -577,7 +584,9 @@ class ExpenseServiceTest : ShouldSpec({
         val exchangeRate = createExchangeRate(EXCHANGE_RATE_VALUE)
         val group = createGroup(createGroupMembers(USER_ID, OTHER_USER_ID, ANOTHER_USER_ID), currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
         whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
-        whenever(currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, Instant.ofEpochMilli(0L))).thenReturn(exchangeRate)
+        whenever(currencyManagerClient.getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))).thenReturn(
+            createExchangeRate(),
+        )
         whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
         whenever(expenseRepository.save(anyVararg(Expense::class))).doAnswer { it.arguments[0] as? Expense }
         // when & then
@@ -585,6 +594,7 @@ class ExpenseServiceTest : ShouldSpec({
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(currencyManagerClient, times(1)).getAvailableCurrencies()
         verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
+        verify(currencyManagerClient, times(1)).getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))
 
         result.also {
             it.id shouldBe EXPENSE_ID
