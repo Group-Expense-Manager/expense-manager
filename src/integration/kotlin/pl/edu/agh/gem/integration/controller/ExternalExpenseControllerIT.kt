@@ -85,6 +85,7 @@ import pl.edu.agh.gem.util.createMembersDTO
 import pl.edu.agh.gem.util.createUserGroupsResponse
 import java.math.BigDecimal
 import java.time.Instant
+import java.time.ZoneId
 
 class ExternalExpenseControllerIT(
     private val service: ServiceTestClient,
@@ -135,7 +136,7 @@ class ExternalExpenseControllerIT(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
                 CURRENCY_1,
                 CURRENCY_2,
-                Instant.ofEpochSecond(0L),
+                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
             )
 
             // when
@@ -177,7 +178,7 @@ class ExternalExpenseControllerIT(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
                 CURRENCY_1,
                 CURRENCY_2,
-                Instant.ofEpochSecond(0L),
+                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
             )
             stubAttachmentStoreGenerateBlankAttachment(attachment, GROUP_ID, USER_ID)
 
@@ -232,7 +233,7 @@ class ExternalExpenseControllerIT(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
                 CURRENCY_1,
                 CURRENCY_2,
-                Instant.ofEpochSecond(0L),
+                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
             )
 
             // when
@@ -254,7 +255,7 @@ class ExternalExpenseControllerIT(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
                 CURRENCY_1,
                 CURRENCY_2,
-                Instant.ofEpochSecond(0L),
+                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
             )
 
             // when
@@ -276,7 +277,7 @@ class ExternalExpenseControllerIT(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
                 CURRENCY_1,
                 CURRENCY_2,
-                Instant.ofEpochSecond(0L),
+                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
             )
 
             // when
@@ -299,7 +300,7 @@ class ExternalExpenseControllerIT(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
                 CURRENCY_1,
                 CURRENCY_2,
-                Instant.ofEpochSecond(0L),
+                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
             )
 
             // when
@@ -319,7 +320,7 @@ class ExternalExpenseControllerIT(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
                 CURRENCY_1,
                 CURRENCY_2,
-                Instant.ofEpochSecond(0L),
+                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
             )
 
             // when
@@ -339,7 +340,7 @@ class ExternalExpenseControllerIT(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
                 CURRENCY_1,
                 CURRENCY_2,
-                Instant.ofEpochSecond(0L),
+                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
             )
 
             // when
@@ -359,7 +360,7 @@ class ExternalExpenseControllerIT(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
                 CURRENCY_1,
                 CURRENCY_2,
-                Instant.ofEpochSecond(0L),
+                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
             )
 
             // when
@@ -379,7 +380,7 @@ class ExternalExpenseControllerIT(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
                 CURRENCY_1,
                 CURRENCY_2,
-                Instant.ofEpochSecond(0L),
+                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
             )
 
             // when
@@ -783,7 +784,7 @@ class ExternalExpenseControllerIT(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
                 CURRENCY_1,
                 CURRENCY_2,
-                Instant.ofEpochSecond(0L),
+                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
             )
             // when
             val response = service.updateExpense(expenseUpdateRequest, createGemUser(USER_ID), GROUP_ID, EXPENSE_ID)
@@ -849,7 +850,7 @@ class ExternalExpenseControllerIT(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
                 CURRENCY_1,
                 CURRENCY_2,
-                Instant.ofEpochSecond(0L),
+                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
             )
             // when
             val response = service.updateExpense(expenseUpdateRequest, createGemUser(USER_ID), GROUP_ID, EXPENSE_ID)
