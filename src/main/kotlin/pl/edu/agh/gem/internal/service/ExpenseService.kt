@@ -124,7 +124,7 @@ class ExpenseService(
         return expenseRepository.findByGroupId(groupId, filterOptions)
     }
 
-    fun decide(expenseDecision: ExpenseDecision) {
+    fun decide(expenseDecision: ExpenseDecision): Expense {
         val expense = expenseRepository.findByExpenseIdAndGroupId(expenseDecision.expenseId, expenseDecision.groupId)
             ?: throw MissingExpenseException(expenseDecision.expenseId, expenseDecision.groupId)
 
@@ -133,7 +133,7 @@ class ExpenseService(
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
 
-        expenseRepository.save(expense.addDecision(expenseDecision))
+        return expenseRepository.save(expense.addDecision(expenseDecision))
     }
 
     private fun Expense.addDecision(expenseDecision: ExpenseDecision): Expense {

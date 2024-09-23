@@ -64,9 +64,9 @@ class ExternalExpenseController(
         @GemUserId userId: String,
         @Valid @RequestBody
         expenseDecisionRequest: ExpenseDecisionRequest,
-    ) {
+    ): ExpenseResponse {
         userId.checkIfUserHaveAccess(expenseDecisionRequest.groupId)
-        expenseService.decide(expenseDecisionRequest.toDomain(userId))
+        return ExpenseResponse.fromExpense(expenseService.decide(expenseDecisionRequest.toDomain(userId)))
     }
 
     @DeleteMapping("{expenseId}/groups/{groupId}")
