@@ -35,6 +35,7 @@ import pl.edu.agh.gem.integration.ability.stubGroupManagerGroupData
 import pl.edu.agh.gem.integration.ability.stubGroupManagerUserGroups
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.EDITED
+import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.internal.service.MissingExpenseException
@@ -147,6 +148,7 @@ class ExternalExpenseControllerIT(
             response.shouldBody<ExpenseResponse> {
                 expenseId.shouldNotBeNull()
                 creatorId shouldBe USER_ID
+                title shouldBe createExpenseRequest.title
                 totalCost shouldBe createExpenseRequest.totalCost
                 baseCurrency shouldBe createExpenseRequest.baseCurrency
                 targetCurrency shouldBe createExpenseRequest.targetCurrency
@@ -190,6 +192,7 @@ class ExternalExpenseControllerIT(
             response.shouldBody<ExpenseResponse> {
                 expenseId.shouldNotBeNull()
                 creatorId shouldBe USER_ID
+                title shouldBe createExpenseRequest.title
                 totalCost shouldBe createExpenseRequest.totalCost
                 baseCurrency shouldBe createExpenseRequest.baseCurrency
                 targetCurrency shouldBe createExpenseRequest.targetCurrency
@@ -405,6 +408,7 @@ class ExternalExpenseControllerIT(
             response.shouldBody<ExpenseResponse> {
                 expenseId shouldBe expense.id
                 creatorId shouldBe expense.creatorId
+                title shouldBe expense.title
                 totalCost shouldBe expense.totalCost
                 baseCurrency shouldBe expense.baseCurrency
                 targetCurrency shouldBe expense.targetCurrency
@@ -482,6 +486,33 @@ class ExternalExpenseControllerIT(
 
             // then
             response shouldHaveHttpStatus OK
+            response.shouldBody<ExpenseResponse> {
+                expenseId shouldBe expense.id
+                creatorId shouldBe expense.creatorId
+                title shouldBe expense.title
+                totalCost shouldBe expense.totalCost
+                baseCurrency shouldBe expense.baseCurrency
+                targetCurrency shouldBe expense.targetCurrency
+                exchangeRate shouldBe expense.exchangeRate?.value
+                createdAt.shouldNotBeNull()
+                updatedAt.shouldNotBeNull()
+                expenseDate.shouldNotBeNull()
+                attachmentId shouldBe expense.attachmentId
+                expenseParticipants shouldHaveSize 1
+                status shouldBe ACCEPTED.name
+                expenseParticipants.first().also { participant ->
+                    participant.participantId shouldBe OTHER_USER_ID
+                    participant.participantStatus shouldBe ACCEPTED.name
+                    participant.participantCost shouldBe expense.expenseParticipants.first().participantCost
+                }
+                history shouldHaveSize 2
+                history.last().also { entry ->
+                    entry.createdAt.shouldNotBeNull()
+                    entry.expenseAction shouldBe ExpenseAction.ACCEPTED.name
+                    entry.participantId shouldBe OTHER_USER_ID
+                    entry.comment shouldBe decisionRequest.message
+                }
+            }
         }
 
         should("return forbidden if user is not a group member") {

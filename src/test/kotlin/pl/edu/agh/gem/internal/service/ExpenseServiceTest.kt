@@ -25,7 +25,9 @@ import pl.edu.agh.gem.internal.client.AttachmentStoreClient
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
 import pl.edu.agh.gem.internal.model.attachment.GroupAttachment
+import pl.edu.agh.gem.internal.model.expense.Decision.ACCEPT
 import pl.edu.agh.gem.internal.model.expense.Expense
+import pl.edu.agh.gem.internal.model.expense.ExpenseAction
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.CREATED
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.EDITED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
@@ -279,13 +281,43 @@ class ExpenseServiceTest : ShouldSpec({
         // given
         val expense = createExpense()
         whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
+        whenever(expenseRepository.save(anyVararg(Expense::class))).thenAnswer { it.arguments[0] }
 
-        val expenseDecision = createExpenseDecision(userId = OTHER_USER_ID)
+        val expenseDecision = createExpenseDecision(userId = OTHER_USER_ID, decision = ACCEPT)
 
         // when
-        expenseService.decide(expenseDecision)
+        val result = expenseService.decide(expenseDecision)
 
         // then
+        result.shouldNotBeNull()
+        result.also {
+            it.id shouldBe expenseDecision.expenseId
+            it.groupId shouldBe GROUP_ID
+            it.creatorId shouldBe USER_ID
+            it.title shouldBe expense.title
+            it.totalCost shouldBe expense.totalCost
+
+            it.targetCurrency shouldBe expense.targetCurrency
+            it.exchangeRate shouldBe expense.exchangeRate
+
+            it.createdAt.shouldNotBeNull()
+            it.updatedAt.shouldNotBeNull()
+            it.attachmentId shouldBe expense.attachmentId
+            it.status shouldBe ACCEPTED
+            it.expenseParticipants.first().also { participant ->
+                participant.participantId shouldBe OTHER_USER_ID
+                participant.participantStatus shouldBe ACCEPTED
+                participant.participantCost shouldBe expense.expenseParticipants.first().participantCost
+            }
+            it.history shouldHaveSize 2
+            it.history.last().also { entry ->
+                entry.createdAt.shouldNotBeNull()
+                entry.expenseAction shouldBe ExpenseAction.ACCEPTED
+                entry.participantId shouldBe expenseDecision.userId
+                entry.comment shouldBe expenseDecision.message
+            }
+        }
+
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
     }
