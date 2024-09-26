@@ -88,9 +88,9 @@ class ServiceTestClient(applicationContext: WebApplicationContext) {
             .exchange()
     }
 
-    fun getInternalGroupExpenses(groupId: String): ResponseSpec {
+    fun getAcceptedGroupExpenses(groupId: String): ResponseSpec {
         return webClient.get()
-            .uri(URI("$INTERNAL/expenses/groups/$groupId"))
+            .uri(URI("$INTERNAL/expenses/accepted/groups/$groupId"))
             .headers { it.withAppAcceptType() }
             .exchange()
     }
