@@ -7,11 +7,11 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import pl.edu.agh.gem.external.dto.expense.AcceptedGroupExpensesResponse
 import pl.edu.agh.gem.external.dto.expense.GroupActivitiesResponse
-import pl.edu.agh.gem.external.dto.expense.InternalGroupExpensesResponse
 import pl.edu.agh.gem.external.dto.expense.UserExpensesResponse
+import pl.edu.agh.gem.external.dto.expense.toAcceptedGroupExpensesResponse
 import pl.edu.agh.gem.external.dto.expense.toGroupActivitiesResponse
-import pl.edu.agh.gem.external.dto.expense.toInternalGroupExpensesResponse
 import pl.edu.agh.gem.external.dto.expense.toUserExpensesResponse
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
 import pl.edu.agh.gem.internal.model.expense.filter.FilterOptions
@@ -36,12 +36,12 @@ class InternalExpenseController(
         return expenseService.getUserExpenses(groupId, userId).toUserExpensesResponse(userId)
     }
 
-    @GetMapping("groups/{groupId}", produces = [APPLICATION_JSON_INTERNAL_VER_1])
+    @GetMapping("accepted/groups/{groupId}", produces = [APPLICATION_JSON_INTERNAL_VER_1])
     @ResponseStatus(OK)
-    fun getInternalGroupExpenses(
+    fun getAcceptedGroupExpenses(
         @PathVariable groupId: String,
-    ): InternalGroupExpensesResponse {
-        return expenseService.getInternalGroupExpenses(groupId).toInternalGroupExpensesResponse(groupId)
+    ): AcceptedGroupExpensesResponse {
+        return expenseService.getAcceptedGroupExpenses(groupId).toAcceptedGroupExpensesResponse(groupId)
     }
 
     @GetMapping("activities/groups/{groupId}", produces = [APPLICATION_JSON_INTERNAL_VER_1])

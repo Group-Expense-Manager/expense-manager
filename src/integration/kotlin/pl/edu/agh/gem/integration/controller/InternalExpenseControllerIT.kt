@@ -9,9 +9,9 @@ import pl.edu.agh.gem.assertion.shouldBody
 import pl.edu.agh.gem.assertion.shouldHaveHttpStatus
 import pl.edu.agh.gem.dto.GroupMemberResponse
 import pl.edu.agh.gem.dto.GroupMembersResponse
+import pl.edu.agh.gem.external.dto.expense.AcceptedGroupExpenseParticipantDto
+import pl.edu.agh.gem.external.dto.expense.AcceptedGroupExpensesResponse
 import pl.edu.agh.gem.external.dto.expense.GroupActivitiesResponse
-import pl.edu.agh.gem.external.dto.expense.InternalGroupExpenseParticipantDto
-import pl.edu.agh.gem.external.dto.expense.InternalGroupExpensesResponse
 import pl.edu.agh.gem.external.dto.expense.UserExpensesResponse
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.group.DummyGroup.OTHER_GROUP_ID
@@ -99,7 +99,7 @@ class InternalExpenseControllerIT(
         }
     }
 
-    should("get internal expenses") {
+    should("get accepted expenses") {
         // given
         val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(USER_ID)))
         stubGroupManagerUserGroups(groupMembers, GROUP_ID)
@@ -108,11 +108,11 @@ class InternalExpenseControllerIT(
         repository.save(expense)
 
         // when
-        val response = service.getInternalGroupExpenses(GROUP_ID)
+        val response = service.getAcceptedGroupExpenses(GROUP_ID)
 
         // then
         response shouldHaveHttpStatus OK
-        response.shouldBody<InternalGroupExpensesResponse> {
+        response.shouldBody<AcceptedGroupExpensesResponse> {
             groupId shouldBe GROUP_ID
             expenses shouldHaveSize 1
             expenses.first().also {
@@ -123,7 +123,7 @@ class InternalExpenseControllerIT(
                 it.targetCurrency shouldBe expense.targetCurrency
                 it.exchangeRate shouldBe expense.exchangeRate?.value
                 it.participants shouldBe expense.expenseParticipants
-                    .map { p -> InternalGroupExpenseParticipantDto(p.participantId, p.participantCost) }
+                    .map { p -> AcceptedGroupExpenseParticipantDto(p.participantId, p.participantCost) }
                 it.expenseDate shouldBe expense.expenseDate
             }
         }

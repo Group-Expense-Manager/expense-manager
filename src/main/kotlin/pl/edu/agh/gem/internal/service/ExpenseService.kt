@@ -116,7 +116,7 @@ class ExpenseService(
         return expenseRepository.findByExpenseIdAndGroupId(expenseId, groupId) ?: throw MissingExpenseException(expenseId, groupId)
     }
 
-    fun getInternalGroupExpenses(groupId: String): List<Expense> {
+    fun getAcceptedGroupExpenses(groupId: String): List<Expense> {
         return expenseRepository.findByGroupId(groupId).filter { it.status == ACCEPTED }
     }
 

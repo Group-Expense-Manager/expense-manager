@@ -8,18 +8,18 @@ import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.util.createExpense
 import pl.edu.agh.gem.util.createExpenseParticipant
-import pl.edu.agh.gem.util.createListOfInternalGroupExpenseParticipantDto
+import pl.edu.agh.gem.util.createListOfAcceptedGroupExpenseParticipantDto
 import java.math.BigDecimal
 import java.time.Instant
 
-class InternalGroupExpensesResponseTest : ShouldSpec({
+class AcceptedGroupExpensesResponseTest : ShouldSpec({
 
-    should("map Expense to InternalGroupExpensesResponse") {
+    should("map Expense to AcceptedGroupExpensesResponse") {
         // given
         val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant()))
 
         // when
-        val groupExpensesResponse = listOf(expense).toInternalGroupExpensesResponse(GROUP_ID)
+        val groupExpensesResponse = listOf(expense).toAcceptedGroupExpensesResponse(GROUP_ID)
 
         // then
         groupExpensesResponse.groupId shouldBe GROUP_ID
@@ -40,7 +40,7 @@ class InternalGroupExpensesResponseTest : ShouldSpec({
         }
     }
 
-    should("map multiple Expenses to InternalGroupExpensesResponse") {
+    should("map multiple Expenses to AcceptedGroupExpensesResponse") {
         // given
         val creatorIds = listOf("creatorId1", "creatorId2", "creatorId3")
         val titles = listOf("title1", "title2", "title3")
@@ -49,15 +49,15 @@ class InternalGroupExpensesResponseTest : ShouldSpec({
         val targetCurrencies = listOf(null, "PLN", "EUR")
         val exchangeRates = listOf(null, BigDecimal.TWO, BigDecimal.TWO)
         val participants = listOf(
-            createListOfInternalGroupExpenseParticipantDto(
+            createListOfAcceptedGroupExpenseParticipantDto(
                 listOf("userId1", "userId2", "userId3"),
                 listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
             ),
-            createListOfInternalGroupExpenseParticipantDto(
+            createListOfAcceptedGroupExpenseParticipantDto(
                 listOf("userId3", "userId1", "userId2"),
                 listOf(BigDecimal("20"), BigDecimal("30"), BigDecimal("10")),
             ),
-            createListOfInternalGroupExpenseParticipantDto(
+            createListOfAcceptedGroupExpenseParticipantDto(
                 listOf("userId2", "userId3", "userId1"),
                 listOf(BigDecimal("30"), BigDecimal("10"), BigDecimal("20")),
             ),
@@ -81,7 +81,7 @@ class InternalGroupExpensesResponseTest : ShouldSpec({
         }
 
         // when
-        val groupExpensesResponse = expenses.toInternalGroupExpensesResponse(GROUP_ID)
+        val groupExpensesResponse = expenses.toAcceptedGroupExpensesResponse(GROUP_ID)
 
         // then
         groupExpensesResponse.groupId shouldBe GROUP_ID
@@ -103,7 +103,7 @@ class InternalGroupExpensesResponseTest : ShouldSpec({
         val expenses = listOf<Expense>()
 
         // when
-        val groupExpensesResponse = expenses.toInternalGroupExpensesResponse(GROUP_ID)
+        val groupExpensesResponse = expenses.toAcceptedGroupExpensesResponse(GROUP_ID)
 
         // then
         groupExpensesResponse.also {

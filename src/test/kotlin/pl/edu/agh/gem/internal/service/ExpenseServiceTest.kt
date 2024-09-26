@@ -440,7 +440,7 @@ class ExpenseServiceTest : ShouldSpec({
         verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
     }
 
-    should("get internal expenses") {
+    should("get accepted expenses") {
         // given
         val acceptedExpense = createExpense(status = ACCEPTED)
         val expenses = listOf(
@@ -451,7 +451,7 @@ class ExpenseServiceTest : ShouldSpec({
         whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(expenses)
 
         // when
-        val result = expenseService.getInternalGroupExpenses(GROUP_ID)
+        val result = expenseService.getAcceptedGroupExpenses(GROUP_ID)
 
         // then
         result.also {
@@ -471,7 +471,7 @@ class ExpenseServiceTest : ShouldSpec({
         )
 
         // when
-        val result = expenseService.getInternalGroupExpenses(GROUP_ID)
+        val result = expenseService.getAcceptedGroupExpenses(GROUP_ID)
 
         // then
         result shouldBe listOf()
