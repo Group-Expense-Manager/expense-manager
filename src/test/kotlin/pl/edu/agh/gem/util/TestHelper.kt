@@ -182,21 +182,17 @@ fun createExpenseParticipants(
 
 fun createGroup(
     members: GroupMembers = createGroupMembers(USER_ID, OTHER_USER_ID),
-    acceptRequired: Boolean = false,
     currencies: Currencies = createCurrencies(CURRENCY_1, CURRENCY_2),
 ) = GroupData(
     members = members,
-    acceptRequired = acceptRequired,
     currencies = currencies,
 )
 
 fun createGroupResponse(
     members: List<MemberDTO> = listOf(USER_ID, OTHER_USER_ID).map { MemberDTO(it) },
-    acceptRequired: Boolean = false,
     groupCurrencies: List<CurrencyDTO> = listOf(CURRENCY_1, CURRENCY_2).map { CurrencyDTO(it) },
 ) = GroupResponse(
     members = members,
-    acceptRequired = acceptRequired,
     groupCurrencies = groupCurrencies,
 )
 
