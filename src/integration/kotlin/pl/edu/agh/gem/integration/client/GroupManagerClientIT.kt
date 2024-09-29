@@ -29,7 +29,7 @@ class GroupManagerClientIT(
         // given
         val members = createMembersDTO(USER_ID, OTHER_USER_ID)
         val listOfCurrencies = createCurrenciesDTO("PLN", "USD", "EUR")
-        val groupResponse = createGroupResponse(members = members, acceptRequired = true, groupCurrencies = listOfCurrencies)
+        val groupResponse = createGroupResponse(members = members, groupCurrencies = listOfCurrencies)
         stubGroupManagerGroupData(groupResponse, GROUP_ID)
 
         // when
@@ -38,7 +38,6 @@ class GroupManagerClientIT(
         // then
         result.also {
             it.shouldNotBeNull()
-            it.acceptRequired shouldBe true
             it.currencies shouldBe listOfCurrencies.map { currency -> Currency(currency.code) }
             it.members.members shouldBe members.map { member -> GroupMember(member.id) }
         }

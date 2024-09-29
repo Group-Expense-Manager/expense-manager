@@ -7,12 +7,10 @@ import pl.edu.agh.gem.model.GroupMembers
 
 data class GroupResponse(
     val members: List<MemberDTO>,
-    val acceptRequired: Boolean,
     val groupCurrencies: List<CurrencyDTO>,
 ) {
     fun toDomain() = GroupData(
         members = GroupMembers(members.map { GroupMember(it.id) }),
-        acceptRequired = acceptRequired,
         currencies = groupCurrencies.map { Currency(it.code) },
     )
 }
