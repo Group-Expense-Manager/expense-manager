@@ -12,8 +12,3 @@ group-manager:
   url: http://${GROUP_MANAGER_SERVICE_SERVICE_HOST}:8080
   read-timeout: 1000ms
   connect-timeout: 1000ms
-
-attachment-store:
-  url: http://${ATTACHMENT_STORE_SERVICE_SERVICE_HOST}:8080
-  read-timeout: 1000ms
-  connect-timeout: 1000ms

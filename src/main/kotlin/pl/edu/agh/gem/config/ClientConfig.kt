@@ -35,19 +35,6 @@ class ClientConfig {
             .withConnectTimeout(currencyManagerProperties.connectTimeout)
             .build()
     }
-
-    @Bean
-    @Qualifier("AttachmentStoreRestTemplate")
-    fun attachmentStoreRestTemplate(
-        attachmentStoreProperties: AttachmentStoreProperties,
-        gemRestTemplateFactory: GemRestTemplateFactory,
-    ): RestTemplate {
-        return gemRestTemplateFactory
-            .builder()
-            .withReadTimeout(attachmentStoreProperties.readTimeout)
-            .withConnectTimeout(attachmentStoreProperties.connectTimeout)
-            .build()
-    }
 }
 
 @ConfigurationProperties(prefix = "group-manager")
@@ -59,13 +46,6 @@ data class GroupManagerProperties(
 
 @ConfigurationProperties(prefix = "currency-manager")
 data class CurrencyManagerProperties(
-    val url: String,
-    val connectTimeout: Duration,
-    val readTimeout: Duration,
-)
-
-@ConfigurationProperties(prefix = "attachment-store")
-data class AttachmentStoreProperties(
     val url: String,
     val connectTimeout: Duration,
     val readTimeout: Duration,

@@ -14,6 +14,7 @@ import pl.edu.agh.gem.annotation.nullorblank.NullOrNotBlank
 import pl.edu.agh.gem.annotation.nullorpattern.NullOrPattern
 import pl.edu.agh.gem.internal.model.expense.ExpenseParticipantCost
 import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
+import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NULL_OR_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_PATTERN
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_PARTICIPANTS_NOT_EMPTY
@@ -47,6 +48,8 @@ data class ExpenseUpdateRequest(
     val expenseParticipants: List<ExpenseParticipantRequestData>,
     @field:NullOrNotBlank(message = MESSAGE_NULL_OR_NOT_BLANK)
     val message: String? = null,
+    @field:NullOrNotBlank(message = ATTACHMENT_ID_NULL_OR_NOT_BLANK)
+    val attachmentId: String?,
 ) {
     fun toDomain(expenseId: String, groupId: String, userId: String) =
         ExpenseUpdate(
@@ -60,6 +63,7 @@ data class ExpenseUpdateRequest(
             expenseDate = expenseDate,
             expenseParticipantsCost = expenseParticipants.map { it.toExpenseParticipantCost() },
             message = message,
+            attachmentId = attachmentId,
         )
 }
 

@@ -1,6 +1,5 @@
 package pl.edu.agh.gem.util
 
-import pl.edu.agh.gem.external.dto.attachment.GroupAttachmentResponse
 import pl.edu.agh.gem.external.dto.currency.CurrenciesResponse
 import pl.edu.agh.gem.external.dto.currency.ExchangeRateResponse
 import pl.edu.agh.gem.external.dto.expense.AcceptedGroupExpenseParticipantDto
@@ -62,7 +61,7 @@ fun createExpenseCreationRequest(
         createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.valueOf(9L)),
     ),
     message: String? = "Something",
-    attachmentId: String = "1234-1234-ffff",
+    attachmentId: String? = "1234-1234-ffff",
 ) = ExpenseCreationRequest(
     title = title,
     totalCost = totalCost,
@@ -118,7 +117,7 @@ fun createExpense(
     createdAt: Instant = now(),
     updatedAt: Instant = now(),
     expenseDate: Instant = Instant.ofEpochMilli(0L),
-    attachmentId: String = ATTACHMENT_ID,
+    attachmentId: String? = ATTACHMENT_ID,
     expenseParticipants: List<ExpenseParticipant> = listOf(createExpenseParticipant(OTHER_USER_ID)),
     status: ExpenseStatus = PENDING,
     history: List<ExpenseHistoryEntry> = arrayListOf(ExpenseHistoryEntry(USER_ID, ExpenseAction.CREATED)),
@@ -255,6 +254,7 @@ fun createExpenseUpdateRequest(
         createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.valueOf(9L)),
     ),
     message: String? = "Something",
+    attachmentId: String? = ATTACHMENT_ID,
 ) = ExpenseUpdateRequest(
     title = title,
     totalCost = totalCost,
@@ -263,6 +263,7 @@ fun createExpenseUpdateRequest(
     expenseDate = expenseDate,
     expenseParticipants = expenseParticipants,
     message = message,
+    attachmentId = attachmentId,
 )
 
 fun createExpenseUpdateRequestFromExpense(
@@ -275,6 +276,7 @@ fun createExpenseUpdateRequestFromExpense(
     expenseDate = expense.expenseDate,
     expenseParticipants = expense.expenseParticipants.map { createExpenseParticipantDto(it.participantId, it.participantCost) },
     message = "Something",
+    attachmentId = expense.attachmentId,
 )
 
 fun createExpenseUpdate(
@@ -290,6 +292,7 @@ fun createExpenseUpdate(
         createExpenseParticipantCost(OTHER_USER_ID),
     ),
     message: String? = "Something",
+    attachmentId: String? = ATTACHMENT_ID,
 ) = ExpenseUpdate(
     id = id,
     groupId = groupId,
@@ -301,6 +304,7 @@ fun createExpenseUpdate(
     expenseDate = expenseDate,
     expenseParticipantsCost = expenseParticipants,
     message = message,
+    attachmentId = attachmentId,
 )
 
 fun createExpenseUpdateFromExpense(
@@ -316,6 +320,7 @@ fun createExpenseUpdateFromExpense(
     expenseDate = expense.expenseDate,
     expenseParticipantsCost = expense.expenseParticipants.map { it.toExpenseParticipantCost() },
     message = null,
+    attachmentId = expense.attachmentId,
 )
 fun createExpenseParticipantCost(
     participantId: String = OTHER_USER_ID,
@@ -341,12 +346,6 @@ fun createFilterOptions(
     creatorId = creatorId,
     sortedBy = sortedBy,
     sortOrder = sortOrder,
-)
-
-fun createGroupAttachmentResponse(
-    attachmentId: String = ATTACHMENT_ID,
-) = GroupAttachmentResponse(
-    id = attachmentId,
 )
 
 object DummyData {
