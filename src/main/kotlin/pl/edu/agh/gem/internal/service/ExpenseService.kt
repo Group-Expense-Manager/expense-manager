@@ -1,7 +1,6 @@
 package pl.edu.agh.gem.internal.service
 
 import org.springframework.stereotype.Service
-import pl.edu.agh.gem.internal.client.AttachmentStoreClient
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
 import pl.edu.agh.gem.internal.mapper.CreditorUserExpenseMapper
@@ -44,7 +43,6 @@ import java.time.ZoneId
 class ExpenseService(
     private val groupManagerClient: GroupManagerClient,
     private val currencyManagerClient: CurrencyManagerClient,
-    private val attachmentStoreClient: AttachmentStoreClient,
     private val expenseRepository: ExpenseRepository,
     private val archivedExpenseRepository: ArchivedExpenseRepository,
 ) {
@@ -78,13 +76,9 @@ class ExpenseService(
             expenseCreation.expenseDate.atZone(ZoneId.systemDefault()).toLocalDate(),
         )
 
-        val attachmentId = expenseCreation.attachmentId
-            ?: attachmentStoreClient.generateBlankAttachment(expenseCreation.groupId, expenseCreation.creatorId).id
-
         return expenseRepository.save(
             expenseCreation.toExpense(
                 exchangeRate = exchangeRate,
-                attachmentId = attachmentId,
             ),
         )
     }
@@ -221,6 +215,7 @@ class ExpenseService(
                 expenseDate = update.expenseDate,
                 expenseParticipants = update.expenseParticipantsCost.map { it.toExpenseParticipant() },
                 status = PENDING,
+                attachmentId = update.attachmentId,
                 history = originalExpense.history + ExpenseHistoryEntry(originalExpense.creatorId, EDITED, now(), update.message),
             ),
         )

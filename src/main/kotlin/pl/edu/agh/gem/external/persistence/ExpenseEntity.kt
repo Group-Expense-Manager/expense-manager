@@ -27,7 +27,7 @@ data class ExpenseEntity(
     val updatedAt: Instant,
     @Indexed(background = true)
     val expenseDate: Instant,
-    val attachmentId: String,
+    val attachmentId: String?,
     val expenseParticipants: List<ExpenseParticipant>,
     val status: ExpenseStatus,
     val history: List<ExpenseHistoryEntry>,

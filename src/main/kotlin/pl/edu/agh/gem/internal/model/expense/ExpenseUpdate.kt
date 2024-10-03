@@ -15,6 +15,7 @@ data class ExpenseUpdate(
     val expenseDate: Instant,
     val expenseParticipantsCost: List<ExpenseParticipantCost>,
     val message: String?,
+    val attachmentId: String?,
 )
 
 data class ExpenseParticipantCost(

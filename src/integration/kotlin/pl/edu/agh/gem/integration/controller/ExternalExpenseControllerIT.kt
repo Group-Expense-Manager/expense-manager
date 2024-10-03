@@ -28,7 +28,6 @@ import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.helper.user.createGemUser
 import pl.edu.agh.gem.integration.BaseIntegrationSpec
 import pl.edu.agh.gem.integration.ability.ServiceTestClient
-import pl.edu.agh.gem.integration.ability.stubAttachmentStoreGenerateBlankAttachment
 import pl.edu.agh.gem.integration.ability.stubCurrencyManagerAvailableCurrencies
 import pl.edu.agh.gem.integration.ability.stubCurrencyManagerExchangeRate
 import pl.edu.agh.gem.integration.ability.stubGroupManagerGroupData
@@ -80,7 +79,6 @@ import pl.edu.agh.gem.util.createExpenseParticipant
 import pl.edu.agh.gem.util.createExpenseParticipantDto
 import pl.edu.agh.gem.util.createExpenseUpdateRequest
 import pl.edu.agh.gem.util.createExpenseUpdateRequestFromExpense
-import pl.edu.agh.gem.util.createGroupAttachmentResponse
 import pl.edu.agh.gem.util.createGroupResponse
 import pl.edu.agh.gem.util.createMembersDTO
 import pl.edu.agh.gem.util.createUserGroupsResponse
@@ -128,7 +126,7 @@ class ExternalExpenseControllerIT(
             }
         }
 
-        should("create expense when attachmentId is provided") {
+        should("create expense") {
             // given
             val createExpenseRequest = createExpenseCreationRequest()
             stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
@@ -157,50 +155,6 @@ class ExternalExpenseControllerIT(
                 updatedAt.shouldNotBeNull()
                 expenseDate.shouldNotBeNull()
                 attachmentId shouldBe createExpenseRequest.attachmentId
-                expenseParticipants shouldHaveSize 1
-                status shouldBe PENDING.name
-                history shouldHaveSize 1
-                history.first().also { entry ->
-                    entry.createdAt.shouldNotBeNull()
-                    entry.expenseAction shouldBe ExpenseAction.CREATED.name
-                    entry.participantId shouldBe USER_ID
-                    entry.comment.shouldNotBeNull()
-                }
-            }
-        }
-
-        should("create expense when attachmentId is not provided") {
-            // given
-            val createExpenseRequest = createExpenseCreationRequest()
-            val attachment = createGroupAttachmentResponse()
-
-            stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
-            stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
-            stubCurrencyManagerExchangeRate(
-                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
-                CURRENCY_1,
-                CURRENCY_2,
-                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
-            )
-            stubAttachmentStoreGenerateBlankAttachment(attachment, GROUP_ID, USER_ID)
-
-            // when
-            val response = service.createExpense(createExpenseRequest, createGemUser(USER_ID), GROUP_ID)
-
-            // then
-            response shouldHaveHttpStatus CREATED
-            response.shouldBody<ExpenseResponse> {
-                expenseId.shouldNotBeNull()
-                creatorId shouldBe USER_ID
-                title shouldBe createExpenseRequest.title
-                totalCost shouldBe createExpenseRequest.totalCost
-                baseCurrency shouldBe createExpenseRequest.baseCurrency
-                targetCurrency shouldBe createExpenseRequest.targetCurrency
-                exchangeRate.shouldNotBeNull()
-                createdAt.shouldNotBeNull()
-                updatedAt.shouldNotBeNull()
-                expenseDate.shouldNotBeNull()
-                attachmentId.shouldNotBeNull()
                 expenseParticipants shouldHaveSize 1
                 status shouldBe PENDING.name
                 history shouldHaveSize 1

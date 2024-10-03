@@ -36,16 +36,6 @@ resilience4j.retry:
         - pl.edu.agh.gem.internal.client.RetryableGroupManagerClientException
         - java.io.IOException
       ignoreExceptions: [ ]
-    attachmentStore:
-      maxAttempts: 3
-      waitDuration: 100ms
-      enableExponentialBackoff: true
-      exponentialBackoffMultiplier: 2
-      retryExceptions:
-        - org.springframework.web.client.HttpServerErrorException
-        - java.io.IOException
-        - pl.edu.agh.gem.internal.client.RetryableAttachmentStoreClientException
-      ignoreExceptions: [ ]
 
 group-manager:
   url: "group/manager/some/url"
@@ -55,10 +45,5 @@ group-manager:
 
 currency-manager:
   url: "currency/manager/some/url"
-  read-timeout: 1000ms
-  connect-timeout: 1000ms
-
-attachment-store:
-  url: "attachment/store/some/url"
   read-timeout: 1000ms
   connect-timeout: 1000ms

@@ -21,10 +21,8 @@ import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.group.createGroupMembers
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
-import pl.edu.agh.gem.internal.client.AttachmentStoreClient
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
-import pl.edu.agh.gem.internal.model.attachment.GroupAttachment
 import pl.edu.agh.gem.internal.model.expense.Decision.ACCEPT
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction
@@ -46,7 +44,6 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.TARGET_CURRENCY_NOT_
 import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_CREATOR
 import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_PARTICIPANT
 import pl.edu.agh.gem.util.DummyData.ANOTHER_USER_ID
-import pl.edu.agh.gem.util.DummyData.ATTACHMENT_ID
 import pl.edu.agh.gem.util.DummyData.CURRENCY_1
 import pl.edu.agh.gem.util.DummyData.CURRENCY_2
 import pl.edu.agh.gem.util.DummyData.EXCHANGE_RATE_VALUE
@@ -69,18 +66,16 @@ import java.time.LocalDate
 class ExpenseServiceTest : ShouldSpec({
     val groupManagerClient = mock<GroupManagerClient> { }
     val currencyManagerClient = mock<CurrencyManagerClient> {}
-    val attachmentStoreClient = mock<AttachmentStoreClient> {}
     val expenseRepository = mock<ExpenseRepository> {}
     val archivedExpenseRepository = mock<ArchivedExpenseRepository> {}
     val expenseService = ExpenseService(
         groupManagerClient = groupManagerClient,
         currencyManagerClient = currencyManagerClient,
-        attachmentStoreClient = attachmentStoreClient,
         expenseRepository = expenseRepository,
         archivedExpenseRepository = archivedExpenseRepository,
     )
 
-    should("create expense when attachmentId is provided") {
+    should("create expense") {
         // given
         val expenseCreation = createExpenseCreation()
         val group = createGroup(currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
@@ -118,49 +113,6 @@ class ExpenseServiceTest : ShouldSpec({
 
         verify(currencyManagerClient, times(1)).getAvailableCurrencies()
         verify(currencyManagerClient, times(1)).getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))
-        verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
-    }
-
-    should("create expense when attachmentId is not provided") {
-        // given
-        val expenseCreation = createExpenseCreation(attachmentId = null)
-        val group = createGroup(currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
-        val exchangeRate = createExchangeRate()
-        whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
-        whenever(currencyManagerClient.getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))).thenReturn(exchangeRate)
-        whenever(attachmentStoreClient.generateBlankAttachment(GROUP_ID, USER_ID)).thenReturn(GroupAttachment(ATTACHMENT_ID))
-        whenever(expenseRepository.save(anyVararg(Expense::class))).thenAnswer { it.arguments[0] }
-
-        // when
-        val result = expenseService.create(group, expenseCreation)
-
-        // then
-        result.also {
-            it.id.shouldNotBeNull()
-            it.groupId shouldBe GROUP_ID
-            it.creatorId shouldBe USER_ID
-            it.title shouldBe expenseCreation.title
-            it.totalCost shouldBe expenseCreation.totalCost
-
-            it.targetCurrency shouldBe expenseCreation.targetCurrency
-            it.exchangeRate shouldBe exchangeRate
-
-            it.createdAt.shouldNotBeNull()
-            it.updatedAt.shouldNotBeNull()
-            it.attachmentId shouldBe ATTACHMENT_ID
-            it.status shouldBe PENDING
-            it.history shouldHaveSize 1
-            it.history.first().also { entry ->
-                entry.createdAt.shouldNotBeNull()
-                entry.expenseAction shouldBe CREATED
-                entry.participantId shouldBe USER_ID
-                entry.comment shouldBe expenseCreation.message
-            }
-        }
-
-        verify(currencyManagerClient, times(1)).getAvailableCurrencies()
-        verify(currencyManagerClient, times(1)).getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))
-        verify(attachmentStoreClient, times(1)).generateBlankAttachment(GROUP_ID, USER_ID)
         verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
     }
 

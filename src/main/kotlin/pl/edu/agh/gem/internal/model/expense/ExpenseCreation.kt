@@ -20,7 +20,7 @@ data class ExpenseCreation(
     val expenseParticipantsCost: List<ExpenseParticipantCost>,
     val attachmentId: String?,
 ) {
-    fun toExpense(exchangeRate: ExchangeRate?, attachmentId: String) = Expense(
+    fun toExpense(exchangeRate: ExchangeRate?) = Expense(
         id = randomUUID().toString(),
         groupId = groupId,
         creatorId = creatorId,

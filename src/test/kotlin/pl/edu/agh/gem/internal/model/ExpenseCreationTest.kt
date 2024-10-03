@@ -9,7 +9,6 @@ import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.CREATED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
-import pl.edu.agh.gem.util.DummyData.ATTACHMENT_ID
 import pl.edu.agh.gem.util.createExchangeRate
 import pl.edu.agh.gem.util.createExpenseCreation
 import pl.edu.agh.gem.util.createExpenseParticipantCost
@@ -24,7 +23,7 @@ class ExpenseCreationTest : ShouldSpec({
         val exchangeRate = createExchangeRate()
 
         // when
-        val expense = expenseCreation.toExpense(exchangeRate, ATTACHMENT_ID)
+        val expense = expenseCreation.toExpense(exchangeRate)
 
         // then
         expense.shouldNotBeNull()
