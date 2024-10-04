@@ -18,7 +18,7 @@ data class UserExpenseDto(
 private fun UserExpense.toUserExpenseDto() = UserExpenseDto(
     value = value,
     currency = currency,
-    exchangeRate = exchangeRate?.value,
+    exchangeRate = exchangeRate,
 )
 
 fun List<UserExpense>.toUserExpensesResponse(userId: String) = UserExpensesResponse(

@@ -2,10 +2,11 @@ package pl.edu.agh.gem.external.persistence
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import pl.edu.agh.gem.internal.model.expense.Amount
 import pl.edu.agh.gem.internal.model.expense.ExpenseHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.ExpenseParticipant
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
-import java.math.BigDecimal
+import pl.edu.agh.gem.internal.model.expense.FxData
 import java.time.Instant
 
 @Document("archived-expenses")
@@ -15,10 +16,8 @@ data class ArchivedExpenseEntity(
     val groupId: String,
     val creatorId: String,
     val title: String,
-    val totalCost: BigDecimal,
-    val baseCurrency: String,
-    val targetCurrency: String?,
-    val exchangeRate: BigDecimal?,
+    val amount: Amount,
+    val fxData: FxData?,
     val createdAt: Instant,
     val updatedAt: Instant,
     val expenseDate: Instant,

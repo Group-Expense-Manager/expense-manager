@@ -19,9 +19,9 @@ import pl.edu.agh.gem.headers.HeadersUtils.withAppContentType
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.CurrencyManagerClientException
 import pl.edu.agh.gem.internal.client.RetryableCurrencyManagerClientException
-import pl.edu.agh.gem.internal.model.currency.ExchangeRate
 import pl.edu.agh.gem.internal.model.group.Currencies
 import pl.edu.agh.gem.paths.Paths.INTERNAL
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @Component
@@ -54,7 +54,7 @@ class RestCurrencyManagerClient(
     }
 
     @Retry(name = "currencyManagerClient")
-    override fun getExchangeRate(baseCurrency: String, targetCurrency: String, date: LocalDate): ExchangeRate {
+    override fun getExchangeRate(baseCurrency: String, targetCurrency: String, date: LocalDate): BigDecimal {
         return try {
             restTemplate.exchange(
                 resolveExchangeRateAddress(baseCurrency, targetCurrency, date),

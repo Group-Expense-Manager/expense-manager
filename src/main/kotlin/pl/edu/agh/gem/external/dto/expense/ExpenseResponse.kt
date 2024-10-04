@@ -1,5 +1,6 @@
 package pl.edu.agh.gem.external.dto.expense
 
+import pl.edu.agh.gem.internal.model.expense.Amount
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.ExpenseParticipant
@@ -10,10 +11,8 @@ data class ExpenseResponse(
     val expenseId: String,
     val creatorId: String,
     val title: String,
-    val totalCost: BigDecimal,
-    val baseCurrency: String,
-    val targetCurrency: String?,
-    val exchangeRate: BigDecimal?,
+    val amount: AmountDto,
+    val fxData: FxDataDto?,
     val createdAt: Instant,
     val updatedAt: Instant,
     val expenseDate: Instant,
@@ -27,10 +26,8 @@ data class ExpenseResponse(
             expenseId = expense.id,
             creatorId = expense.creatorId,
             title = expense.title,
-            totalCost = expense.totalCost,
-            baseCurrency = expense.baseCurrency,
-            targetCurrency = expense.targetCurrency,
-            exchangeRate = expense.exchangeRate?.value,
+            amount = expense.amount.toAmountDto(),
+            fxData = expense.fxData?.toDto(),
             createdAt = expense.createdAt,
             updatedAt = expense.updatedAt,
             expenseDate = expense.expenseDate,
@@ -71,3 +68,5 @@ data class ExpenseHistoryEntryResponseData(
         )
     }
 }
+
+fun Amount.toAmountDto() = AmountDto(value, currency)

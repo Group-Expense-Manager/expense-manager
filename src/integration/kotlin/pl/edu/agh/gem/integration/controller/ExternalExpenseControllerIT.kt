@@ -18,6 +18,8 @@ import pl.edu.agh.gem.assertion.shouldHaveValidationError
 import pl.edu.agh.gem.assertion.shouldHaveValidatorError
 import pl.edu.agh.gem.exception.UserWithoutGroupAccessException
 import pl.edu.agh.gem.external.dto.expense.ExpenseResponse
+import pl.edu.agh.gem.external.dto.expense.toAmountDto
+import pl.edu.agh.gem.external.dto.expense.toDto
 import pl.edu.agh.gem.external.dto.expense.toExpenseParticipantCost
 import pl.edu.agh.gem.external.dto.group.CurrencyDTO
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
@@ -38,6 +40,7 @@ import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.internal.service.MissingExpenseException
+import pl.edu.agh.gem.internal.validation.ValidationMessage.AMOUNT_DECIMAL_PLACES
 import pl.edu.agh.gem.internal.validation.ValidationMessage.ATTACHMENT_ID_NULL_OR_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.BASE_CURRENCY_NOT_AVAILABLE
@@ -49,18 +52,17 @@ import pl.edu.agh.gem.internal.validation.ValidationMessage.DUPLICATED_PARTICIPA
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.EXPENSE_PARTICIPANTS_NOT_EMPTY
 import pl.edu.agh.gem.internal.validation.ValidationMessage.GROUP_ID_NOT_BLANK
-import pl.edu.agh.gem.internal.validation.ValidationMessage.MAX_TOTAL_COST
+import pl.edu.agh.gem.internal.validation.ValidationMessage.MAX_AMOUNT
 import pl.edu.agh.gem.internal.validation.ValidationMessage.MESSAGE_NULL_OR_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_COSTS_HIGHER_THAN_TOTAL_COST
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_ID_NOT_BLANK
 import pl.edu.agh.gem.internal.validation.ValidationMessage.PARTICIPANT_NOT_GROUP_MEMBER
+import pl.edu.agh.gem.internal.validation.ValidationMessage.POSITIVE_AMOUNT
 import pl.edu.agh.gem.internal.validation.ValidationMessage.POSITIVE_PARTICIPANT_COST
-import pl.edu.agh.gem.internal.validation.ValidationMessage.POSITIVE_TOTAL_COST
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TARGET_CURRENCY_PATTERN
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TITLE_MAX_LENGTH
 import pl.edu.agh.gem.internal.validation.ValidationMessage.TITLE_NOT_BLANK
-import pl.edu.agh.gem.internal.validation.ValidationMessage.TOTAL_COST_DECIMAL_PLACES
 import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_CREATOR
 import pl.edu.agh.gem.internal.validation.ValidationMessage.USER_NOT_PARTICIPANT
 import pl.edu.agh.gem.util.DummyData.ANOTHER_USER_ID
@@ -68,9 +70,9 @@ import pl.edu.agh.gem.util.DummyData.CURRENCY_1
 import pl.edu.agh.gem.util.DummyData.CURRENCY_2
 import pl.edu.agh.gem.util.DummyData.EXCHANGE_RATE_VALUE
 import pl.edu.agh.gem.util.DummyData.EXPENSE_ID
+import pl.edu.agh.gem.util.createAmountDto
 import pl.edu.agh.gem.util.createCurrenciesDTO
 import pl.edu.agh.gem.util.createCurrenciesResponse
-import pl.edu.agh.gem.util.createExchangeRate
 import pl.edu.agh.gem.util.createExchangeRateResponse
 import pl.edu.agh.gem.util.createExpense
 import pl.edu.agh.gem.util.createExpenseCreationRequest
@@ -99,11 +101,11 @@ class ExternalExpenseControllerIT(
                     TITLE_MAX_LENGTH,
                     createExpenseCreationRequest(title = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
                 ),
-                Pair(POSITIVE_TOTAL_COST, createExpenseCreationRequest(totalCost = BigDecimal.ZERO)),
-                Pair(MAX_TOTAL_COST, createExpenseCreationRequest(totalCost = "100000".toBigDecimal())),
-                Pair(TOTAL_COST_DECIMAL_PLACES, createExpenseCreationRequest(totalCost = "1000.001".toBigDecimal())),
-                Pair(BASE_CURRENCY_NOT_BLANK, createExpenseCreationRequest(baseCurrency = "")),
-                Pair(BASE_CURRENCY_PATTERN, createExpenseCreationRequest(baseCurrency = "pln")),
+                Pair(POSITIVE_AMOUNT, createExpenseCreationRequest(amount = createAmountDto(value = BigDecimal.ZERO))),
+                Pair(MAX_AMOUNT, createExpenseCreationRequest(amount = createAmountDto(value = "100000".toBigDecimal()))),
+                Pair(AMOUNT_DECIMAL_PLACES, createExpenseCreationRequest(amount = createAmountDto(value = "1000.001".toBigDecimal()))),
+                Pair(BASE_CURRENCY_NOT_BLANK, createExpenseCreationRequest(amount = createAmountDto(currency = ""))),
+                Pair(BASE_CURRENCY_PATTERN, createExpenseCreationRequest(amount = createAmountDto(currency = "pln"))),
                 Pair(TARGET_CURRENCY_PATTERN, createExpenseCreationRequest(targetCurrency = "pln")),
                 Pair(EXPENSE_PARTICIPANTS_NOT_EMPTY, createExpenseCreationRequest(expenseParticipants = emptyList())),
                 Pair(ATTACHMENT_ID_NULL_OR_NOT_BLANK, createExpenseCreationRequest(attachmentId = "")),
@@ -147,10 +149,11 @@ class ExternalExpenseControllerIT(
                 expenseId.shouldNotBeNull()
                 creatorId shouldBe USER_ID
                 title shouldBe createExpenseRequest.title
-                totalCost shouldBe createExpenseRequest.totalCost
-                baseCurrency shouldBe createExpenseRequest.baseCurrency
-                targetCurrency shouldBe createExpenseRequest.targetCurrency
-                exchangeRate.shouldNotBeNull()
+                amount shouldBe createExpenseRequest.amount
+                fxData?.also { fxData ->
+                    fxData.targetCurrency shouldBe createExpenseRequest.targetCurrency
+                    fxData.exchangeRate.shouldNotBeNull()
+                }
                 createdAt.shouldNotBeNull()
                 updatedAt.shouldNotBeNull()
                 expenseDate.shouldNotBeNull()
@@ -183,7 +186,7 @@ class ExternalExpenseControllerIT(
 
         should("return validator exception cause PARTICIPANT_COSTS_HIGHER_THAN_TOTAL_COST") {
             // given
-            val createExpenseRequest = createExpenseCreationRequest(totalCost = BigDecimal.TWO)
+            val createExpenseRequest = createExpenseCreationRequest(amount = createAmountDto(value = BigDecimal.TWO))
             stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
             stubCurrencyManagerExchangeRate(
@@ -290,7 +293,7 @@ class ExternalExpenseControllerIT(
 
         should("return validator exception cause BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY") {
             // given
-            val createExpenseRequest = createExpenseCreationRequest(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_1)
+            val createExpenseRequest = createExpenseCreationRequest(amount = createAmountDto(currency = CURRENCY_1), targetCurrency = CURRENCY_1)
             stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
             stubCurrencyManagerExchangeRate(
@@ -310,7 +313,7 @@ class ExternalExpenseControllerIT(
 
         should("return validator exception cause TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES") {
             // given
-            val createExpenseRequest = createExpenseCreationRequest(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_2)
+            val createExpenseRequest = createExpenseCreationRequest(amount = createAmountDto(currency = CURRENCY_1), targetCurrency = CURRENCY_2)
             stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_1)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
             stubCurrencyManagerExchangeRate(
@@ -330,7 +333,7 @@ class ExternalExpenseControllerIT(
 
         should("return validator exception cause BASE_CURRENCY_NOT_AVAILABLE") {
             // given
-            val createExpenseRequest = createExpenseCreationRequest(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_2)
+            val createExpenseRequest = createExpenseCreationRequest(amount = createAmountDto(currency = CURRENCY_1), targetCurrency = CURRENCY_2)
             stubGroupManagerGroupData(createGroupResponse(groupCurrencies = createCurrenciesDTO(CURRENCY_2)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_2))
             stubCurrencyManagerExchangeRate(
@@ -363,10 +366,8 @@ class ExternalExpenseControllerIT(
                 expenseId shouldBe expense.id
                 creatorId shouldBe expense.creatorId
                 title shouldBe expense.title
-                totalCost shouldBe expense.totalCost
-                baseCurrency shouldBe expense.baseCurrency
-                targetCurrency shouldBe expense.targetCurrency
-                exchangeRate shouldBe expense.exchangeRate?.value
+                amount shouldBe expense.amount.toAmountDto()
+                fxData shouldBe expense.fxData?.toDto()
                 createdAt.shouldNotBeNull()
                 updatedAt.shouldNotBeNull()
                 expenseDate.shouldNotBeNull()
@@ -444,10 +445,8 @@ class ExternalExpenseControllerIT(
                 expenseId shouldBe expense.id
                 creatorId shouldBe expense.creatorId
                 title shouldBe expense.title
-                totalCost shouldBe expense.totalCost
-                baseCurrency shouldBe expense.baseCurrency
-                targetCurrency shouldBe expense.targetCurrency
-                exchangeRate shouldBe expense.exchangeRate?.value
+                amount shouldBe expense.amount.toAmountDto()
+                fxData shouldBe expense.fxData?.toDto()
                 createdAt.shouldNotBeNull()
                 updatedAt.shouldNotBeNull()
                 expenseDate.shouldNotBeNull()
@@ -601,12 +600,12 @@ class ExternalExpenseControllerIT(
                     TITLE_MAX_LENGTH,
                     createExpenseUpdateRequest(title = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
                 ),
-                Pair(POSITIVE_TOTAL_COST, createExpenseUpdateRequest(totalCost = BigDecimal.ZERO)),
-                Pair(MAX_TOTAL_COST, createExpenseUpdateRequest(totalCost = "100000".toBigDecimal())),
-                Pair(TOTAL_COST_DECIMAL_PLACES, createExpenseUpdateRequest(totalCost = "1000.001".toBigDecimal())),
+                Pair(POSITIVE_AMOUNT, createExpenseUpdateRequest(amount = createAmountDto(value = BigDecimal.ZERO))),
+                Pair(MAX_AMOUNT, createExpenseUpdateRequest(amount = createAmountDto(value = "100000".toBigDecimal()))),
+                Pair(AMOUNT_DECIMAL_PLACES, createExpenseUpdateRequest(amount = createAmountDto(value = "1000.001".toBigDecimal()))),
+                Pair(BASE_CURRENCY_NOT_BLANK, createExpenseUpdateRequest(amount = createAmountDto(currency = ""))),
+                Pair(BASE_CURRENCY_PATTERN, createExpenseUpdateRequest(amount = createAmountDto(currency = "pln"))),
 
-                Pair(BASE_CURRENCY_NOT_BLANK, createExpenseUpdateRequest(baseCurrency = "")),
-                Pair(BASE_CURRENCY_PATTERN, createExpenseUpdateRequest(baseCurrency = "pln")),
                 Pair(TARGET_CURRENCY_PATTERN, createExpenseUpdateRequest(targetCurrency = "pln")),
                 Pair(EXPENSE_PARTICIPANTS_NOT_EMPTY, createExpenseUpdateRequest(expenseParticipants = emptyList())),
                 Pair(
@@ -662,7 +661,7 @@ class ExternalExpenseControllerIT(
                 nameFn = { it.first },
                 Quintuple(
                     PARTICIPANT_COSTS_HIGHER_THAN_TOTAL_COST,
-                    createExpenseUpdateRequest(totalCost = BigDecimal.TWO),
+                    createExpenseUpdateRequest(amount = createAmountDto(value = "2".toBigDecimal())),
                     listOf(CURRENCY_1, CURRENCY_2),
                     arrayOf(CURRENCY_1, CURRENCY_2),
                     USER_ID,
@@ -705,7 +704,7 @@ class ExternalExpenseControllerIT(
                 ),
                 Quintuple(
                     BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY,
-                    createExpenseUpdateRequest(baseCurrency = CURRENCY_1, targetCurrency = CURRENCY_1),
+                    createExpenseUpdateRequest(amount = createAmountDto(currency = CURRENCY_1), targetCurrency = CURRENCY_1),
                     listOf(CURRENCY_1, CURRENCY_2),
                     arrayOf(CURRENCY_1, CURRENCY_2),
                     USER_ID,
@@ -756,7 +755,7 @@ class ExternalExpenseControllerIT(
             // given
             val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
             val expenseUpdateRequest = createExpenseUpdateRequest(
-                totalCost = BigDecimal(6),
+                amount = createAmountDto(value = "6".toBigDecimal()),
                 expenseParticipants = listOf(
                     createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.ONE),
                     createExpenseParticipantDto(ANOTHER_USER_ID, BigDecimal(4)),
@@ -779,10 +778,11 @@ class ExternalExpenseControllerIT(
             response.shouldBody<ExpenseResponse> {
                 expenseId shouldBe EXPENSE_ID
                 creatorId shouldBe USER_ID
-                totalCost shouldBe expenseUpdateRequest.totalCost
-                baseCurrency shouldBe expenseUpdateRequest.baseCurrency
-                targetCurrency shouldBe expenseUpdateRequest.targetCurrency
-                exchangeRate.shouldNotBeNull()
+                amount shouldBe expenseUpdateRequest.amount
+                fxData?.also { fxData ->
+                    fxData.targetCurrency shouldBe expenseUpdateRequest.targetCurrency
+                    fxData.exchangeRate.shouldNotBeNull()
+                }
                 createdAt.shouldNotBeNull()
                 updatedAt.shouldNotBeNull()
                 expenseDate.shouldNotBeNull()
@@ -803,10 +803,11 @@ class ExternalExpenseControllerIT(
                 it.groupId shouldBe GROUP_ID
                 it.creatorId shouldBe USER_ID
                 it.title shouldBe expenseUpdateRequest.title
-                it.totalCost shouldBe expenseUpdateRequest.totalCost
-                it.baseCurrency shouldBe expenseUpdateRequest.baseCurrency
-                it.targetCurrency shouldBe expenseUpdateRequest.targetCurrency
-                it.exchangeRate shouldBe createExchangeRate(EXCHANGE_RATE_VALUE)
+                it.amount shouldBe expenseUpdateRequest.amount.toDomain()
+                it.fxData.also { fxData ->
+                    fxData?.targetCurrency shouldBe expenseUpdateRequest.targetCurrency
+                    fxData?.exchangeRate shouldBe EXCHANGE_RATE_VALUE
+                }
                 it.createdAt.shouldNotBeNull()
                 it.updatedAt.shouldNotBeNull()
                 it.attachmentId shouldBe expense.attachmentId
@@ -845,10 +846,11 @@ class ExternalExpenseControllerIT(
             response.shouldBody<ExpenseResponse> {
                 expenseId shouldBe EXPENSE_ID
                 creatorId shouldBe USER_ID
-                totalCost shouldBe expenseUpdateRequest.totalCost
-                baseCurrency shouldBe expenseUpdateRequest.baseCurrency
-                targetCurrency shouldBe expenseUpdateRequest.targetCurrency
-                exchangeRate.shouldNotBeNull()
+                amount shouldBe expenseUpdateRequest.amount
+                fxData?.also { fxData ->
+                    fxData.targetCurrency shouldBe expenseUpdateRequest.targetCurrency
+                    fxData.exchangeRate.shouldNotBeNull()
+                }
                 createdAt.shouldNotBeNull()
                 updatedAt.shouldNotBeNull()
                 expenseDate.shouldNotBeNull()
@@ -870,10 +872,11 @@ class ExternalExpenseControllerIT(
                 it.groupId shouldBe GROUP_ID
                 it.creatorId shouldBe USER_ID
                 it.title shouldBe expenseUpdateRequest.title
-                it.totalCost shouldBe expenseUpdateRequest.totalCost
-                it.baseCurrency shouldBe expenseUpdateRequest.baseCurrency
-                it.targetCurrency shouldBe expenseUpdateRequest.targetCurrency
-                it.exchangeRate shouldBe createExchangeRate(EXCHANGE_RATE_VALUE)
+                it.amount shouldBe expenseUpdateRequest.amount.toDomain()
+                it.fxData?.also { fxData ->
+                    fxData.targetCurrency shouldBe expenseUpdateRequest.targetCurrency
+                    fxData.exchangeRate.shouldNotBeNull()
+                }
                 it.createdAt.shouldNotBeNull()
                 it.updatedAt.shouldNotBeNull()
                 it.attachmentId shouldBe expense.attachmentId

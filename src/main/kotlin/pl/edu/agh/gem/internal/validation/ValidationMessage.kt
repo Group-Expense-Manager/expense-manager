@@ -3,9 +3,9 @@ package pl.edu.agh.gem.internal.validation
 object ValidationMessage {
     const val TITLE_NOT_BLANK = "Title can not be blank"
     const val TITLE_MAX_LENGTH = "Name must not exceed 30 characters"
-    const val POSITIVE_TOTAL_COST = "Total cost must be positive"
-    const val MAX_TOTAL_COST = "Total cost must be less than 100000"
-    const val TOTAL_COST_DECIMAL_PLACES = "Total cost can have a maximum of two decimal places"
+    const val POSITIVE_AMOUNT = "Amount value must be positive"
+    const val MAX_AMOUNT = "Amount value must be less than 100000"
+    const val AMOUNT_DECIMAL_PLACES = "Amount value can have a maximum of two decimal places"
     const val BASE_CURRENCY_NOT_BLANK = "Base currency can not be blank"
     const val BASE_CURRENCY_PATTERN = "Base currency must be a 3-letter uppercase code"
     const val TARGET_CURRENCY_PATTERN = "Target Currency must be null or a 3-letter uppercase code"
