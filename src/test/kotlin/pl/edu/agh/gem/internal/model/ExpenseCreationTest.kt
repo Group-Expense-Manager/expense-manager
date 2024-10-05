@@ -9,10 +9,11 @@ import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.CREATED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
-import pl.edu.agh.gem.util.createExchangeRate
+import pl.edu.agh.gem.util.DummyData.EXCHANGE_RATE_VALUE
 import pl.edu.agh.gem.util.createExpenseCreation
 import pl.edu.agh.gem.util.createExpenseParticipantCost
 import pl.edu.agh.gem.util.createExpenseParticipantDto
+import pl.edu.agh.gem.util.createFxData
 
 class ExpenseCreationTest : ShouldSpec({
 
@@ -20,10 +21,9 @@ class ExpenseCreationTest : ShouldSpec({
         // given
         val expenseParticipants = arrayListOf(createExpenseParticipantCost(participantId = USER_ID))
         val expenseCreation = createExpenseCreation(expenseParticipantsCost = expenseParticipants)
-        val exchangeRate = createExchangeRate()
 
         // when
-        val expense = expenseCreation.toExpense(exchangeRate)
+        val expense = expenseCreation.toExpense(createFxData())
 
         // then
         expense.shouldNotBeNull()
@@ -32,10 +32,9 @@ class ExpenseCreationTest : ShouldSpec({
             it.groupId shouldBe GROUP_ID
             it.creatorId shouldBe USER_ID
             it.title shouldBe expenseCreation.title
-            it.totalCost shouldBe expenseCreation.totalCost
-            it.baseCurrency shouldBe expenseCreation.baseCurrency
-            it.targetCurrency shouldBe expenseCreation.targetCurrency
-            it.exchangeRate shouldBe exchangeRate
+            it.amount shouldBe expenseCreation.amount
+            it.fxData?.targetCurrency shouldBe expenseCreation.targetCurrency
+            it.fxData?.exchangeRate shouldBe EXCHANGE_RATE_VALUE
             it.createdAt.shouldNotBeNull()
             it.updatedAt.shouldNotBeNull()
             it.expenseDate shouldBe expenseCreation.expenseDate

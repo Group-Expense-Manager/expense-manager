@@ -27,8 +27,7 @@ class ExpenseCreationRequestTest : ShouldSpec({
             it.groupId shouldBe GROUP_ID
             it.creatorId shouldBe USER_ID
             it.title shouldBe expenseCreationRequest.title
-            it.totalCost shouldBe expenseCreationRequest.totalCost
-            it.baseCurrency shouldBe expenseCreationRequest.baseCurrency
+            it.amount shouldBe expenseCreationRequest.amount.toDomain()
             it.targetCurrency shouldBe expenseCreationRequest.targetCurrency
             it.expenseDate shouldBe expenseCreationRequest.expenseDate
             it.attachmentId shouldBe expenseCreationRequest.attachmentId

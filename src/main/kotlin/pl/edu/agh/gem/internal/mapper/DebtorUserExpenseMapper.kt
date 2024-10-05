@@ -11,8 +11,8 @@ class DebtorUserExpenseMapper {
             expense.status == ACCEPTED && expense.creatorId != debtorId && cost != null -> {
                 UserExpense(
                     value = cost.negate(),
-                    currency = expense.targetCurrency ?: expense.baseCurrency,
-                    exchangeRate = expense.exchangeRate,
+                    currency = expense.fxData?.targetCurrency ?: expense.amount.currency,
+                    exchangeRate = expense.fxData?.exchangeRate,
                 )
             }
             else -> null

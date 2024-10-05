@@ -13,6 +13,8 @@ import pl.edu.agh.gem.external.dto.expense.AcceptedGroupExpenseParticipantDto
 import pl.edu.agh.gem.external.dto.expense.AcceptedGroupExpensesResponse
 import pl.edu.agh.gem.external.dto.expense.GroupActivitiesResponse
 import pl.edu.agh.gem.external.dto.expense.UserExpensesResponse
+import pl.edu.agh.gem.external.dto.expense.toAmountDto
+import pl.edu.agh.gem.external.dto.expense.toDto
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.group.DummyGroup.OTHER_GROUP_ID
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
@@ -32,9 +34,11 @@ import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.util.DummyData.CURRENCY_1
 import pl.edu.agh.gem.util.DummyData.CURRENCY_2
 import pl.edu.agh.gem.util.DummyData.EXCHANGE_RATE_VALUE
+import pl.edu.agh.gem.util.createAmount
 import pl.edu.agh.gem.util.createExpense
 import pl.edu.agh.gem.util.createExpenseParticipant
 import pl.edu.agh.gem.util.createExpenseParticipants
+import pl.edu.agh.gem.util.createFxData
 import java.math.BigDecimal
 import java.time.Instant.ofEpochMilli
 
@@ -49,10 +53,8 @@ class InternalExpenseControllerIT(
             createExpense(
                 id = "1",
                 creatorId = USER_ID,
-                totalCost = BigDecimal("60"),
-                baseCurrency = CURRENCY_1,
-                targetCurrency = null,
-                exchangeRate = null,
+                amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
+                fxData = null,
                 expenseParticipants = createExpenseParticipants(
                     listOf(USER_ID, "userId2", "userId3"),
                     listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
@@ -63,10 +65,8 @@ class InternalExpenseControllerIT(
             createExpense(
                 id = "2",
                 creatorId = OTHER_USER_ID,
-                totalCost = BigDecimal("60"),
-                baseCurrency = CURRENCY_1,
-                targetCurrency = CURRENCY_2,
-                exchangeRate = EXCHANGE_RATE_VALUE,
+                amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
+                fxData = createFxData(),
                 expenseParticipants = createExpenseParticipants(
                     listOf(USER_ID, OTHER_USER_ID, "userId3"),
                     listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
@@ -118,10 +118,8 @@ class InternalExpenseControllerIT(
             expenses.first().also {
                 it.creatorId shouldBe expense.creatorId
                 it.title shouldBe expense.title
-                it.totalCost shouldBe expense.totalCost
-                it.baseCurrency shouldBe expense.baseCurrency
-                it.targetCurrency shouldBe expense.targetCurrency
-                it.exchangeRate shouldBe expense.exchangeRate?.value
+                it.amount shouldBe expense.amount.toAmountDto()
+                it.fxData shouldBe expense.fxData?.toDto()
                 it.participants shouldBe expense.expenseParticipants
                     .map { p -> AcceptedGroupExpenseParticipantDto(p.participantId, p.participantCost) }
                 it.expenseDate shouldBe expense.expenseDate
@@ -146,9 +144,8 @@ class InternalExpenseControllerIT(
                 it.expenseId shouldBe expense.id
                 it.creatorId shouldBe expense.creatorId
                 it.title shouldBe expense.title
-                it.totalCost shouldBe expense.totalCost
-                it.baseCurrency shouldBe expense.baseCurrency
-                it.targetCurrency shouldBe expense.targetCurrency
+                it.amount shouldBe expense.amount.toAmountDto()
+                it.fxData shouldBe expense.fxData?.toDto()
                 it.status shouldBe expense.status
                 it.participantIds.shouldHaveSize(1)
                 it.participantIds.first() shouldBe expense.expenseParticipants.first().participantId

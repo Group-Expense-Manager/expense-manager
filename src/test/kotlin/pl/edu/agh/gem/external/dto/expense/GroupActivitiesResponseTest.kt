@@ -5,10 +5,12 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
+import pl.edu.agh.gem.internal.model.expense.Amount
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.REJECTED
+import pl.edu.agh.gem.internal.model.expense.FxData
 import pl.edu.agh.gem.util.createExpense
 import pl.edu.agh.gem.util.createExpenseParticipant
 import java.math.BigDecimal
@@ -29,9 +31,8 @@ class GroupActivitiesResponseTest : ShouldSpec({
             it.expenseId shouldBe expense.id
             it.creatorId shouldBe expense.creatorId
             it.title shouldBe expense.title
-            it.totalCost shouldBe expense.totalCost
-            it.baseCurrency shouldBe expense.baseCurrency
-            it.targetCurrency shouldBe expense.targetCurrency
+            it.amount shouldBe expense.amount.toAmountDto()
+            it.fxData shouldBe expense.fxData?.toDto()
             it.status shouldBe expense.status
             it.participantIds.shouldHaveSize(1)
             it.participantIds.first() shouldBe expense.expenseParticipants.first().participantId
@@ -44,9 +45,17 @@ class GroupActivitiesResponseTest : ShouldSpec({
         val expenseIds = listOf("expenseId1", "expenseId2", "expenseId3")
         val creatorIds = listOf("creatorId1", "creatorId2", "creatorId3")
         val titles = listOf("title1", "title2", "title3")
-        val costs = listOf(BigDecimal.ONE, BigDecimal.TWO, BigDecimal.TEN)
-        val baseCurrencies = listOf("PLN", "EUR", "USD")
-        val targetCurrencies = listOf("EUR", null, "PLN")
+        val amounts = listOf(
+            Amount(value = BigDecimal.ONE, currency = "PLN"),
+            Amount(value = BigDecimal.TWO, currency = "EUR"),
+            Amount(value = BigDecimal.TEN, currency = "USD"),
+        )
+        val fxData = listOf(
+            FxData(targetCurrency = "EUR", exchangeRate = "2".toBigDecimal()),
+            null,
+            FxData(targetCurrency = "PLN", exchangeRate = "3".toBigDecimal()),
+
+        )
         val statuses = listOf(PENDING, ACCEPTED, REJECTED)
         val participantIds = listOf(
             listOf("participant1", "participant2"),
@@ -63,9 +72,8 @@ class GroupActivitiesResponseTest : ShouldSpec({
                 id = expenseId,
                 creatorId = creatorIds[index],
                 title = titles[index],
-                totalCost = costs[index],
-                baseCurrency = baseCurrencies[index],
-                targetCurrency = targetCurrencies[index],
+                amount = amounts[index],
+                fxData = fxData[index],
                 status = statuses[index],
                 expenseParticipants = participantIds[index].map { createExpenseParticipant(participantId = it) },
                 expenseDate = expenseDates[index],
@@ -82,9 +90,8 @@ class GroupActivitiesResponseTest : ShouldSpec({
             it.map { groupExpensesDto -> groupExpensesDto.expenseId } shouldContainExactly expenseIds
             it.map { groupExpensesDto -> groupExpensesDto.creatorId } shouldContainExactly creatorIds
             it.map { groupExpensesDto -> groupExpensesDto.title } shouldContainExactly titles
-            it.map { groupExpensesDto -> groupExpensesDto.totalCost } shouldContainExactly costs
-            it.map { groupExpensesDto -> groupExpensesDto.baseCurrency } shouldContainExactly baseCurrencies
-            it.map { groupExpensesDto -> groupExpensesDto.targetCurrency } shouldContainExactly targetCurrencies
+            it.map { groupPaymentsDto -> groupPaymentsDto.amount } shouldContainExactly amounts.map { amount -> amount.toAmountDto() }
+            it.map { groupPaymentsDto -> groupPaymentsDto.fxData } shouldContainExactly fxData.map { fxData -> fxData?.toDto() }
             it.map { groupExpensesDto -> groupExpensesDto.status } shouldContainExactly statuses
             it.map { groupExpensesDto -> groupExpensesDto.participantIds } shouldContainExactly participantIds
             it.map { groupExpensesDto -> groupExpensesDto.expenseDate } shouldContainExactly expenseDates

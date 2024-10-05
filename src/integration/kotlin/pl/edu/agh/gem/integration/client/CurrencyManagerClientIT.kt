@@ -67,7 +67,7 @@ class CurrencyManagerClientIT(
         val result = currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, date)
 
         // then
-        result.value shouldBe EXCHANGE_RATE_VALUE
+        result shouldBe EXCHANGE_RATE_VALUE
     }
 
     should("throw CurrencyManagerClientException when we send bad request") {

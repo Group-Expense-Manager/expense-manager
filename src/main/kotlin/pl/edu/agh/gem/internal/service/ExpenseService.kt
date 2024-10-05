@@ -14,6 +14,7 @@ import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
+import pl.edu.agh.gem.internal.model.expense.FxData
 import pl.edu.agh.gem.internal.model.expense.UserExpense
 import pl.edu.agh.gem.internal.model.expense.filter.FilterOptions
 import pl.edu.agh.gem.internal.model.group.GroupData
@@ -70,32 +71,39 @@ class ExpenseService(
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
 
-        val exchangeRate = getExchangeRate(
-            expenseCreation.baseCurrency,
+        val fxData = getFxData(
+            expenseCreation.amount.currency,
             expenseCreation.targetCurrency,
             expenseCreation.expenseDate.atZone(ZoneId.systemDefault()).toLocalDate(),
         )
 
         return expenseRepository.save(
             expenseCreation.toExpense(
-                exchangeRate = exchangeRate,
+                fxData = fxData,
             ),
         )
     }
 
-    private fun getExchangeRate(baseCurrency: String, targetCurrency: String?, date: LocalDate) =
-        targetCurrency?.let { currencyManagerClient.getExchangeRate(baseCurrency, targetCurrency, date) }
-
-    private fun createExpenseCreationDataWrapper(groupData: GroupData, expenseCreation: ExpenseCreation): ExpenseCreationDataWrapper {
+    private fun getFxData(baseCurrency: String, targetCurrency: String?, date: LocalDate) =
+        targetCurrency?.let {
+            FxData(
+                targetCurrency = targetCurrency,
+                exchangeRate = currencyManagerClient.getExchangeRate(baseCurrency, targetCurrency, date),
+            )
+        }
+    private fun createExpenseCreationDataWrapper(
+        groupData: GroupData,
+        expenseCreation: ExpenseCreation,
+    ): ExpenseCreationDataWrapper {
         return ExpenseCreationDataWrapper(
             currencyData = CurrencyData(
                 groupCurrencies = groupData.currencies,
                 currencyManagerClient.getAvailableCurrencies(),
-                baseCurrency = expenseCreation.baseCurrency,
+                baseCurrency = expenseCreation.amount.currency,
                 targetCurrency = expenseCreation.targetCurrency,
             ),
             costData = CostData(
-                fullCost = expenseCreation.totalCost,
+                fullCost = expenseCreation.amount.value,
                 partialCosts = expenseCreation.expenseParticipantsCost.map { it.participantCost },
             ),
             participantData = ParticipantData(
@@ -202,15 +210,13 @@ class ExpenseService(
 
         return expenseRepository.save(
             originalExpense.copy(
-                exchangeRate = getExchangeRate(
-                    update.baseCurrency,
+                fxData = getFxData(
+                    update.amount.currency,
                     update.targetCurrency,
                     update.expenseDate.atZone(ZoneId.systemDefault()).toLocalDate(),
                 ),
                 title = update.title,
-                totalCost = update.totalCost,
-                baseCurrency = update.baseCurrency,
-                targetCurrency = update.targetCurrency,
+                amount = update.amount,
                 updatedAt = now(),
                 expenseDate = update.expenseDate,
                 expenseParticipants = update.expenseParticipantsCost.map { it.toExpenseParticipant() },
@@ -229,11 +235,11 @@ class ExpenseService(
             currencyData = CurrencyData(
                 groupCurrencies = groupData.currencies,
                 currencyManagerClient.getAvailableCurrencies(),
-                baseCurrency = expenseUpdate.baseCurrency,
+                baseCurrency = expenseUpdate.amount.currency,
                 targetCurrency = expenseUpdate.targetCurrency,
             ),
             costData = CostData(
-                fullCost = expenseUpdate.totalCost,
+                fullCost = expenseUpdate.amount.value,
                 partialCosts = expenseUpdate.expenseParticipantsCost.map { it.participantCost },
             ),
             participantData = ParticipantData(

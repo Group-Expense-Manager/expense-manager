@@ -3,10 +3,12 @@ package pl.edu.agh.gem.util
 import pl.edu.agh.gem.external.dto.currency.CurrenciesResponse
 import pl.edu.agh.gem.external.dto.currency.ExchangeRateResponse
 import pl.edu.agh.gem.external.dto.expense.AcceptedGroupExpenseParticipantDto
+import pl.edu.agh.gem.external.dto.expense.AmountDto
 import pl.edu.agh.gem.external.dto.expense.ExpenseCreationRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseDecisionRequest
 import pl.edu.agh.gem.external.dto.expense.ExpenseParticipantRequestData
 import pl.edu.agh.gem.external.dto.expense.ExpenseUpdateRequest
+import pl.edu.agh.gem.external.dto.expense.toAmountDto
 import pl.edu.agh.gem.external.dto.group.CurrencyDTO
 import pl.edu.agh.gem.external.dto.group.GroupDto
 import pl.edu.agh.gem.external.dto.group.GroupResponse
@@ -18,7 +20,7 @@ import pl.edu.agh.gem.helper.group.createGroupMembers
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.internal.model.currency.Currency
-import pl.edu.agh.gem.internal.model.currency.ExchangeRate
+import pl.edu.agh.gem.internal.model.expense.Amount
 import pl.edu.agh.gem.internal.model.expense.Decision
 import pl.edu.agh.gem.internal.model.expense.Decision.ACCEPT
 import pl.edu.agh.gem.internal.model.expense.Expense
@@ -32,6 +34,7 @@ import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
+import pl.edu.agh.gem.internal.model.expense.FxData
 import pl.edu.agh.gem.internal.model.expense.UserExpense
 import pl.edu.agh.gem.internal.model.expense.filter.FilterOptions
 import pl.edu.agh.gem.internal.model.expense.filter.SortOrder
@@ -51,10 +54,17 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.time.Instant.now
 
+fun createAmountDto(
+    value: BigDecimal = "10".toBigDecimal(),
+    currency: String = CURRENCY_1,
+) = AmountDto(
+    value = value,
+    currency = currency,
+)
+
 fun createExpenseCreationRequest(
     title: String = "My Expense",
-    totalCost: BigDecimal = BigDecimal(10),
-    baseCurrency: String = CURRENCY_1,
+    amount: AmountDto = createAmountDto(),
     targetCurrency: String? = CURRENCY_2,
     expenseDate: Instant = Instant.ofEpochMilli(0L),
     expenseParticipants: List<ExpenseParticipantRequestData> = listOf(
@@ -64,8 +74,7 @@ fun createExpenseCreationRequest(
     attachmentId: String? = "1234-1234-ffff",
 ) = ExpenseCreationRequest(
     title = title,
-    totalCost = totalCost,
-    baseCurrency = baseCurrency,
+    amount = amount,
     targetCurrency = targetCurrency,
     expenseDate = expenseDate,
     expenseParticipants = expenseParticipants,
@@ -89,10 +98,6 @@ fun createCurrenciesResponse(
     vararg currencies: String = arrayOf(CURRENCY_1),
 ) = CurrenciesResponse(currencies.map { CurrencyDTO(it) })
 
-fun createExchangeRate(
-    value: BigDecimal = EXCHANGE_RATE_VALUE,
-) = ExchangeRate(value)
-
 fun createExchangeRateResponse(
     currencyFrom: String = CURRENCY_1,
     currencyTo: String = CURRENCY_2,
@@ -105,15 +110,28 @@ fun createExchangeRateResponse(
     createdAt = createdAt,
 )
 
+fun createAmount(
+    value: BigDecimal = "10".toBigDecimal(),
+    currency: String = CURRENCY_1,
+) = Amount(
+    value = value,
+    currency = currency,
+)
+
+fun createFxData(
+    targetCurrency: String = CURRENCY_2,
+    exchangeRate: BigDecimal = EXCHANGE_RATE_VALUE,
+) = FxData(
+    targetCurrency = targetCurrency,
+    exchangeRate = exchangeRate,
+)
 fun createExpense(
     id: String = EXPENSE_ID,
     groupId: String = GROUP_ID,
     creatorId: String = USER_ID,
     title: String = "Some title",
-    totalCost: BigDecimal = BigDecimal.valueOf(4L),
-    baseCurrency: String = CURRENCY_1,
-    targetCurrency: String? = CURRENCY_2,
-    exchangeRate: BigDecimal? = EXCHANGE_RATE_VALUE,
+    amount: Amount = createAmount(value = "4".toBigDecimal(), currency = CURRENCY_1),
+    fxData: FxData? = createFxData(),
     createdAt: Instant = now(),
     updatedAt: Instant = now(),
     expenseDate: Instant = Instant.ofEpochMilli(0L),
@@ -126,10 +144,8 @@ fun createExpense(
     groupId = groupId,
     creatorId = creatorId,
     title = title,
-    totalCost = totalCost,
-    baseCurrency = baseCurrency,
-    targetCurrency = targetCurrency,
-    exchangeRate = exchangeRate?.let { ExchangeRate(it) },
+    amount = amount,
+    fxData = fxData,
     createdAt = createdAt,
     updatedAt = updatedAt,
     expenseDate = expenseDate,
@@ -143,8 +159,7 @@ fun createExpenseCreation(
     groupId: String = GROUP_ID,
     creatorId: String = USER_ID,
     title: String = "Some title",
-    totalCost: BigDecimal = BigDecimal.valueOf(4L),
-    baseCurrency: String = CURRENCY_1,
+    amount: Amount = createAmount(value = "4".toBigDecimal(), currency = CURRENCY_1),
     targetCurrency: String? = CURRENCY_2,
     expenseDate: Instant = Instant.ofEpochMilli(0L),
     attachmentId: String? = ATTACHMENT_ID,
@@ -155,8 +170,7 @@ fun createExpenseCreation(
     groupId = groupId,
     creatorId = creatorId,
     title = title,
-    totalCost = totalCost,
-    baseCurrency = baseCurrency,
+    amount = amount,
     targetCurrency = targetCurrency,
     expenseDate = expenseDate,
     attachmentId = attachmentId,
@@ -236,7 +250,7 @@ fun createUserExpense(
 ) = UserExpense(
     value = value,
     currency = currency,
-    exchangeRate = exchangeRate?.let { ExchangeRate(it) },
+    exchangeRate = exchangeRate,
 )
 
 fun createListOfAcceptedGroupExpenseParticipantDto(
@@ -246,8 +260,7 @@ fun createListOfAcceptedGroupExpenseParticipantDto(
 
 fun createExpenseUpdateRequest(
     title: String = "My Modified Expense",
-    totalCost: BigDecimal = BigDecimal(10),
-    baseCurrency: String = CURRENCY_1,
+    amount: AmountDto = createAmountDto(),
     targetCurrency: String? = CURRENCY_2,
     expenseDate: Instant = Instant.ofEpochMilli(0L),
     expenseParticipants: List<ExpenseParticipantRequestData> = listOf(
@@ -257,8 +270,7 @@ fun createExpenseUpdateRequest(
     attachmentId: String? = ATTACHMENT_ID,
 ) = ExpenseUpdateRequest(
     title = title,
-    totalCost = totalCost,
-    baseCurrency = baseCurrency,
+    amount = amount,
     targetCurrency = targetCurrency,
     expenseDate = expenseDate,
     expenseParticipants = expenseParticipants,
@@ -270,9 +282,8 @@ fun createExpenseUpdateRequestFromExpense(
     expense: Expense = createExpense(),
 ) = ExpenseUpdateRequest(
     title = expense.title,
-    totalCost = expense.totalCost,
-    baseCurrency = expense.baseCurrency,
-    targetCurrency = expense.targetCurrency,
+    amount = expense.amount.toAmountDto(),
+    targetCurrency = expense.fxData?.targetCurrency,
     expenseDate = expense.expenseDate,
     expenseParticipants = expense.expenseParticipants.map { createExpenseParticipantDto(it.participantId, it.participantCost) },
     message = "Something",
@@ -284,8 +295,7 @@ fun createExpenseUpdate(
     groupId: String = GROUP_ID,
     userId: String = USER_ID,
     title: String = "Some modified title",
-    totalCost: BigDecimal = BigDecimal.valueOf(4L),
-    baseCurrency: String = CURRENCY_1,
+    amount: Amount = createAmount(value = "4".toBigDecimal(), currency = CURRENCY_1),
     targetCurrency: String? = CURRENCY_2,
     expenseDate: Instant = Instant.ofEpochMilli(0L),
     expenseParticipants: List<ExpenseParticipantCost> = listOf(
@@ -298,8 +308,7 @@ fun createExpenseUpdate(
     groupId = groupId,
     userId = userId,
     title = title,
-    totalCost = totalCost,
-    baseCurrency = baseCurrency,
+    amount = amount,
     targetCurrency = targetCurrency,
     expenseDate = expenseDate,
     expenseParticipantsCost = expenseParticipants,
@@ -314,9 +323,8 @@ fun createExpenseUpdateFromExpense(
     groupId = expense.groupId,
     userId = expense.creatorId,
     title = expense.title,
-    totalCost = expense.totalCost,
-    baseCurrency = expense.baseCurrency,
-    targetCurrency = expense.targetCurrency,
+    amount = expense.amount,
+    targetCurrency = expense.fxData?.targetCurrency,
     expenseDate = expense.expenseDate,
     expenseParticipantsCost = expense.expenseParticipants.map { it.toExpenseParticipantCost() },
     message = null,

@@ -10,8 +10,8 @@ class CreditorUserExpenseMapper {
         when {
             expense.status == ACCEPTED && creditorId == expense.creatorId -> UserExpense(
                 value = getCostAsExpenseCreator(expense),
-                currency = expense.targetCurrency ?: expense.baseCurrency,
-                exchangeRate = expense.exchangeRate,
+                currency = expense.fxData?.targetCurrency ?: expense.amount.currency,
+                exchangeRate = expense.fxData?.exchangeRate,
             )
             else -> null
         }

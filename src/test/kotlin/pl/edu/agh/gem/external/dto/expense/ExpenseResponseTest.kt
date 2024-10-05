@@ -20,10 +20,8 @@ class ExpenseResponseTest : ShouldSpec({
         expenseResponse shouldNotBe null
         expenseResponse.also {
             it.creatorId shouldBe expense.creatorId
-            it.totalCost shouldBe expense.totalCost
-            it.baseCurrency shouldBe expense.baseCurrency
-            it.targetCurrency shouldBe expense.targetCurrency
-            it.exchangeRate shouldBe expense.exchangeRate?.value
+            it.amount shouldBe expense.amount.toAmountDto()
+            it.fxData
             it.createdAt shouldBe expense.createdAt
             it.updatedAt shouldBe expense.updatedAt
             it.expenseDate shouldBe expense.expenseDate

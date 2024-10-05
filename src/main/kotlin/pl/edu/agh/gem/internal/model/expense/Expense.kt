@@ -1,6 +1,5 @@
 package pl.edu.agh.gem.internal.model.expense
 
-import pl.edu.agh.gem.internal.model.currency.ExchangeRate
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -9,10 +8,8 @@ data class Expense(
     val groupId: String,
     val creatorId: String,
     val title: String,
-    val totalCost: BigDecimal,
-    val baseCurrency: String,
-    val targetCurrency: String?,
-    val exchangeRate: ExchangeRate?,
+    val amount: Amount,
+    val fxData: FxData?,
     val createdAt: Instant,
     val updatedAt: Instant,
     val expenseDate: Instant,
@@ -20,4 +17,14 @@ data class Expense(
     val expenseParticipants: List<ExpenseParticipant>,
     val status: ExpenseStatus,
     val history: List<ExpenseHistoryEntry>,
+)
+
+data class Amount(
+    val value: BigDecimal,
+    val currency: String,
+)
+
+data class FxData(
+    val targetCurrency: String,
+    val exchangeRate: BigDecimal,
 )
