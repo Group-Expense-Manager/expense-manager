@@ -504,7 +504,8 @@ class ExpenseServiceTest : ShouldSpec({
         // given
         val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
         val expenseUpdate = createExpenseUpdate(
-            amount = createAmount(value = "6".toBigDecimal()),
+            amount = createAmount(value = "6".toBigDecimal(), currency = CURRENCY_2),
+            targetCurrency = CURRENCY_1,
             expenseParticipants = listOf(
                 createExpenseParticipantCost(OTHER_USER_ID, BigDecimal.ONE),
                 createExpenseParticipantCost(ANOTHER_USER_ID, BigDecimal(4)),
@@ -513,7 +514,7 @@ class ExpenseServiceTest : ShouldSpec({
 
         val group = createGroup(createGroupMembers(USER_ID, OTHER_USER_ID, ANOTHER_USER_ID), currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
         whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
-        whenever(currencyManagerClient.getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))).thenReturn(
+        whenever(currencyManagerClient.getExchangeRate(eq(CURRENCY_2), eq(CURRENCY_1), anyVararg(LocalDate::class))).thenReturn(
             EXCHANGE_RATE_VALUE,
         )
         whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
@@ -522,7 +523,7 @@ class ExpenseServiceTest : ShouldSpec({
         val result = expenseService.updateExpense(group, expenseUpdate)
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(currencyManagerClient, times(1)).getAvailableCurrencies()
-        verify(currencyManagerClient, times(1)).getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))
+        verify(currencyManagerClient, times(1)).getExchangeRate(eq(CURRENCY_2), eq(CURRENCY_1), anyVararg(LocalDate::class))
         verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
 
         result.also {
@@ -560,9 +561,6 @@ class ExpenseServiceTest : ShouldSpec({
 
         val group = createGroup(createGroupMembers(USER_ID, OTHER_USER_ID, ANOTHER_USER_ID), currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
         whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
-        whenever(currencyManagerClient.getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))).thenReturn(
-            EXCHANGE_RATE_VALUE,
-        )
         whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
         whenever(expenseRepository.save(anyVararg(Expense::class))).doAnswer { it.arguments[0] as? Expense }
         // when & then
@@ -570,7 +568,7 @@ class ExpenseServiceTest : ShouldSpec({
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(currencyManagerClient, times(1)).getAvailableCurrencies()
         verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
-        verify(currencyManagerClient, times(1)).getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))
+        verify(currencyManagerClient, times(0)).getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))
 
         result.also {
             it.id shouldBe EXPENSE_ID
