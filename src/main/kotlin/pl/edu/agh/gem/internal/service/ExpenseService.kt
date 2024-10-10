@@ -37,7 +37,6 @@ import pl.edu.agh.gem.validator.ValidatorsException
 import pl.edu.agh.gem.validator.alsoValidate
 import pl.edu.agh.gem.validator.validate
 import java.time.Instant.now
-import java.time.LocalDate
 import java.time.ZoneId
 
 @Service
@@ -71,11 +70,7 @@ class ExpenseService(
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
 
-        val fxData = getFxData(
-            expenseCreation.amount.currency,
-            expenseCreation.targetCurrency,
-            expenseCreation.expenseDate.atZone(ZoneId.systemDefault()).toLocalDate(),
-        )
+        val fxData = createFxData(expenseCreation)
 
         return expenseRepository.save(
             expenseCreation.toExpense(
@@ -84,11 +79,15 @@ class ExpenseService(
         )
     }
 
-    private fun getFxData(baseCurrency: String, targetCurrency: String?, date: LocalDate) =
-        targetCurrency?.let {
+    private fun createFxData(expenseCreation: ExpenseCreation) =
+        expenseCreation.targetCurrency?.let {
             FxData(
-                targetCurrency = targetCurrency,
-                exchangeRate = currencyManagerClient.getExchangeRate(baseCurrency, targetCurrency, date),
+                targetCurrency = expenseCreation.targetCurrency,
+                exchangeRate = currencyManagerClient.getExchangeRate(
+                    expenseCreation.amount.currency,
+                    expenseCreation.targetCurrency,
+                    expenseCreation.expenseDate.atZone(ZoneId.systemDefault()).toLocalDate(),
+                ),
             )
         }
     private fun createExpenseCreationDataWrapper(
@@ -210,11 +209,7 @@ class ExpenseService(
 
         return expenseRepository.save(
             originalExpense.copy(
-                fxData = getFxData(
-                    update.amount.currency,
-                    update.targetCurrency,
-                    update.expenseDate.atZone(ZoneId.systemDefault()).toLocalDate(),
-                ),
+                fxData = updateFxData(originalExpense = originalExpense, expenseUpdate = update),
                 title = update.title,
                 amount = update.amount,
                 updatedAt = now(),
@@ -226,6 +221,28 @@ class ExpenseService(
             ),
         )
     }
+
+    private fun updateFxData(originalExpense: Expense, expenseUpdate: ExpenseUpdate): FxData? {
+        if (shouldUseOriginalFxData(originalExpense, expenseUpdate)) {
+            return originalExpense.fxData
+        }
+        return expenseUpdate.targetCurrency?.let {
+            FxData(
+                targetCurrency = expenseUpdate.targetCurrency,
+                exchangeRate = currencyManagerClient.getExchangeRate(
+                    expenseUpdate.amount.currency,
+                    expenseUpdate.targetCurrency,
+                    expenseUpdate.expenseDate.atZone(ZoneId.systemDefault()).toLocalDate(),
+                ),
+            )
+        }
+    }
+
+    private fun shouldUseOriginalFxData(originalExpense: Expense, update: ExpenseUpdate): Boolean {
+        return originalExpense.expenseDate == update.expenseDate && originalExpense.amount.currency == update.amount.currency &&
+            originalExpense.fxData?.targetCurrency == update.targetCurrency
+    }
+
     private fun createExpenseUpdateDataWrapper(
         groupData: GroupData,
         expenseUpdate: ExpenseUpdate,

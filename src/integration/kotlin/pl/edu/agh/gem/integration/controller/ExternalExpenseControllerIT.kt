@@ -755,7 +755,8 @@ class ExternalExpenseControllerIT(
             // given
             val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
             val expenseUpdateRequest = createExpenseUpdateRequest(
-                amount = createAmountDto(value = "6".toBigDecimal()),
+                amount = createAmountDto(value = "6".toBigDecimal(), currency = CURRENCY_2),
+                targetCurrency = CURRENCY_1,
                 expenseParticipants = listOf(
                     createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.ONE),
                     createExpenseParticipantDto(ANOTHER_USER_ID, BigDecimal(4)),
@@ -766,8 +767,8 @@ class ExternalExpenseControllerIT(
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
             stubCurrencyManagerExchangeRate(
                 createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
-                CURRENCY_1,
                 CURRENCY_2,
+                CURRENCY_1,
                 Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
             )
             // when
@@ -832,12 +833,6 @@ class ExternalExpenseControllerIT(
             repository.save(expense)
             stubGroupManagerGroupData(createGroupResponse(members = createMembersDTO(USER_ID, OTHER_USER_ID, ANOTHER_USER_ID)), GROUP_ID)
             stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
-            stubCurrencyManagerExchangeRate(
-                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
-                CURRENCY_1,
-                CURRENCY_2,
-                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
-            )
             // when
             val response = service.updateExpense(expenseUpdateRequest, createGemUser(USER_ID), GROUP_ID, EXPENSE_ID)
 
