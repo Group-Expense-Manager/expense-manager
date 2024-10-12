@@ -35,6 +35,19 @@ class ClientConfig {
             .withConnectTimeout(currencyManagerProperties.connectTimeout)
             .build()
     }
+
+    @Bean
+    @Qualifier("FinanceAdapterRestTemplate")
+    fun financeAdapterRestTemplate(
+        financeAdapterProperties: FinanceAdapterProperties,
+        gemRestTemplateFactory: GemRestTemplateFactory,
+    ): RestTemplate {
+        return gemRestTemplateFactory
+            .builder()
+            .withReadTimeout(financeAdapterProperties.readTimeout)
+            .withConnectTimeout(financeAdapterProperties.connectTimeout)
+            .build()
+    }
 }
 
 @ConfigurationProperties(prefix = "group-manager")
@@ -46,6 +59,13 @@ data class GroupManagerProperties(
 
 @ConfigurationProperties(prefix = "currency-manager")
 data class CurrencyManagerProperties(
+    val url: String,
+    val connectTimeout: Duration,
+    val readTimeout: Duration,
+)
+
+@ConfigurationProperties(prefix = "finance-adapter")
+data class FinanceAdapterProperties(
     val url: String,
     val connectTimeout: Duration,
     val readTimeout: Duration,
