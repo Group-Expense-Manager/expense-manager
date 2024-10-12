@@ -12,6 +12,10 @@ currency-manager:
   read-timeout: 1000ms
   connect-timeout: 1000ms
 
+finance-adapter:
+  url: http://localhost:${wiremock.server.port}
+  read-timeout: 1000ms
+  connect-timeout: 1000ms
 
 server:
   shutdown: immediate

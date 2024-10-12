@@ -1,10 +1,13 @@
 package pl.edu.agh.gem.internal.service
 
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
+import pl.edu.agh.gem.internal.client.FinanceAdapterClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
 import pl.edu.agh.gem.internal.mapper.CreditorUserExpenseMapper
 import pl.edu.agh.gem.internal.mapper.DebtorUserExpenseMapper
+import pl.edu.agh.gem.internal.model.currency.Currency
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.EDITED
 import pl.edu.agh.gem.internal.model.expense.ExpenseCreation
@@ -43,6 +46,7 @@ import java.time.ZoneId
 class ExpenseService(
     private val groupManagerClient: GroupManagerClient,
     private val currencyManagerClient: CurrencyManagerClient,
+    private val financeAdapterClient: FinanceAdapterClient,
     private val expenseRepository: ExpenseRepository,
     private val archivedExpenseRepository: ArchivedExpenseRepository,
 ) {
@@ -125,6 +129,7 @@ class ExpenseService(
         return expenseRepository.findByGroupId(groupId, filterOptions)
     }
 
+    @Transactional
     fun decide(expenseDecision: ExpenseDecision): Expense {
         val expense = expenseRepository.findByExpenseIdAndGroupId(expenseDecision.expenseId, expenseDecision.groupId)
             ?: throw MissingExpenseException(expenseDecision.expenseId, expenseDecision.groupId)
@@ -134,7 +139,22 @@ class ExpenseService(
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
 
-        return expenseRepository.save(expense.addDecision(expenseDecision))
+        val updatedExpense = expenseRepository.save(expense.addDecision(expenseDecision))
+
+        val previousStatus = expense.status
+        val currentStatus = updatedExpense.status
+        if (previousStatus.changedToAccepted(currentStatus) || currentStatus.changedFromAccepted(previousStatus)) {
+            generateBalancesAndSettlements(updatedExpense)
+        }
+
+        return updatedExpense
+    }
+
+    private fun generateBalancesAndSettlements(expense: Expense) {
+        financeAdapterClient.generate(
+            groupId = expense.groupId,
+            currency = Currency(expense.fxData?.targetCurrency ?: expense.amount.currency),
+        )
     }
 
     private fun Expense.addDecision(expenseDecision: ExpenseDecision): Expense {
@@ -165,6 +185,7 @@ class ExpenseService(
         )
     }
 
+    @Transactional
     fun deleteExpense(expenseId: String, groupId: String, userId: String) {
         val expenseToDelete = expenseRepository.findByExpenseIdAndGroupId(expenseId, groupId) ?: throw MissingExpenseException(expenseId, groupId)
 
@@ -181,6 +202,10 @@ class ExpenseService(
 
         expenseRepository.delete(expenseToDelete)
         archivedExpenseRepository.add(expenseToDelete)
+
+        if (expenseToDelete.status == ACCEPTED) {
+            generateBalancesAndSettlements(expenseToDelete)
+        }
     }
 
     fun getUserExpenses(groupId: String, userId: String): List<UserExpense> {
@@ -194,6 +219,7 @@ class ExpenseService(
         return costsAsExpenseCreator + costsAsExpenseMember
     }
 
+    @Transactional
     fun updateExpense(groupData: GroupData, update: ExpenseUpdate): Expense {
         val originalExpense = expenseRepository.findByExpenseIdAndGroupId(update.id, update.groupId)
             ?: throw MissingExpenseException(update.id, update.groupId)
@@ -207,7 +233,7 @@ class ExpenseService(
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
 
-        return expenseRepository.save(
+        val updatedExpense = expenseRepository.save(
             originalExpense.copy(
                 fxData = updateFxData(originalExpense = originalExpense, expenseUpdate = update),
                 title = update.title,
@@ -220,6 +246,12 @@ class ExpenseService(
                 history = originalExpense.history + ExpenseHistoryEntry(originalExpense.creatorId, EDITED, now(), update.message),
             ),
         )
+
+        if (originalExpense.status == ACCEPTED) {
+            generateBalancesAndSettlements(originalExpense)
+        }
+
+        return updatedExpense
     }
 
     private fun updateFxData(originalExpense: Expense, expenseUpdate: ExpenseUpdate): FxData? {
