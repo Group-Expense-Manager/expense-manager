@@ -103,26 +103,74 @@ class InternalExpenseControllerIT(
         // given
         val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(USER_ID)))
         stubGroupManagerUserGroups(groupMembers, GROUP_ID)
-        val expense = createExpense(expenseParticipants = listOf(createExpenseParticipant()), status = ACCEPTED)
+        val acceptedExpense1 = createExpense(
+            id = "1",
+            status = ACCEPTED,
+            amount = createAmount(currency = CURRENCY_1),
+            fxData = createFxData(targetCurrency = CURRENCY_2),
+        )
+        val acceptedExpense2 = createExpense(
+            id = "2",
+            status = ACCEPTED,
+            amount = createAmount(currency = CURRENCY_2),
+            fxData = null,
+        )
+        val expensesToSave = listOf(
+            acceptedExpense1,
+            acceptedExpense2,
+            createExpense(
+                id = "3",
+                status = ACCEPTED,
+                amount = createAmount(currency = CURRENCY_2),
+                fxData = createFxData(targetCurrency = CURRENCY_1),
+            ),
+            createExpense(
+                id = "4",
+                status = ACCEPTED,
+                amount = createAmount(currency = CURRENCY_1),
+                fxData = null,
+            ),
+            createExpense(
+                id = "5",
+                status = PENDING,
+                amount = createAmount(currency = CURRENCY_1),
+                fxData = createFxData(targetCurrency = CURRENCY_2),
+            ),
+            createExpense(
+                id = "6",
+                status = PENDING,
+                amount = createAmount(currency = CURRENCY_2),
+                fxData = null,
+            ),
+        )
 
-        repository.save(expense)
+        expensesToSave.forEach { repository.save(it) }
 
         // when
-        val response = service.getAcceptedGroupExpenses(GROUP_ID)
+        val response = service.getAcceptedGroupExpenses(GROUP_ID, CURRENCY_2)
 
         // then
         response shouldHaveHttpStatus OK
         response.shouldBody<AcceptedGroupExpensesResponse> {
             groupId shouldBe GROUP_ID
-            expenses shouldHaveSize 1
+            expenses shouldHaveSize 2
             expenses.first().also {
-                it.creatorId shouldBe expense.creatorId
-                it.title shouldBe expense.title
-                it.amount shouldBe expense.amount.toAmountDto()
-                it.fxData shouldBe expense.fxData?.toDto()
-                it.participants shouldBe expense.expenseParticipants
+                it.creatorId shouldBe acceptedExpense1.creatorId
+                it.title shouldBe acceptedExpense1.title
+                it.amount shouldBe acceptedExpense1.amount.toAmountDto()
+                it.fxData shouldBe acceptedExpense1.fxData?.toDto()
+                it.participants shouldBe acceptedExpense1.expenseParticipants
                     .map { p -> AcceptedGroupExpenseParticipantDto(p.participantId, p.participantCost) }
-                it.expenseDate shouldBe expense.expenseDate
+                it.expenseDate shouldBe acceptedExpense1.expenseDate
+            }
+            expenses.last().also {
+                it.creatorId shouldBe acceptedExpense2.creatorId
+                it.title shouldBe acceptedExpense2.title
+                it.amount shouldBe acceptedExpense2.amount.toAmountDto()
+                it.fxData shouldBe acceptedExpense2.fxData?.toDto()
+                it.participants shouldBe acceptedExpense2.expenseParticipants
+                    .map { p -> AcceptedGroupExpenseParticipantDto(p.participantId, p.participantCost) }
+                it.expenseDate shouldBe acceptedExpense2.expenseDate
             }
         }
     }

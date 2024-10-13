@@ -418,21 +418,51 @@ class ExpenseServiceTest : ShouldSpec({
 
     should("get accepted expenses") {
         // given
-        val acceptedExpense = createExpense(status = ACCEPTED)
+        val acceptedExpense1 = createExpense(
+            status = ACCEPTED,
+            amount = createAmount(currency = CURRENCY_1),
+            fxData = createFxData(targetCurrency = CURRENCY_2),
+        )
+        val acceptedExpense2 = createExpense(
+            status = ACCEPTED,
+            amount = createAmount(currency = CURRENCY_2),
+            fxData = null,
+        )
         val expenses = listOf(
-            acceptedExpense,
-            createExpense(status = PENDING),
-            createExpense(status = REJECTED),
+            acceptedExpense1,
+            acceptedExpense2,
+
+            createExpense(
+                status = ACCEPTED,
+                amount = createAmount(currency = CURRENCY_2),
+                fxData = createFxData(targetCurrency = CURRENCY_1),
+            ),
+            createExpense(
+                status = ACCEPTED,
+                amount = createAmount(currency = CURRENCY_1),
+                fxData = null,
+            ),
+            createExpense(
+                status = PENDING,
+                amount = createAmount(currency = CURRENCY_1),
+                fxData = createFxData(targetCurrency = CURRENCY_2),
+            ),
+            createExpense(
+                status = PENDING,
+                amount = createAmount(currency = CURRENCY_2),
+                fxData = null,
+            ),
         )
         whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(expenses)
 
         // when
-        val result = expenseService.getAcceptedGroupExpenses(GROUP_ID)
+        val result = expenseService.getAcceptedGroupExpenses(GROUP_ID, CURRENCY_2)
 
         // then
         result.also {
-            it shouldHaveSize 1
-            it.first() shouldBe acceptedExpense
+            it shouldHaveSize 2
+            it.first() shouldBe acceptedExpense1
+            it.last() shouldBe acceptedExpense2
         }
         verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
     }
@@ -447,7 +477,7 @@ class ExpenseServiceTest : ShouldSpec({
         )
 
         // when
-        val result = expenseService.getAcceptedGroupExpenses(GROUP_ID)
+        val result = expenseService.getAcceptedGroupExpenses(GROUP_ID, CURRENCY_2)
 
         // then
         result shouldBe listOf()

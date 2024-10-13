@@ -121,8 +121,10 @@ class ExpenseService(
         return expenseRepository.findByExpenseIdAndGroupId(expenseId, groupId) ?: throw MissingExpenseException(expenseId, groupId)
     }
 
-    fun getAcceptedGroupExpenses(groupId: String): List<Expense> {
-        return expenseRepository.findByGroupId(groupId).filter { it.status == ACCEPTED }
+    fun getAcceptedGroupExpenses(groupId: String, currency: String): List<Expense> {
+        return expenseRepository.findByGroupId(groupId).filter {
+            it.status == ACCEPTED && (it.fxData?.targetCurrency ?: it.amount.currency) == currency
+        }
     }
 
     fun getGroupActivities(groupId: String, filterOptions: FilterOptions): List<Expense> {
