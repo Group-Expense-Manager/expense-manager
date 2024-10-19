@@ -40,8 +40,9 @@ class InternalExpenseController(
     @ResponseStatus(OK)
     fun getAcceptedGroupExpenses(
         @PathVariable groupId: String,
+        @RequestParam currency: String,
     ): AcceptedGroupExpensesResponse {
-        return expenseService.getAcceptedGroupExpenses(groupId).toAcceptedGroupExpensesResponse(groupId)
+        return expenseService.getAcceptedGroupExpenses(groupId, currency).toAcceptedGroupExpensesResponse(groupId)
     }
 
     @GetMapping("activities/groups/{groupId}", produces = [APPLICATION_JSON_INTERNAL_VER_1])
