@@ -22,10 +22,12 @@ import pl.edu.agh.gem.helper.group.createGroupMembers
 import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
+import pl.edu.agh.gem.internal.client.FinanceAdapterClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
+import pl.edu.agh.gem.internal.model.currency.Currency
 import pl.edu.agh.gem.internal.model.expense.Decision.ACCEPT
+import pl.edu.agh.gem.internal.model.expense.Decision.REJECT
 import pl.edu.agh.gem.internal.model.expense.Expense
-import pl.edu.agh.gem.internal.model.expense.ExpenseAction
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.CREATED
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.EDITED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
@@ -48,6 +50,7 @@ import pl.edu.agh.gem.util.DummyData.CURRENCY_1
 import pl.edu.agh.gem.util.DummyData.CURRENCY_2
 import pl.edu.agh.gem.util.DummyData.EXCHANGE_RATE_VALUE
 import pl.edu.agh.gem.util.DummyData.EXPENSE_ID
+import pl.edu.agh.gem.util.Triple
 import pl.edu.agh.gem.util.createAmount
 import pl.edu.agh.gem.util.createCurrencies
 import pl.edu.agh.gem.util.createExpense
@@ -67,11 +70,13 @@ import java.time.LocalDate
 class ExpenseServiceTest : ShouldSpec({
     val groupManagerClient = mock<GroupManagerClient> { }
     val currencyManagerClient = mock<CurrencyManagerClient> {}
+    val financeAdapterClient = mock<FinanceAdapterClient> {}
     val expenseRepository = mock<ExpenseRepository> {}
     val archivedExpenseRepository = mock<ArchivedExpenseRepository> {}
     val expenseService = ExpenseService(
         groupManagerClient = groupManagerClient,
         currencyManagerClient = currencyManagerClient,
+        financeAdapterClient = financeAdapterClient,
         expenseRepository = expenseRepository,
         archivedExpenseRepository = archivedExpenseRepository,
     )
@@ -229,46 +234,56 @@ class ExpenseServiceTest : ShouldSpec({
         verify(expenseRepository, times(1)).findByGroupId(GROUP_ID, filterOptions)
     }
 
-    should("decide") {
-        // given
-        val expense = createExpense()
-        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
-        whenever(expenseRepository.save(anyVararg(Expense::class))).thenAnswer { it.arguments[0] }
+    context("decide ") {
+        withData(
+            nameFn = { "when expense was ${it.first} and decision is: ${it.second}" },
+            Triple(ACCEPTED, REJECT, 1),
+            Triple(REJECTED, ACCEPT, 1),
+            Triple(ACCEPTED, ACCEPT, 0),
+            Triple(PENDING, REJECT, 0),
 
-        val expenseDecision = createExpenseDecision(userId = OTHER_USER_ID, decision = ACCEPT)
+        ) { (status, decision, timesInvoked) ->
+            // given
+            val expense = createExpense(status = status)
+            whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
+            whenever(expenseRepository.save(anyVararg(Expense::class))).thenAnswer { it.arguments[0] }
 
-        // when
-        val result = expenseService.decide(expenseDecision)
+            val expenseDecision = createExpenseDecision(userId = OTHER_USER_ID, decision = decision)
 
-        // then
-        result.shouldNotBeNull()
-        result.also {
-            it.id shouldBe expenseDecision.expenseId
-            it.groupId shouldBe GROUP_ID
-            it.creatorId shouldBe USER_ID
-            it.title shouldBe expense.title
-            it.amount shouldBe expense.amount
-            it.fxData shouldBe expense.fxData
-            it.createdAt.shouldNotBeNull()
-            it.updatedAt.shouldNotBeNull()
-            it.attachmentId shouldBe expense.attachmentId
-            it.status shouldBe ACCEPTED
-            it.expenseParticipants.first().also { participant ->
-                participant.participantId shouldBe OTHER_USER_ID
-                participant.participantStatus shouldBe ACCEPTED
-                participant.participantCost shouldBe expense.expenseParticipants.first().participantCost
+            // when
+            val result = expenseService.decide(expenseDecision)
+
+            // then
+            result.shouldNotBeNull()
+            result.also {
+                it.id shouldBe expenseDecision.expenseId
+                it.groupId shouldBe GROUP_ID
+                it.creatorId shouldBe USER_ID
+                it.title shouldBe expense.title
+                it.amount shouldBe expense.amount
+                it.fxData shouldBe expense.fxData
+                it.createdAt.shouldNotBeNull()
+                it.updatedAt.shouldNotBeNull()
+                it.attachmentId shouldBe expense.attachmentId
+                it.status shouldBe decision.toExpenseStatus()
+                it.expenseParticipants.first().also { participant ->
+                    participant.participantId shouldBe OTHER_USER_ID
+                    participant.participantStatus shouldBe decision.toExpenseStatus()
+                    participant.participantCost shouldBe expense.expenseParticipants.first().participantCost
+                }
+                it.history shouldHaveSize 2
+                it.history.last().also { entry ->
+                    entry.createdAt.shouldNotBeNull()
+                    entry.expenseAction shouldBe decision.toExpenseAction()
+                    entry.participantId shouldBe expenseDecision.userId
+                    entry.comment shouldBe expenseDecision.message
+                }
             }
-            it.history shouldHaveSize 2
-            it.history.last().also { entry ->
-                entry.createdAt.shouldNotBeNull()
-                entry.expenseAction shouldBe ExpenseAction.ACCEPTED
-                entry.participantId shouldBe expenseDecision.userId
-                entry.comment shouldBe expenseDecision.message
-            }
+
+            verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
+            verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
+            verify(financeAdapterClient, times(timesInvoked)).generate(eq(GROUP_ID), anyVararg(Currency::class))
         }
-
-        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
-        verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
     }
 
     should("throw MissingExpenseException when expense is not present") {
@@ -295,9 +310,9 @@ class ExpenseServiceTest : ShouldSpec({
         verify(expenseRepository, times(0)).save(anyVararg(Expense::class))
     }
 
-    should("delete expense") {
+    should("delete expense that was ACCEPTED") {
         // given
-        val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
+        val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID, status = ACCEPTED)
         whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
 
         // when
@@ -307,6 +322,22 @@ class ExpenseServiceTest : ShouldSpec({
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(expenseRepository, times(1)).delete(expense)
         verify(archivedExpenseRepository, times(1)).add(expense)
+        verify(financeAdapterClient, times(1)).generate(eq(GROUP_ID), anyVararg(Currency::class))
+    }
+
+    should("delete expense that was not ACCEPTED") {
+        // given
+        val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID, status = PENDING)
+        whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
+
+        // when
+        expenseService.deleteExpense(EXPENSE_ID, GROUP_ID, USER_ID)
+
+        // then
+        verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
+        verify(expenseRepository, times(1)).delete(expense)
+        verify(archivedExpenseRepository, times(1)).add(expense)
+        verify(financeAdapterClient, times(0)).generate(eq(GROUP_ID), anyVararg(Currency::class))
     }
 
     should("throw MissingExpenseException when expense does not exist") {
@@ -500,9 +531,9 @@ class ExpenseServiceTest : ShouldSpec({
         }
     }
 
-    should("update expense") {
+    should("update expense that was ACCEPTED") {
         // given
-        val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
+        val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID, status = ACCEPTED)
         val expenseUpdate = createExpenseUpdate(
             amount = createAmount(value = "6".toBigDecimal(), currency = CURRENCY_2),
             targetCurrency = CURRENCY_1,
@@ -519,12 +550,14 @@ class ExpenseServiceTest : ShouldSpec({
         )
         whenever(currencyManagerClient.getAvailableCurrencies()).thenReturn(createCurrencies(CURRENCY_1, CURRENCY_2))
         whenever(expenseRepository.save(anyVararg(Expense::class))).doAnswer { it.arguments[0] as? Expense }
+
         // when & then
         val result = expenseService.updateExpense(group, expenseUpdate)
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(currencyManagerClient, times(1)).getAvailableCurrencies()
         verify(currencyManagerClient, times(1)).getExchangeRate(eq(CURRENCY_2), eq(CURRENCY_1), anyVararg(LocalDate::class))
         verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
+        verify(financeAdapterClient, times(1)).generate(eq(GROUP_ID), anyVararg(Currency::class))
 
         result.also {
             it.id shouldBe EXPENSE_ID
@@ -552,7 +585,7 @@ class ExpenseServiceTest : ShouldSpec({
         }
     }
 
-    should("update expense when data did not changed") {
+    should("update expense when data did not changed and status was not ACCEPTED") {
         // given
         val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
         val expenseUpdate = createExpenseUpdateFromExpense(
@@ -569,6 +602,7 @@ class ExpenseServiceTest : ShouldSpec({
         verify(currencyManagerClient, times(1)).getAvailableCurrencies()
         verify(expenseRepository, times(1)).save(anyVararg(Expense::class))
         verify(currencyManagerClient, times(0)).getExchangeRate(eq(CURRENCY_1), eq(CURRENCY_2), anyVararg(LocalDate::class))
+        verify(financeAdapterClient, times(0)).generate(eq(GROUP_ID), anyVararg(Currency::class))
 
         result.also {
             it.id shouldBe EXPENSE_ID

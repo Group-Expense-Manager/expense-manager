@@ -6,6 +6,14 @@ enum class ExpenseStatus {
     PENDING,
     ;
 
+    fun changedToAccepted(currentStatus: ExpenseStatus): Boolean {
+        return this != ACCEPTED && currentStatus == ACCEPTED
+    }
+
+    fun changedFromAccepted(previousStatus: ExpenseStatus): Boolean {
+        return previousStatus == ACCEPTED && this != ACCEPTED
+    }
+
     companion object {
         fun reduce(statuses: List<ExpenseStatus>): ExpenseStatus {
             return when {
