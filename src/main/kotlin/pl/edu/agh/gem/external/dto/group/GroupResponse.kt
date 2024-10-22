@@ -22,5 +22,3 @@ data class MemberDTO(
 data class CurrencyDTO(
     val code: String,
 )
-
-fun Currency.toDto() = CurrencyDTO(code)

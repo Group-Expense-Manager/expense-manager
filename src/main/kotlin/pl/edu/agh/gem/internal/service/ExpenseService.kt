@@ -1,7 +1,6 @@
 package pl.edu.agh.gem.internal.service
 
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.FinanceAdapterClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
@@ -131,7 +130,6 @@ class ExpenseService(
         return expenseRepository.findByGroupId(groupId, filterOptions)
     }
 
-    @Transactional
     fun decide(expenseDecision: ExpenseDecision): Expense {
         val expense = expenseRepository.findByExpenseIdAndGroupId(expenseDecision.expenseId, expenseDecision.groupId)
             ?: throw MissingExpenseException(expenseDecision.expenseId, expenseDecision.groupId)
@@ -187,7 +185,6 @@ class ExpenseService(
         )
     }
 
-    @Transactional
     fun deleteExpense(expenseId: String, groupId: String, userId: String) {
         val expenseToDelete = expenseRepository.findByExpenseIdAndGroupId(expenseId, groupId) ?: throw MissingExpenseException(expenseId, groupId)
 
@@ -221,7 +218,6 @@ class ExpenseService(
         return costsAsExpenseCreator + costsAsExpenseMember
     }
 
-    @Transactional
     fun updateExpense(groupData: GroupData, update: ExpenseUpdate): Expense {
         val originalExpense = expenseRepository.findByExpenseIdAndGroupId(update.id, update.groupId)
             ?: throw MissingExpenseException(update.id, update.groupId)

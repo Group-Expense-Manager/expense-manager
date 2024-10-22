@@ -9,7 +9,6 @@ import io.kotest.matchers.shouldBe
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.CREATED
 import org.springframework.http.HttpStatus.FORBIDDEN
-import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.HttpStatus.OK
 import pl.edu.agh.gem.assertion.shouldBody
@@ -23,6 +22,7 @@ import pl.edu.agh.gem.external.dto.expense.toAmountDto
 import pl.edu.agh.gem.external.dto.expense.toDto
 import pl.edu.agh.gem.external.dto.expense.toExpenseParticipantCost
 import pl.edu.agh.gem.external.dto.group.CurrencyDTO
+import pl.edu.agh.gem.external.dto.reconciliation.GenerateReconciliationRequest
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.group.DummyGroup.OTHER_GROUP_ID
 import pl.edu.agh.gem.helper.user.DummyUser.EMAIL
@@ -448,7 +448,7 @@ class ExternalExpenseControllerIT(
                 stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), OTHER_USER_ID)
 
                 if (shouldStubFinanceAdapter) {
-                    stubFinanceAdapterGenerate(requestBody = CurrencyDTO(code = CURRENCY_2), groupId = GROUP_ID)
+                    stubFinanceAdapterGenerate(requestBody = GenerateReconciliationRequest(currency = CURRENCY_2), groupId = GROUP_ID)
                 }
 
                 val expense = createExpense(status = expenseStatus)
@@ -484,25 +484,6 @@ class ExternalExpenseControllerIT(
                         entry.comment shouldBe decisionRequest.message
                     }
                 }
-            }
-        }
-
-        should("rollback decide when financeClient fails") {
-            // given
-            val decisionRequest = createExpenseDecisionRequest()
-            stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), OTHER_USER_ID)
-            stubFinanceAdapterGenerate(requestBody = CurrencyDTO(code = CURRENCY_2), groupId = GROUP_ID, statusCode = INTERNAL_SERVER_ERROR)
-
-            val expense = createExpense()
-            repository.save(expense)
-
-            // when
-            val response = service.decide(decisionRequest, createGemUser(id = OTHER_USER_ID))
-
-            // then
-            response shouldHaveHttpStatus INTERNAL_SERVER_ERROR
-            repository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID).also {
-                it?.status shouldBe PENDING
             }
         }
 
@@ -576,7 +557,7 @@ class ExternalExpenseControllerIT(
             val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID, status = ACCEPTED)
             repository.save(expense)
             stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), USER_ID)
-            stubFinanceAdapterGenerate(requestBody = CurrencyDTO(code = CURRENCY_2), groupId = GROUP_ID)
+            stubFinanceAdapterGenerate(requestBody = GenerateReconciliationRequest(currency = CURRENCY_2), groupId = GROUP_ID)
 
             // when
             val response = service.delete(createGemUser(USER_ID, EMAIL), GROUP_ID, EXPENSE_ID)
@@ -585,23 +566,6 @@ class ExternalExpenseControllerIT(
             response shouldHaveHttpStatus OK
             repository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID).also {
                 it.shouldBeNull()
-            }
-        }
-
-        should("rollback deleting expense that was ACCEPTED when financeAdapterClient failed") {
-            // given
-            val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID, status = ACCEPTED)
-            repository.save(expense)
-            stubGroupManagerUserGroups(createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID), USER_ID)
-            stubFinanceAdapterGenerate(requestBody = CurrencyDTO(code = CURRENCY_2), groupId = GROUP_ID, statusCode = INTERNAL_SERVER_ERROR)
-
-            // when
-            val response = service.delete(createGemUser(USER_ID, EMAIL), GROUP_ID, EXPENSE_ID)
-
-            // then
-            response shouldHaveHttpStatus INTERNAL_SERVER_ERROR
-            repository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID).also {
-                it.shouldNotBeNull()
             }
         }
 
@@ -843,7 +807,7 @@ class ExternalExpenseControllerIT(
                 CURRENCY_1,
                 Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
             )
-            stubFinanceAdapterGenerate(requestBody = CurrencyDTO(code = CURRENCY_2), groupId = GROUP_ID)
+            stubFinanceAdapterGenerate(requestBody = GenerateReconciliationRequest(currency = CURRENCY_2), groupId = GROUP_ID)
 
             // when
             val response = service.updateExpense(expenseUpdateRequest, createGemUser(USER_ID), GROUP_ID, EXPENSE_ID)
@@ -895,53 +859,6 @@ class ExternalExpenseControllerIT(
                     entry.expenseAction shouldBe EDITED
                     entry.comment shouldBe expenseUpdateRequest.message
                 }
-            }
-        }
-
-        should("rollback update expense that was ACCEPTED when financeAdapterClient failed") {
-            // given
-            val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID, status = ACCEPTED)
-            val expenseUpdateRequest = createExpenseUpdateRequest(
-                amount = createAmountDto(value = "6".toBigDecimal(), currency = CURRENCY_2),
-                targetCurrency = CURRENCY_1,
-                expenseParticipants = listOf(
-                    createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.ONE),
-                    createExpenseParticipantDto(ANOTHER_USER_ID, BigDecimal(4)),
-                ),
-            )
-            repository.save(expense)
-            stubGroupManagerGroupData(createGroupResponse(members = createMembersDTO(USER_ID, OTHER_USER_ID, ANOTHER_USER_ID)), GROUP_ID)
-            stubCurrencyManagerAvailableCurrencies(createCurrenciesResponse(CURRENCY_1, CURRENCY_2))
-            stubCurrencyManagerExchangeRate(
-                createExchangeRateResponse(value = EXCHANGE_RATE_VALUE),
-                CURRENCY_2,
-                CURRENCY_1,
-                Instant.ofEpochSecond(0L).atZone(ZoneId.systemDefault()).toLocalDate(),
-            )
-            stubFinanceAdapterGenerate(requestBody = CurrencyDTO(code = CURRENCY_1), groupId = GROUP_ID, statusCode = INTERNAL_SERVER_ERROR)
-
-            // when
-            val response = service.updateExpense(expenseUpdateRequest, createGemUser(USER_ID), GROUP_ID, EXPENSE_ID)
-
-            // then
-            response shouldHaveHttpStatus INTERNAL_SERVER_ERROR
-
-            repository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID).also {
-                it.shouldNotBeNull()
-                it.id shouldBe EXPENSE_ID
-                it.groupId shouldBe GROUP_ID
-                it.creatorId shouldBe USER_ID
-                it.title shouldBe expense.title
-                it.amount shouldBe expense.amount
-                it.fxData.also { fxData ->
-                    fxData?.targetCurrency shouldBe expense.fxData?.targetCurrency
-                    fxData?.exchangeRate shouldBe EXCHANGE_RATE_VALUE
-                }
-                it.createdAt.shouldNotBeNull()
-                it.updatedAt.shouldNotBeNull()
-                it.attachmentId shouldBe expense.attachmentId
-                it.expenseParticipants shouldContainExactly expense.expenseParticipants
-                it.status shouldBe ACCEPTED
             }
         }
 

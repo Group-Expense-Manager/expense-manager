@@ -5,7 +5,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_ACCEPTABLE
 import pl.edu.agh.gem.external.client.RestFinanceAdapterClient
-import pl.edu.agh.gem.external.dto.group.CurrencyDTO
+import pl.edu.agh.gem.external.dto.reconciliation.GenerateReconciliationRequest
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.integration.BaseIntegrationSpec
 import pl.edu.agh.gem.integration.ability.stubFinanceAdapterGenerate
@@ -18,7 +18,7 @@ class FinanceAdapterClientIT(
 ) : BaseIntegrationSpec({
     should("generate") {
         // given
-        stubFinanceAdapterGenerate(requestBody = CurrencyDTO(code = CURRENCY_1), groupId = GROUP_ID)
+        stubFinanceAdapterGenerate(requestBody = GenerateReconciliationRequest(currency = CURRENCY_1), groupId = GROUP_ID)
 
         // when & then
         shouldNotThrowAny {
@@ -28,7 +28,7 @@ class FinanceAdapterClientIT(
 
     should("throw FinanceAdapterClientException when we send bad request") {
         // given
-        stubFinanceAdapterGenerate(requestBody = CurrencyDTO(code = CURRENCY_1), groupId = GROUP_ID, NOT_ACCEPTABLE)
+        stubFinanceAdapterGenerate(requestBody = GenerateReconciliationRequest(currency = CURRENCY_1), groupId = GROUP_ID, NOT_ACCEPTABLE)
 
         // when & then
         shouldThrow<FinanceAdapterClientException> {
@@ -38,7 +38,7 @@ class FinanceAdapterClientIT(
 
     should("throw RetryableFinanceAdapterClientException when client has internal error") {
         // given
-        stubFinanceAdapterGenerate(requestBody = CurrencyDTO(code = CURRENCY_1), groupId = GROUP_ID, INTERNAL_SERVER_ERROR)
+        stubFinanceAdapterGenerate(requestBody = GenerateReconciliationRequest(currency = CURRENCY_1), groupId = GROUP_ID, INTERNAL_SERVER_ERROR)
 
         // when & then
         shouldThrow<FinanceAdapterClientException> {

@@ -12,7 +12,7 @@ import org.springframework.web.client.HttpServerErrorException
 import org.springframework.web.client.RestTemplate
 import pl.edu.agh.gem.config.FinanceAdapterProperties
 import pl.edu.agh.gem.external.dto.group.GroupResponse
-import pl.edu.agh.gem.external.dto.group.toDto
+import pl.edu.agh.gem.external.dto.reconciliation.GenerateReconciliationRequest
 import pl.edu.agh.gem.headers.HeadersUtils.withAppContentType
 import pl.edu.agh.gem.internal.client.FinanceAdapterClient
 import pl.edu.agh.gem.internal.client.FinanceAdapterClientException
@@ -33,7 +33,7 @@ class RestFinanceAdapterClient(
             restTemplate.exchange(
                 resolveGenerateAddress(groupId),
                 POST,
-                HttpEntity(currency.toDto(), HttpHeaders().withAppContentType()),
+                HttpEntity(GenerateReconciliationRequest(currency = currency.code), HttpHeaders().withAppContentType()),
                 GroupResponse::class.java,
             )
         } catch (ex: HttpClientErrorException) {
