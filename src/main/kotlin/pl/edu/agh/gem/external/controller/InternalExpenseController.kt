@@ -52,10 +52,11 @@ class InternalExpenseController(
         @RequestParam title: String?,
         @RequestParam status: ExpenseStatus?,
         @RequestParam creatorId: String?,
-        @RequestParam sortedBy: SortedBy,
-        @RequestParam sortOrder: SortOrder,
+        @RequestParam sortedBy: SortedBy?,
+        @RequestParam sortOrder: SortOrder?,
     ): GroupActivitiesResponse {
-        val filterOptions = FilterOptions(title, status, creatorId, sortedBy, sortOrder)
+        val filterOptions = if (sortedBy != null && sortOrder != null) FilterOptions(title, status, creatorId, sortedBy, sortOrder) else null
+
         return expenseService.getGroupActivities(groupId, filterOptions).toGroupActivitiesResponse(groupId)
     }
 }

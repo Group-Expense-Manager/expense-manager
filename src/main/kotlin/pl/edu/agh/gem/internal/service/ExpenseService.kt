@@ -126,7 +126,7 @@ class ExpenseService(
         }
     }
 
-    fun getGroupActivities(groupId: String, filterOptions: FilterOptions): List<Expense> {
+    fun getGroupActivities(groupId: String, filterOptions: FilterOptions?): List<Expense> {
         return expenseRepository.findByGroupId(groupId, filterOptions)
     }
 
