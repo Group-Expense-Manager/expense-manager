@@ -15,8 +15,12 @@ import pl.edu.agh.gem.internal.model.expense.filter.SortOrder.DESCENDING
 import pl.edu.agh.gem.internal.model.expense.filter.SortedBy.DATE
 import pl.edu.agh.gem.internal.model.expense.filter.SortedBy.TITLE
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
+import pl.edu.agh.gem.util.DummyData.CURRENCY_1
+import pl.edu.agh.gem.util.DummyData.CURRENCY_2
+import pl.edu.agh.gem.util.createAmount
 import pl.edu.agh.gem.util.createExpense
 import pl.edu.agh.gem.util.createFilterOptions
+import pl.edu.agh.gem.util.createFxData
 import java.time.Instant.ofEpochMilli
 
 class MongoExpenseRepositoryIT(
@@ -113,6 +117,34 @@ class MongoExpenseRepositoryIT(
         listOf(expense1, expense2, expense3).forEach { expenseRepository.save(it) }
 
         val filterOptions = createFilterOptions(creatorId = "1")
+
+        // when
+        val expenses = expenseRepository.findByGroupId(GROUP_ID, filterOptions)
+
+        // then
+        expenses.map { it.id } shouldContainExactly listOf(expense1.id, expense3.id)
+    }
+
+    should("find expense with given groupId and currency") {
+        // given
+        val expense1 = createExpense(id = "1", groupId = GROUP_ID, amount = createAmount(currency = CURRENCY_1), fxData = null)
+        val expense2 = createExpense(id = "2", groupId = GROUP_ID, amount = createAmount(currency = CURRENCY_2), fxData = null)
+        val expense3 = createExpense(
+            id = "3",
+            groupId = GROUP_ID,
+            amount = createAmount(currency = CURRENCY_2),
+            fxData = createFxData(targetCurrency = CURRENCY_1),
+        )
+        val expense4 = createExpense(
+            id = "4",
+            groupId = GROUP_ID,
+            amount = createAmount(currency = CURRENCY_1),
+            fxData = createFxData(targetCurrency = CURRENCY_2),
+        )
+
+        listOf(expense1, expense2, expense3, expense4).forEach { expenseRepository.save(it) }
+
+        val filterOptions = createFilterOptions(currency = CURRENCY_1)
 
         // when
         val expenses = expenseRepository.findByGroupId(GROUP_ID, filterOptions)

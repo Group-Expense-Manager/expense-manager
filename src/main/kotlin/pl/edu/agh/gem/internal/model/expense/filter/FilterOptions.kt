@@ -6,6 +6,7 @@ data class FilterOptions(
     val title: String?,
     val status: ExpenseStatus?,
     val creatorId: String?,
+    val currency: String?,
     val sortedBy: SortedBy,
     val sortOrder: SortOrder,
 )
