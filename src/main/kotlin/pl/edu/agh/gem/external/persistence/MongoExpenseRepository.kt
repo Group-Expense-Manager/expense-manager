@@ -14,8 +14,10 @@ import pl.edu.agh.gem.internal.model.expense.filter.SortOrder.DESCENDING
 import pl.edu.agh.gem.internal.model.expense.filter.SortedBy.DATE
 import pl.edu.agh.gem.internal.model.expense.filter.SortedBy.TITLE
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
+import pl.edu.agh.gem.metrics.MeteredRepository
 
 @Repository
+@MeteredRepository
 class MongoExpenseRepository(
     private val mongo: MongoTemplate,
 ) : ExpenseRepository {
@@ -23,14 +25,21 @@ class MongoExpenseRepository(
         return mongo.save(expense.toEntity()).toDomain()
     }
 
-    override fun findByExpenseIdAndGroupId(expenseId: String, groupId: String): Expense? {
-        val query = Query()
-            .addCriteria(where(ExpenseEntity::id).isEqualTo(expenseId))
-            .addCriteria(where(ExpenseEntity::groupId).isEqualTo(groupId))
+    override fun findByExpenseIdAndGroupId(
+        expenseId: String,
+        groupId: String,
+    ): Expense? {
+        val query =
+            Query()
+                .addCriteria(where(ExpenseEntity::id).isEqualTo(expenseId))
+                .addCriteria(where(ExpenseEntity::groupId).isEqualTo(groupId))
         return mongo.findOne(query, ExpenseEntity::class.java)?.toDomain()
     }
 
-    override fun findByGroupId(groupId: String, filterOptions: FilterOptions?): List<Expense> {
+    override fun findByGroupId(
+        groupId: String,
+        filterOptions: FilterOptions?,
+    ): List<Expense> {
         val query = Query().addCriteria(where(ExpenseEntity::groupId).isEqualTo(groupId))
 
         filterOptions?.also {
@@ -55,20 +64,21 @@ class MongoExpenseRepository(
                             Criteria.where("amount.currency").`is`(currency),
                             Criteria.where("fxData").isNull(),
                         ),
-
                     ),
                 )
             }
 
-            val sortedByField = when (it.sortedBy) {
-                TITLE -> ExpenseEntity::title.name
-                DATE -> ExpenseEntity::expenseDate.name
-            }
+            val sortedByField =
+                when (it.sortedBy) {
+                    TITLE -> ExpenseEntity::title.name
+                    DATE -> ExpenseEntity::expenseDate.name
+                }
 
-            val sort = when (it.sortOrder) {
-                ASCENDING -> Sort.by(Sort.Order.asc(sortedByField))
-                DESCENDING -> Sort.by(Sort.Order.desc(sortedByField))
-            }
+            val sort =
+                when (it.sortOrder) {
+                    ASCENDING -> Sort.by(Sort.Order.asc(sortedByField))
+                    DESCENDING -> Sort.by(Sort.Order.desc(sortedByField))
+                }
             query.with(sort)
         }
 

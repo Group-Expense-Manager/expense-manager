@@ -6,7 +6,7 @@ import io.kotest.core.listeners.AfterTestListener
 import io.kotest.core.listeners.BeforeProjectListener
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 class WireMockListener(private val wireMockServer: WireMockServer) :
     AfterTestListener,

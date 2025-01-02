@@ -1,7 +1,7 @@
 package pl.edu.agh.gem.external.client
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.resilience4j.retry.annotation.Retry
-import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -19,16 +19,20 @@ import pl.edu.agh.gem.internal.client.FinanceAdapterClientException
 import pl.edu.agh.gem.internal.client.GroupManagerClientException
 import pl.edu.agh.gem.internal.client.RetryableFinanceAdapterClientException
 import pl.edu.agh.gem.internal.model.currency.Currency
+import pl.edu.agh.gem.metrics.MeteredClient
 import pl.edu.agh.gem.paths.Paths.INTERNAL
 
 @Component
+@MeteredClient
 class RestFinanceAdapterClient(
     @Qualifier("FinanceAdapterRestTemplate") val restTemplate: RestTemplate,
     private val financeAdapterProperties: FinanceAdapterProperties,
 ) : FinanceAdapterClient {
-
     @Retry(name = "financeAdapterClient")
-    override fun generate(groupId: String, currency: Currency) {
+    override fun generate(
+        groupId: String,
+        currency: Currency,
+    ) {
         try {
             restTemplate.exchange(
                 resolveGenerateAddress(groupId),
@@ -37,19 +41,24 @@ class RestFinanceAdapterClient(
                 GroupResponse::class.java,
             )
         } catch (ex: HttpClientErrorException) {
-            logger.warn(ex) { "Client side exception while trying to generate balance & settlement for group: $groupId and currency: $currency" }
+            logger.warn(ex) {
+                "Client side exception while trying to generate balance & settlement for group: $groupId and currency: $currency"
+            }
             throw GroupManagerClientException(ex.message)
         } catch (ex: HttpServerErrorException) {
-            logger.warn(ex) { "Server side exception while trying to generate balance & settlement for group: $groupId and currency: $currency" }
+            logger.warn(ex) {
+                "Server side exception while trying to generate balance & settlement for group: $groupId and currency: $currency"
+            }
             throw RetryableFinanceAdapterClientException(ex.message)
         } catch (ex: Exception) {
-            logger.warn(ex) { "Unexpected exception while trying to generate balance & settlement for group: $groupId and currency: $currency" }
+            logger.warn(ex) {
+                "Unexpected exception while trying to generate balance & settlement for group: $groupId and currency: $currency"
+            }
             throw FinanceAdapterClientException(ex.message)
         }
     }
 
-    private fun resolveGenerateAddress(groupId: String) =
-        "${financeAdapterProperties.url}$INTERNAL/generate/groups/$groupId"
+    private fun resolveGenerateAddress(groupId: String) = "${financeAdapterProperties.url}$INTERNAL/generate/groups/$groupId"
 
     companion object {
         private val logger = KotlinLogging.logger {}
