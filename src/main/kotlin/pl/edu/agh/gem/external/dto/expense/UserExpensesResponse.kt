@@ -12,16 +12,17 @@ data class UserExpenseDto(
     val value: BigDecimal,
     val currency: String,
     val exchangeRate: BigDecimal?,
-
 )
 
-private fun UserExpense.toUserExpenseDto() = UserExpenseDto(
-    value = value,
-    currency = currency,
-    exchangeRate = exchangeRate,
-)
+private fun UserExpense.toUserExpenseDto() =
+    UserExpenseDto(
+        value = value,
+        currency = currency,
+        exchangeRate = exchangeRate,
+    )
 
-fun List<UserExpense>.toUserExpensesResponse(userId: String) = UserExpensesResponse(
-    userId = userId,
-    expenses = map { it.toUserExpenseDto() },
-)
+fun List<UserExpense>.toUserExpensesResponse(userId: String) =
+    UserExpensesResponse(
+        userId = userId,
+        expenses = map { it.toUserExpenseDto() },
+    )

@@ -22,11 +22,16 @@ import java.util.Optional
 @Component
 @Lazy
 class ServiceTestClient(applicationContext: WebApplicationContext) {
-    private val webClient = bindToApplicationContext(applicationContext)
-        .configureClient()
-        .build()
+    private val webClient =
+        bindToApplicationContext(applicationContext)
+            .configureClient()
+            .build()
 
-    fun createExpense(body: Any, user: GemUser, groupId: String): ResponseSpec {
+    fun createExpense(
+        body: Any,
+        user: GemUser,
+        groupId: String,
+    ): ResponseSpec {
         return webClient.post()
             .uri { it.path("$EXTERNAL/expenses").queryParam("groupId", groupId).build() }
             .headers {
@@ -37,7 +42,11 @@ class ServiceTestClient(applicationContext: WebApplicationContext) {
             .exchange()
     }
 
-    fun getExpense(user: GemUser, expenseId: String, groupId: String): ResponseSpec {
+    fun getExpense(
+        user: GemUser,
+        expenseId: String,
+        groupId: String,
+    ): ResponseSpec {
         return webClient.get()
             .uri(URI("$EXTERNAL/expenses/$expenseId/groups/$groupId"))
             .headers { it.withValidatedUser(user).withAppAcceptType() }
@@ -66,7 +75,10 @@ class ServiceTestClient(applicationContext: WebApplicationContext) {
             .exchange()
     }
 
-    fun decide(body: Any, user: GemUser): ResponseSpec {
+    fun decide(
+        body: Any,
+        user: GemUser,
+    ): ResponseSpec {
         return webClient.post()
             .uri(URI("$EXTERNAL/expenses/decide"))
             .headers { it.withValidatedUser(user).withAppContentType() }
@@ -74,28 +86,43 @@ class ServiceTestClient(applicationContext: WebApplicationContext) {
             .exchange()
     }
 
-    fun delete(user: GemUser, groupId: String, expenseId: String): ResponseSpec {
+    fun delete(
+        user: GemUser,
+        groupId: String,
+        expenseId: String,
+    ): ResponseSpec {
         return webClient.delete()
             .uri(URI("$EXTERNAL/expenses/$expenseId/groups/$groupId"))
             .headers { it.withValidatedUser(user) }
             .exchange()
     }
 
-    fun getUserExpenses(groupId: String, userId: String): ResponseSpec {
+    fun getUserExpenses(
+        groupId: String,
+        userId: String,
+    ): ResponseSpec {
         return webClient.get()
             .uri(URI("$INTERNAL/expenses/groups/$groupId/users/$userId"))
             .headers { it.withAppAcceptType() }
             .exchange()
     }
 
-    fun getAcceptedGroupExpenses(groupId: String, currency: String): ResponseSpec {
+    fun getAcceptedGroupExpenses(
+        groupId: String,
+        currency: String,
+    ): ResponseSpec {
         return webClient.get()
             .uri { it.path("$INTERNAL/expenses/accepted/groups/$groupId").queryParam("currency", currency).build() }
             .headers { it.withAppAcceptType() }
             .exchange()
     }
 
-    fun updateExpense(body: Any, user: GemUser, groupId: String, expenseId: String): ResponseSpec {
+    fun updateExpense(
+        body: Any,
+        user: GemUser,
+        groupId: String,
+        expenseId: String,
+    ): ResponseSpec {
         return webClient.put()
             .uri(URI("$EXTERNAL/expenses/$expenseId/groups/$groupId"))
             .headers {

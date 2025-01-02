@@ -806,8 +806,8 @@ formatting:
     active: true
     autoCorrect: true
   ArgumentListWrapping:
-    active: true
-    autoCorrect: true
+    active: false
+    autoCorrect: false
     indentSize: 4
     maxLineLength: 120
     ignoreRuleParameterThreshold: 8
@@ -930,8 +930,8 @@ formatting:
     active: true
     autoCorrect: true
   MultiLineIfElse:
-    active: true
-    autoCorrect: true
+    active: false
+    autoCorrect: false
     indentSize: 4
   MultilineExpressionWrapping:
     active: false
@@ -943,8 +943,8 @@ formatting:
     active: true
     autoCorrect: true
   NoBlankLineInList:
-    active: true
-    autoCorrect: true
+    active: false
+    autoCorrect: false
   NoBlankLinesInChainedMethodCalls:
     active: true
     autoCorrect: true
@@ -959,8 +959,8 @@ formatting:
   NoEmptyFile:
     active: true
   NoEmptyFirstLineInClassBody:
-    active: true
-    autoCorrect: true
+    active: false
+    autoCorrect: false
     indentSize: 4
   NoEmptyFirstLineInMethodBlock:
     active: true
@@ -1012,8 +1012,8 @@ formatting:
   PropertyName:
     active: false
   PropertyWrapping:
-    active: true
-    autoCorrect: true
+    active: false
+    autoCorrect: false
     indentSize: 4
     maxLineLength: 120
   SpacingAroundAngleBrackets:

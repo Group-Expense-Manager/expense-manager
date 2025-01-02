@@ -17,11 +17,12 @@ data class ExpenseDecisionRequest(
     @field:NullOrNotBlank(message = MESSAGE_NULL_OR_NOT_BLANK)
     val message: String?,
 ) {
-    fun toDomain(userId: String) = ExpenseDecision(
-        userId = userId,
-        expenseId = expenseId,
-        groupId = groupId,
-        decision = decision,
-        message = message,
-    )
+    fun toDomain(userId: String) =
+        ExpenseDecision(
+            userId = userId,
+            expenseId = expenseId,
+            groupId = groupId,
+            decision = decision,
+            message = message,
+        )
 }

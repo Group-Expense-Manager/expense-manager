@@ -36,4 +36,4 @@ class ExpenseUpdateRequestTest : ShouldSpec({
             it.message shouldBe expenseUpdateRequest.message
         }
     }
-},)
+})

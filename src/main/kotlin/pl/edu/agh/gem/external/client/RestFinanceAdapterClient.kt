@@ -16,7 +16,6 @@ import pl.edu.agh.gem.external.dto.reconciliation.GenerateReconciliationRequest
 import pl.edu.agh.gem.headers.HeadersUtils.withAppContentType
 import pl.edu.agh.gem.internal.client.FinanceAdapterClient
 import pl.edu.agh.gem.internal.client.FinanceAdapterClientException
-import pl.edu.agh.gem.internal.client.GroupManagerClientException
 import pl.edu.agh.gem.internal.client.RetryableFinanceAdapterClientException
 import pl.edu.agh.gem.internal.model.currency.Currency
 import pl.edu.agh.gem.metrics.MeteredClient
@@ -44,7 +43,7 @@ class RestFinanceAdapterClient(
             logger.warn(ex) {
                 "Client side exception while trying to generate balance & settlement for group: $groupId and currency: $currency"
             }
-            throw GroupManagerClientException(ex.message)
+            throw FinanceAdapterClientException(ex.message)
         } catch (ex: HttpServerErrorException) {
             logger.warn(ex) {
                 "Server side exception while trying to generate balance & settlement for group: $groupId and currency: $currency"

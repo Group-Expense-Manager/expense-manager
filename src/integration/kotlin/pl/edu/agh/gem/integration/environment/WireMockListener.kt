@@ -1,18 +1,21 @@
 package pl.edu.agh.gem.integration.environment
 
 import com.github.tomakehurst.wiremock.WireMockServer
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.core.listeners.AfterProjectListener
 import io.kotest.core.listeners.AfterTestListener
 import io.kotest.core.listeners.BeforeProjectListener
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
-import io.github.oshai.kotlinlogging.KotlinLogging
 
 class WireMockListener(private val wireMockServer: WireMockServer) :
     AfterTestListener,
     BeforeProjectListener,
     AfterProjectListener {
-    override suspend fun afterTest(testCase: TestCase, result: TestResult) {
+    override suspend fun afterTest(
+        testCase: TestCase,
+        result: TestResult,
+    ) {
         wireMockServer.resetAll()
     }
 
