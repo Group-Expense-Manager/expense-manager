@@ -144,11 +144,7 @@ tasks {
         }
         outputs.upToDateWhen { false }
     }
-
-    withType<org.jlleitschuh.gradle.ktlint.tasks.BaseKtLintCheckTask> {
-        workerMaxHeapSize.set("512m")
-    }
-
+    
     register<Test>("integration") {
         description = "Runs the integration tests."
         group = "verification"
