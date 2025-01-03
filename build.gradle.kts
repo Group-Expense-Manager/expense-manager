@@ -144,7 +144,7 @@ tasks {
         }
         outputs.upToDateWhen { false }
     }
-    
+
     register<Test>("integration") {
         description = "Runs the integration tests."
         group = "verification"
