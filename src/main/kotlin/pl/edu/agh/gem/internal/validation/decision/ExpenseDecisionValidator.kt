@@ -5,10 +5,10 @@ import pl.edu.agh.gem.validator.BaseValidator
 import pl.edu.agh.gem.validator.Check
 
 class ExpenseDecisionValidator : BaseValidator<ExpenseDecisionDataWrapper>() {
-    override val checks: List<Check<ExpenseDecisionDataWrapper>> = listOf(
-        Check(USER_NOT_PARTICIPANT) { validateParticipant(it) },
-
-    )
+    override val checks: List<Check<ExpenseDecisionDataWrapper>> =
+        listOf(
+            Check(USER_NOT_PARTICIPANT) { validateParticipant(it) },
+        )
 
     private fun validateParticipant(expenseDecisionDataWrapper: ExpenseDecisionDataWrapper): Boolean {
         return expenseDecisionDataWrapper.expense.expenseParticipants

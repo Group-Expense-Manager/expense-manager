@@ -1,0 +1,57 @@
+version: 2
+registries:
+  maven-google:
+    type: maven-repository
+    url: "https://maven.google.com"
+  maven-central:
+    type: maven-repository
+    url: "https://repo.maven.apache.org/maven2"
+  gradle-plugin:
+    type: maven-repository
+    url: "https://plugins.gradle.org/m2"
+  gem-lib:
+    type: maven-repository
+    url: "https://maven.pkg.github.com/Group-Expense-Manager/gem-lib"
+    username: ${{ secrets.LIB_LOGIN }}
+    password: ${{ secrets.LIB_TOKEN }}
+  jitpack:
+    type: maven-repository
+    url: "https://jitpack.io"
+
+updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    registries:
+      - maven-central
+      - maven-google
+      - gradle-plugin
+      - gem-lib
+      - jitpack
+    commit-message:
+      prefix: "GEM-241 | "
+    schedule:
+      interval: "daily"
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
+          - "major"
+
+  # Update GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    commit-message:
+      prefix: "GEM-241 | "
+    schedule:
+      interval: "daily"
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
+          - "major"

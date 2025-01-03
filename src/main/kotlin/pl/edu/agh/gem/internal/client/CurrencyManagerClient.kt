@@ -6,7 +6,12 @@ import java.time.LocalDate
 
 interface CurrencyManagerClient {
     fun getAvailableCurrencies(): Currencies
-    fun getExchangeRate(baseCurrency: String, targetCurrency: String, date: LocalDate): BigDecimal
+
+    fun getExchangeRate(
+        baseCurrency: String,
+        targetCurrency: String,
+        date: LocalDate,
+    ): BigDecimal
 }
 
 class CurrencyManagerClientException(override val message: String?) : RuntimeException()

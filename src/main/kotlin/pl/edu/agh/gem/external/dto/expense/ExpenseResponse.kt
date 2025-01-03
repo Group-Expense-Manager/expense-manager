@@ -22,20 +22,21 @@ data class ExpenseResponse(
     val history: List<ExpenseHistoryEntryResponseData>,
 ) {
     companion object {
-        fun fromExpense(expense: Expense) = ExpenseResponse(
-            expenseId = expense.id,
-            creatorId = expense.creatorId,
-            title = expense.title,
-            amount = expense.amount.toAmountDto(),
-            fxData = expense.fxData?.toDto(),
-            createdAt = expense.createdAt,
-            updatedAt = expense.updatedAt,
-            expenseDate = expense.expenseDate,
-            attachmentId = expense.attachmentId,
-            expenseParticipants = expense.expenseParticipants.map { ExpenseParticipantResponseData.fromExpenseParticipant(it) },
-            status = expense.status.name,
-            history = expense.history.map { ExpenseHistoryEntryResponseData.fromExpenseHistoryEntry(it) },
-        )
+        fun fromExpense(expense: Expense) =
+            ExpenseResponse(
+                expenseId = expense.id,
+                creatorId = expense.creatorId,
+                title = expense.title,
+                amount = expense.amount.toAmountDto(),
+                fxData = expense.fxData?.toDto(),
+                createdAt = expense.createdAt,
+                updatedAt = expense.updatedAt,
+                expenseDate = expense.expenseDate,
+                attachmentId = expense.attachmentId,
+                expenseParticipants = expense.expenseParticipants.map { ExpenseParticipantResponseData.fromExpenseParticipant(it) },
+                status = expense.status.name,
+                history = expense.history.map { ExpenseHistoryEntryResponseData.fromExpenseHistoryEntry(it) },
+            )
     }
 }
 
@@ -45,11 +46,12 @@ data class ExpenseParticipantResponseData(
     val participantStatus: String,
 ) {
     companion object {
-        fun fromExpenseParticipant(expenseParticipant: ExpenseParticipant) = ExpenseParticipantResponseData(
-            participantId = expenseParticipant.participantId,
-            participantCost = expenseParticipant.participantCost,
-            participantStatus = expenseParticipant.participantStatus.name,
-        )
+        fun fromExpenseParticipant(expenseParticipant: ExpenseParticipant) =
+            ExpenseParticipantResponseData(
+                participantId = expenseParticipant.participantId,
+                participantCost = expenseParticipant.participantCost,
+                participantStatus = expenseParticipant.participantStatus.name,
+            )
     }
 }
 
@@ -60,12 +62,13 @@ data class ExpenseHistoryEntryResponseData(
     val comment: String?,
 ) {
     companion object {
-        fun fromExpenseHistoryEntry(expenseHistoryEntry: ExpenseHistoryEntry) = ExpenseHistoryEntryResponseData(
-            participantId = expenseHistoryEntry.participantId,
-            expenseAction = expenseHistoryEntry.expenseAction.name,
-            createdAt = expenseHistoryEntry.createdAt,
-            comment = expenseHistoryEntry.comment,
-        )
+        fun fromExpenseHistoryEntry(expenseHistoryEntry: ExpenseHistoryEntry) =
+            ExpenseHistoryEntryResponseData(
+                participantId = expenseHistoryEntry.participantId,
+                expenseAction = expenseHistoryEntry.expenseAction.name,
+                createdAt = expenseHistoryEntry.createdAt,
+                comment = expenseHistoryEntry.comment,
+            )
     }
 }
 

@@ -36,22 +36,26 @@ data class ExpenseUpdateRequest(
     @field:NullOrNotBlank(message = ATTACHMENT_ID_NULL_OR_NOT_BLANK)
     val attachmentId: String?,
 ) {
-    fun toDomain(expenseId: String, groupId: String, userId: String) =
-        ExpenseUpdate(
-            id = expenseId,
-            groupId = groupId,
-            userId = userId,
-            title = title,
-            amount = amount.toDomain(),
-            targetCurrency = targetCurrency,
-            expenseDate = expenseDate,
-            expenseParticipantsCost = expenseParticipants.map { it.toExpenseParticipantCost() },
-            message = message,
-            attachmentId = attachmentId,
-        )
+    fun toDomain(
+        expenseId: String,
+        groupId: String,
+        userId: String,
+    ) = ExpenseUpdate(
+        id = expenseId,
+        groupId = groupId,
+        userId = userId,
+        title = title,
+        amount = amount.toDomain(),
+        targetCurrency = targetCurrency,
+        expenseDate = expenseDate,
+        expenseParticipantsCost = expenseParticipants.map { it.toExpenseParticipantCost() },
+        message = message,
+        attachmentId = attachmentId,
+    )
 }
 
-fun ExpenseParticipantRequestData.toExpenseParticipantCost() = ExpenseParticipantCost(
-    participantId = participantId,
-    participantCost = participantCost,
-)
+fun ExpenseParticipantRequestData.toExpenseParticipantCost() =
+    ExpenseParticipantCost(
+        participantId = participantId,
+        participantCost = participantCost,
+    )

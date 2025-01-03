@@ -8,12 +8,13 @@ import pl.edu.agh.gem.validator.BaseValidator
 import pl.edu.agh.gem.validator.Check
 
 class CurrenciesValidator : BaseValidator<CurrencyDataWrapper>() {
-    override val checks: List<Check<CurrencyDataWrapper>> = listOf(
-        Check(BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES) { validateBaseCurrencyInGroupCurrencies(it) },
-        Check(BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY) { validateBaseCurrencyNotEqualTargetCurrency(it) },
-        Check(TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES) { validateTargetCurrencyInGroupCurrencies(it) },
-        Check(BASE_CURRENCY_NOT_AVAILABLE) { validateBaseCurrencyAvailable(it) },
-    )
+    override val checks: List<Check<CurrencyDataWrapper>> =
+        listOf(
+            Check(BASE_CURRENCY_NOT_IN_GROUP_CURRENCIES) { validateBaseCurrencyInGroupCurrencies(it) },
+            Check(BASE_CURRENCY_EQUAL_TO_TARGET_CURRENCY) { validateBaseCurrencyNotEqualTargetCurrency(it) },
+            Check(TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES) { validateTargetCurrencyInGroupCurrencies(it) },
+            Check(BASE_CURRENCY_NOT_AVAILABLE) { validateBaseCurrencyAvailable(it) },
+        )
 
     private fun validateBaseCurrencyInGroupCurrencies(currencyDataWrapper: CurrencyDataWrapper): Boolean {
         return currencyDataWrapper.currencyData.targetCurrency != null ||

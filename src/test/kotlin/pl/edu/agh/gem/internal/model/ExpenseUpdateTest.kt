@@ -52,4 +52,4 @@ class ExpenseUpdateTest : ShouldSpec({
             it.participantCost shouldBe expenseParticipantRequestData.participantCost
         }
     }
-},)
+})

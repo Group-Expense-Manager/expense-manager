@@ -4,8 +4,10 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Repository
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.persistence.ArchivedExpenseRepository
+import pl.edu.agh.gem.metrics.MeteredRepository
 
 @Repository
+@MeteredRepository
 class MongoArchivedExpenseRepository(
     private val mongo: MongoTemplate,
 ) : ArchivedExpenseRepository {

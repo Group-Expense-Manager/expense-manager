@@ -20,20 +20,22 @@ data class GroupActivityDto(
     val expenseDate: Instant,
 ) {
     companion object {
-        fun fromExpense(expense: Expense) = GroupActivityDto(
-            expenseId = expense.id,
-            creatorId = expense.creatorId,
-            title = expense.title,
-            amount = expense.amount.toAmountDto(),
-            fxData = expense.fxData?.toDto(),
-            status = expense.status,
-            participantIds = expense.expenseParticipants.map { it.participantId },
-            expenseDate = expense.expenseDate,
-        )
+        fun fromExpense(expense: Expense) =
+            GroupActivityDto(
+                expenseId = expense.id,
+                creatorId = expense.creatorId,
+                title = expense.title,
+                amount = expense.amount.toAmountDto(),
+                fxData = expense.fxData?.toDto(),
+                status = expense.status,
+                participantIds = expense.expenseParticipants.map { it.participantId },
+                expenseDate = expense.expenseDate,
+            )
     }
 }
 
-fun List<Expense>.toGroupActivitiesResponse(groupId: String) = GroupActivitiesResponse(
-    groupId = groupId,
-    expenses = map { GroupActivityDto.fromExpense(it) },
-)
+fun List<Expense>.toGroupActivitiesResponse(groupId: String) =
+    GroupActivitiesResponse(
+        groupId = groupId,
+        expenses = map { GroupActivityDto.fromExpense(it) },
+    )

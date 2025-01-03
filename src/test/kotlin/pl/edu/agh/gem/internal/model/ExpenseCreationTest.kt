@@ -70,4 +70,4 @@ class ExpenseCreationTest : ShouldSpec({
             it.participantStatus shouldBe PENDING
         }
     }
-},)
+})

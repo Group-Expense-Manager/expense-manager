@@ -47,314 +47,320 @@ class InternalExpenseControllerIT(
     private val repository: ExpenseRepository,
 ) : BaseIntegrationSpec({
 
-    should("get user expenses") {
-        // given
-        val expenseList = listOf(
-            createExpense(
-                id = "1",
-                creatorId = USER_ID,
-                amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
-                fxData = null,
-                expenseParticipants = createExpenseParticipants(
-                    listOf(USER_ID, "userId2", "userId3"),
-                    listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
-                ),
-                status = ACCEPTED,
-            ),
+        should("get user expenses") {
+            // given
+            val expenseList =
+                listOf(
+                    createExpense(
+                        id = "1",
+                        creatorId = USER_ID,
+                        amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
+                        fxData = null,
+                        expenseParticipants =
+                            createExpenseParticipants(
+                                listOf(USER_ID, "userId2", "userId3"),
+                                listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+                            ),
+                        status = ACCEPTED,
+                    ),
+                    createExpense(
+                        id = "2",
+                        creatorId = OTHER_USER_ID,
+                        amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
+                        fxData = createFxData(),
+                        expenseParticipants =
+                            createExpenseParticipants(
+                                listOf(USER_ID, OTHER_USER_ID, "userId3"),
+                                listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+                            ),
+                        status = ACCEPTED,
+                    ),
+                )
+            expenseList.forEach { repository.save(it) }
 
-            createExpense(
-                id = "2",
-                creatorId = OTHER_USER_ID,
-                amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
-                fxData = createFxData(),
-                expenseParticipants = createExpenseParticipants(
-                    listOf(USER_ID, OTHER_USER_ID, "userId3"),
-                    listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
-                ),
-                status = ACCEPTED,
-            ),
+            // when
+            val response = service.getUserExpenses(GROUP_ID, USER_ID)
 
-        )
-        expenseList.forEach { repository.save(it) }
+            // then
+            response shouldHaveHttpStatus OK
+            response.shouldBody<UserExpensesResponse> {
+                userId shouldBe USER_ID
+                expenses.size shouldBe 2
+                expenses.first().also { userExpenses ->
+                    userExpenses.value shouldBe BigDecimal("50")
+                    userExpenses.currency shouldBe CURRENCY_1
+                    userExpenses.exchangeRate.shouldBeNull()
+                }
 
-        // when
-        val response = service.getUserExpenses(GROUP_ID, USER_ID)
-
-        // then
-        response shouldHaveHttpStatus OK
-        response.shouldBody<UserExpensesResponse> {
-            userId shouldBe USER_ID
-            expenses.size shouldBe 2
-            expenses.first().also { userExpenses ->
-                userExpenses.value shouldBe BigDecimal("50")
-                userExpenses.currency shouldBe CURRENCY_1
-                userExpenses.exchangeRate.shouldBeNull()
-            }
-
-            expenses.last().also { userExpenses ->
-                userExpenses.value shouldBe BigDecimal("-10")
-                userExpenses.currency shouldBe CURRENCY_2
-                userExpenses.exchangeRate shouldBe EXCHANGE_RATE_VALUE
-            }
-        }
-    }
-
-    should("get accepted expenses") {
-        // given
-        val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(USER_ID)))
-        stubGroupManagerUserGroups(groupMembers, GROUP_ID)
-        val acceptedExpense1 = createExpense(
-            id = "1",
-            status = ACCEPTED,
-            amount = createAmount(currency = CURRENCY_1),
-            fxData = createFxData(targetCurrency = CURRENCY_2),
-        )
-        val acceptedExpense2 = createExpense(
-            id = "2",
-            status = ACCEPTED,
-            amount = createAmount(currency = CURRENCY_2),
-            fxData = null,
-        )
-        val expensesToSave = listOf(
-            acceptedExpense1,
-            acceptedExpense2,
-            createExpense(
-                id = "3",
-                status = ACCEPTED,
-                amount = createAmount(currency = CURRENCY_2),
-                fxData = createFxData(targetCurrency = CURRENCY_1),
-            ),
-            createExpense(
-                id = "4",
-                status = ACCEPTED,
-                amount = createAmount(currency = CURRENCY_1),
-                fxData = null,
-            ),
-            createExpense(
-                id = "5",
-                status = PENDING,
-                amount = createAmount(currency = CURRENCY_1),
-                fxData = createFxData(targetCurrency = CURRENCY_2),
-            ),
-            createExpense(
-                id = "6",
-                status = PENDING,
-                amount = createAmount(currency = CURRENCY_2),
-                fxData = null,
-            ),
-        )
-
-        expensesToSave.forEach { repository.save(it) }
-
-        // when
-        val response = service.getAcceptedGroupExpenses(GROUP_ID, CURRENCY_2)
-
-        // then
-        response shouldHaveHttpStatus OK
-        response.shouldBody<AcceptedGroupExpensesResponse> {
-            groupId shouldBe GROUP_ID
-            expenses shouldHaveSize 2
-            expenses.first().also {
-                it.creatorId shouldBe acceptedExpense1.creatorId
-                it.title shouldBe acceptedExpense1.title
-                it.amount shouldBe acceptedExpense1.amount.toAmountDto()
-                it.fxData shouldBe acceptedExpense1.fxData?.toDto()
-                it.participants shouldBe acceptedExpense1.expenseParticipants
-                    .map { p -> AcceptedGroupExpenseParticipantDto(p.participantId, p.participantCost) }
-                it.expenseDate shouldBe acceptedExpense1.expenseDate
-            }
-            expenses.last().also {
-                it.creatorId shouldBe acceptedExpense2.creatorId
-                it.title shouldBe acceptedExpense2.title
-                it.amount shouldBe acceptedExpense2.amount.toAmountDto()
-                it.fxData shouldBe acceptedExpense2.fxData?.toDto()
-                it.participants shouldBe acceptedExpense2.expenseParticipants
-                    .map { p -> AcceptedGroupExpenseParticipantDto(p.participantId, p.participantCost) }
-                it.expenseDate shouldBe acceptedExpense2.expenseDate
+                expenses.last().also { userExpenses ->
+                    userExpenses.value shouldBe BigDecimal("-10")
+                    userExpenses.currency shouldBe CURRENCY_2
+                    userExpenses.exchangeRate shouldBe EXCHANGE_RATE_VALUE
+                }
             }
         }
-    }
 
-    should("get group activities") {
-        // given
-        val expense = createExpense(groupId = GROUP_ID, expenseParticipants = listOf(createExpenseParticipant()))
-        repository.save(expense)
+        should("get accepted expenses") {
+            // given
+            val groupMembers = GroupMembersResponse(listOf(GroupMemberResponse(USER_ID)))
+            stubGroupManagerUserGroups(groupMembers, GROUP_ID)
+            val acceptedExpense1 =
+                createExpense(
+                    id = "1",
+                    status = ACCEPTED,
+                    amount = createAmount(currency = CURRENCY_1),
+                    fxData = createFxData(targetCurrency = CURRENCY_2),
+                )
+            val acceptedExpense2 =
+                createExpense(
+                    id = "2",
+                    status = ACCEPTED,
+                    amount = createAmount(currency = CURRENCY_2),
+                    fxData = null,
+                )
+            val expensesToSave =
+                listOf(
+                    acceptedExpense1,
+                    acceptedExpense2,
+                    createExpense(
+                        id = "3",
+                        status = ACCEPTED,
+                        amount = createAmount(currency = CURRENCY_2),
+                        fxData = createFxData(targetCurrency = CURRENCY_1),
+                    ),
+                    createExpense(
+                        id = "4",
+                        status = ACCEPTED,
+                        amount = createAmount(currency = CURRENCY_1),
+                        fxData = null,
+                    ),
+                    createExpense(
+                        id = "5",
+                        status = PENDING,
+                        amount = createAmount(currency = CURRENCY_1),
+                        fxData = createFxData(targetCurrency = CURRENCY_2),
+                    ),
+                    createExpense(
+                        id = "6",
+                        status = PENDING,
+                        amount = createAmount(currency = CURRENCY_2),
+                        fxData = null,
+                    ),
+                )
 
-        // when
-        val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID)
+            expensesToSave.forEach { repository.save(it) }
 
-        // then
-        response shouldHaveHttpStatus OK
-        response.shouldBody<GroupActivitiesResponse> {
-            groupId shouldBe GROUP_ID
-            expenses shouldHaveSize 1
-            expenses.first().also {
-                it.expenseId shouldBe expense.id
-                it.creatorId shouldBe expense.creatorId
-                it.title shouldBe expense.title
-                it.amount shouldBe expense.amount.toAmountDto()
-                it.fxData shouldBe expense.fxData?.toDto()
-                it.status shouldBe expense.status
-                it.participantIds.shouldHaveSize(1)
-                it.participantIds.first() shouldBe expense.expenseParticipants.first().participantId
-                it.expenseDate shouldBe expense.expenseDate
+            // when
+            val response = service.getAcceptedGroupExpenses(GROUP_ID, CURRENCY_2)
+
+            // then
+            response shouldHaveHttpStatus OK
+            response.shouldBody<AcceptedGroupExpensesResponse> {
+                groupId shouldBe GROUP_ID
+                expenses shouldHaveSize 2
+                expenses.first().also {
+                    it.creatorId shouldBe acceptedExpense1.creatorId
+                    it.title shouldBe acceptedExpense1.title
+                    it.amount shouldBe acceptedExpense1.amount.toAmountDto()
+                    it.fxData shouldBe acceptedExpense1.fxData?.toDto()
+                    it.participants shouldBe
+                        acceptedExpense1.expenseParticipants
+                            .map { p -> AcceptedGroupExpenseParticipantDto(p.participantId, p.participantCost) }
+                    it.expenseDate shouldBe acceptedExpense1.expenseDate
+                }
+                expenses.last().also {
+                    it.creatorId shouldBe acceptedExpense2.creatorId
+                    it.title shouldBe acceptedExpense2.title
+                    it.amount shouldBe acceptedExpense2.amount.toAmountDto()
+                    it.fxData shouldBe acceptedExpense2.fxData?.toDto()
+                    it.participants shouldBe
+                        acceptedExpense2.expenseParticipants
+                            .map { p -> AcceptedGroupExpenseParticipantDto(p.participantId, p.participantCost) }
+                    it.expenseDate shouldBe acceptedExpense2.expenseDate
+                }
             }
         }
-    }
 
-    should("get empty list when attempting to get group activities") {
-        // given
-        val expense = createExpense(groupId = OTHER_GROUP_ID, expenseParticipants = listOf(createExpenseParticipant()))
-        repository.save(expense)
+        should("get group activities") {
+            // given
+            val expense = createExpense(groupId = GROUP_ID, expenseParticipants = listOf(createExpenseParticipant()))
+            repository.save(expense)
 
-        // when
-        val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID)
+            // when
+            val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID)
 
-        // then
-        response shouldHaveHttpStatus OK
-        response.shouldBody<GroupActivitiesResponse> {
-            groupId shouldBe GROUP_ID
-            expenses shouldHaveSize 0
+            // then
+            response shouldHaveHttpStatus OK
+            response.shouldBody<GroupActivitiesResponse> {
+                groupId shouldBe GROUP_ID
+                expenses shouldHaveSize 1
+                expenses.first().also {
+                    it.expenseId shouldBe expense.id
+                    it.creatorId shouldBe expense.creatorId
+                    it.title shouldBe expense.title
+                    it.amount shouldBe expense.amount.toAmountDto()
+                    it.fxData shouldBe expense.fxData?.toDto()
+                    it.status shouldBe expense.status
+                    it.participantIds.shouldHaveSize(1)
+                    it.participantIds.first() shouldBe expense.expenseParticipants.first().participantId
+                    it.expenseDate shouldBe expense.expenseDate
+                }
+            }
         }
-    }
 
-    should("get group activities with given title") {
-        // given
-        val expense1 = createExpense(id = "1", groupId = GROUP_ID, title = "Pizza in Krakow")
-        val expense2 = createExpense(id = "2", groupId = GROUP_ID, title = "The best burger")
-        val expense3 = createExpense(id = "3", groupId = GROUP_ID, title = "Spaghetti with Andrzej")
+        should("get empty list when attempting to get group activities") {
+            // given
+            val expense = createExpense(groupId = OTHER_GROUP_ID, expenseParticipants = listOf(createExpenseParticipant()))
+            repository.save(expense)
 
-        listOf(expense1, expense2, expense3).forEach { repository.save(it) }
+            // when
+            val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID)
 
-        // when
-        val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID, title = "KRA")
-
-        // then
-        response shouldHaveHttpStatus OK
-        response.shouldBody<GroupActivitiesResponse> {
-            groupId shouldBe GROUP_ID
-            expenses shouldHaveSize 1
-            expenses.first().expenseId shouldBe expense1.id
+            // then
+            response shouldHaveHttpStatus OK
+            response.shouldBody<GroupActivitiesResponse> {
+                groupId shouldBe GROUP_ID
+                expenses shouldHaveSize 0
+            }
         }
-    }
 
-    should("get group activities with given status") {
-        // given
-        val expense1 = createExpense(id = "1", groupId = GROUP_ID, status = REJECTED)
-        val expense2 = createExpense(id = "2", groupId = GROUP_ID, status = ACCEPTED)
-        val expense3 = createExpense(id = "3", groupId = GROUP_ID, status = PENDING)
+        should("get group activities with given title") {
+            // given
+            val expense1 = createExpense(id = "1", groupId = GROUP_ID, title = "Pizza in Krakow")
+            val expense2 = createExpense(id = "2", groupId = GROUP_ID, title = "The best burger")
+            val expense3 = createExpense(id = "3", groupId = GROUP_ID, title = "Spaghetti with Andrzej")
 
-        listOf(expense1, expense2, expense3).forEach { repository.save(it) }
+            listOf(expense1, expense2, expense3).forEach { repository.save(it) }
 
-        // when
-        val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID, status = PENDING)
+            // when
+            val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID, title = "KRA")
 
-        // then
-        response shouldHaveHttpStatus OK
-        response.shouldBody<GroupActivitiesResponse> {
-            groupId shouldBe GROUP_ID
-            expenses shouldHaveSize 1
-            expenses.first().expenseId shouldBe expense3.id
+            // then
+            response shouldHaveHttpStatus OK
+            response.shouldBody<GroupActivitiesResponse> {
+                groupId shouldBe GROUP_ID
+                expenses shouldHaveSize 1
+                expenses.first().expenseId shouldBe expense1.id
+            }
         }
-    }
 
-    should("get group activities with given creatorId") {
-        // given
-        val expense1 = createExpense(id = "1", groupId = GROUP_ID, creatorId = "1")
-        val expense2 = createExpense(id = "2", groupId = GROUP_ID, creatorId = "2")
-        val expense3 = createExpense(id = "3", groupId = GROUP_ID, creatorId = "1")
+        should("get group activities with given status") {
+            // given
+            val expense1 = createExpense(id = "1", groupId = GROUP_ID, status = REJECTED)
+            val expense2 = createExpense(id = "2", groupId = GROUP_ID, status = ACCEPTED)
+            val expense3 = createExpense(id = "3", groupId = GROUP_ID, status = PENDING)
 
-        listOf(expense1, expense2, expense3).forEach { repository.save(it) }
+            listOf(expense1, expense2, expense3).forEach { repository.save(it) }
 
-        // when
-        val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID, creatorId = "1")
+            // when
+            val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID, status = PENDING)
 
-        // then
-        response shouldHaveHttpStatus OK
-        response.shouldBody<GroupActivitiesResponse> {
-            groupId shouldBe GROUP_ID
-            expenses shouldHaveSize 2
-            expenses.map { it.expenseId } shouldContainExactly listOf(expense1.id, expense3.id)
+            // then
+            response shouldHaveHttpStatus OK
+            response.shouldBody<GroupActivitiesResponse> {
+                groupId shouldBe GROUP_ID
+                expenses shouldHaveSize 1
+                expenses.first().expenseId shouldBe expense3.id
+            }
         }
-    }
 
-    should("get group activities sorted by title") {
-        // given
-        val expense1 = createExpense(id = "1", groupId = GROUP_ID, title = "Pizza in Krakow")
-        val expense2 = createExpense(id = "2", groupId = GROUP_ID, title = "The best burger")
-        val expense3 = createExpense(id = "3", groupId = GROUP_ID, title = "Spaghetti with Andrzej")
+        should("get group activities with given creatorId") {
+            // given
+            val expense1 = createExpense(id = "1", groupId = GROUP_ID, creatorId = "1")
+            val expense2 = createExpense(id = "2", groupId = GROUP_ID, creatorId = "2")
+            val expense3 = createExpense(id = "3", groupId = GROUP_ID, creatorId = "1")
 
-        listOf(expense1, expense2, expense3).forEach { repository.save(it) }
+            listOf(expense1, expense2, expense3).forEach { repository.save(it) }
 
-        // when
-        val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID, sortedBy = TITLE)
+            // when
+            val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID, creatorId = "1")
 
-        // then
-        response shouldHaveHttpStatus OK
-        response.shouldBody<GroupActivitiesResponse> {
-            groupId shouldBe GROUP_ID
-            expenses shouldHaveSize 3
-            expenses.map { it.expenseId } shouldContainExactly listOf(expense1.id, expense3.id, expense2.id)
+            // then
+            response shouldHaveHttpStatus OK
+            response.shouldBody<GroupActivitiesResponse> {
+                groupId shouldBe GROUP_ID
+                expenses shouldHaveSize 2
+                expenses.map { it.expenseId } shouldContainExactly listOf(expense1.id, expense3.id)
+            }
         }
-    }
 
-    should("get group activities sorted by expenseDate") {
-        // given
-        val expense1 = createExpense(id = "1", groupId = GROUP_ID, expenseDate = ofEpochMilli(2))
-        val expense2 = createExpense(id = "2", groupId = GROUP_ID, expenseDate = ofEpochMilli(3))
-        val expense3 = createExpense(id = "3", groupId = GROUP_ID, expenseDate = ofEpochMilli(1))
+        should("get group activities sorted by title") {
+            // given
+            val expense1 = createExpense(id = "1", groupId = GROUP_ID, title = "Pizza in Krakow")
+            val expense2 = createExpense(id = "2", groupId = GROUP_ID, title = "The best burger")
+            val expense3 = createExpense(id = "3", groupId = GROUP_ID, title = "Spaghetti with Andrzej")
 
-        listOf(expense1, expense2, expense3).forEach { repository.save(it) }
+            listOf(expense1, expense2, expense3).forEach { repository.save(it) }
 
-        // when
-        val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID, sortedBy = DATE)
+            // when
+            val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID, sortedBy = TITLE)
 
-        // then
-        response shouldHaveHttpStatus OK
-        response.shouldBody<GroupActivitiesResponse> {
-            groupId shouldBe GROUP_ID
-            expenses shouldHaveSize 3
-            expenses.map { it.expenseId } shouldContainExactly listOf(expense3.id, expense1.id, expense2.id)
+            // then
+            response shouldHaveHttpStatus OK
+            response.shouldBody<GroupActivitiesResponse> {
+                groupId shouldBe GROUP_ID
+                expenses shouldHaveSize 3
+                expenses.map { it.expenseId } shouldContainExactly listOf(expense1.id, expense3.id, expense2.id)
+            }
         }
-    }
 
-    should("get group activities sorted by expenseDate ascending") {
-        // given
-        val expense1 = createExpense(id = "1", groupId = GROUP_ID, expenseDate = ofEpochMilli(2))
-        val expense2 = createExpense(id = "2", groupId = GROUP_ID, expenseDate = ofEpochMilli(3))
-        val expense3 = createExpense(id = "3", groupId = GROUP_ID, expenseDate = ofEpochMilli(1))
+        should("get group activities sorted by expenseDate") {
+            // given
+            val expense1 = createExpense(id = "1", groupId = GROUP_ID, expenseDate = ofEpochMilli(2))
+            val expense2 = createExpense(id = "2", groupId = GROUP_ID, expenseDate = ofEpochMilli(3))
+            val expense3 = createExpense(id = "3", groupId = GROUP_ID, expenseDate = ofEpochMilli(1))
 
-        listOf(expense1, expense2, expense3).forEach { repository.save(it) }
+            listOf(expense1, expense2, expense3).forEach { repository.save(it) }
 
-        // when
-        val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID, sortOrder = ASCENDING)
+            // when
+            val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID, sortedBy = DATE)
 
-        // then
-        response shouldHaveHttpStatus OK
-        response.shouldBody<GroupActivitiesResponse> {
-            groupId shouldBe GROUP_ID
-            expenses shouldHaveSize 3
-            expenses.map { it.expenseId } shouldContainExactly listOf(expense3.id, expense1.id, expense2.id)
+            // then
+            response shouldHaveHttpStatus OK
+            response.shouldBody<GroupActivitiesResponse> {
+                groupId shouldBe GROUP_ID
+                expenses shouldHaveSize 3
+                expenses.map { it.expenseId } shouldContainExactly listOf(expense3.id, expense1.id, expense2.id)
+            }
         }
-    }
 
-    should("get group activities sorted by expenseDate descending") {
-        // given
-        val expense1 = createExpense(id = "1", groupId = GROUP_ID, expenseDate = ofEpochMilli(2))
-        val expense2 = createExpense(id = "2", groupId = GROUP_ID, expenseDate = ofEpochMilli(3))
-        val expense3 = createExpense(id = "3", groupId = GROUP_ID, expenseDate = ofEpochMilli(1))
+        should("get group activities sorted by expenseDate ascending") {
+            // given
+            val expense1 = createExpense(id = "1", groupId = GROUP_ID, expenseDate = ofEpochMilli(2))
+            val expense2 = createExpense(id = "2", groupId = GROUP_ID, expenseDate = ofEpochMilli(3))
+            val expense3 = createExpense(id = "3", groupId = GROUP_ID, expenseDate = ofEpochMilli(1))
 
-        listOf(expense1, expense2, expense3).forEach { repository.save(it) }
+            listOf(expense1, expense2, expense3).forEach { repository.save(it) }
 
-        // when
-        val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID, sortOrder = DESCENDING)
+            // when
+            val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID, sortOrder = ASCENDING)
 
-        // then
-        response shouldHaveHttpStatus OK
-        response.shouldBody<GroupActivitiesResponse> {
-            groupId shouldBe GROUP_ID
-            expenses shouldHaveSize 3
-            expenses.map { it.expenseId } shouldContainExactly listOf(expense2.id, expense1.id, expense3.id)
+            // then
+            response shouldHaveHttpStatus OK
+            response.shouldBody<GroupActivitiesResponse> {
+                groupId shouldBe GROUP_ID
+                expenses shouldHaveSize 3
+                expenses.map { it.expenseId } shouldContainExactly listOf(expense3.id, expense1.id, expense2.id)
+            }
         }
-    }
-},)
+
+        should("get group activities sorted by expenseDate descending") {
+            // given
+            val expense1 = createExpense(id = "1", groupId = GROUP_ID, expenseDate = ofEpochMilli(2))
+            val expense2 = createExpense(id = "2", groupId = GROUP_ID, expenseDate = ofEpochMilli(3))
+            val expense3 = createExpense(id = "3", groupId = GROUP_ID, expenseDate = ofEpochMilli(1))
+
+            listOf(expense1, expense2, expense3).forEach { repository.save(it) }
+
+            // when
+            val response = service.getGroupActivitiesResponse(createGemUser(USER_ID), GROUP_ID, sortOrder = DESCENDING)
+
+            // then
+            response shouldHaveHttpStatus OK
+            response.shouldBody<GroupActivitiesResponse> {
+                groupId shouldBe GROUP_ID
+                expenses shouldHaveSize 3
+                expenses.map { it.expenseId } shouldContainExactly listOf(expense2.id, expense1.id, expense3.id)
+            }
+        }
+    })
