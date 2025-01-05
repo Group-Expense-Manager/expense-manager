@@ -113,12 +113,6 @@ kotlin {
     }
 }
 
-ktlint {
-    reporters {
-        reporter(ReporterType.PLAIN)
-    }
-}
-
 sourceSets {
     create("integration") {
         compileClasspath += project.sourceSets["main"].output + project.sourceSets["test"].output
@@ -152,6 +146,7 @@ tasks {
         classpath = sourceSets["integration"].runtimeClasspath
         mustRunAfter("test")
     }
+
     check {
         dependsOn("integration")
     }
