@@ -8,7 +8,6 @@ import java.time.Duration
 import java.time.Duration.ofSeconds
 
 object ProjectConfig : AbstractProjectConfig() {
-
     private const val WIREMOCK_SERVER_PORT = 9999
     const val MONGODB_IMAGE = "mongo:6.0"
     const val DATABASE_NAME = "database"
@@ -18,11 +17,12 @@ object ProjectConfig : AbstractProjectConfig() {
     private val wiremockListener = WireMockListener(wiremock)
     private val mongoListener = MongoListener()
 
-    override fun extensions() = listOf(
-        mongoListener,
-        wiremockListener,
-        SpringExtension,
-    )
+    override fun extensions() =
+        listOf(
+            mongoListener,
+            wiremockListener,
+            SpringExtension,
+        )
 
     fun updateConfiguration(registry: DynamicPropertyRegistry) {
         registry.add("spring.data.mongodb.uri") { mongoListener.url() }

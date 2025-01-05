@@ -30,10 +30,11 @@ class CreditorUserExpenseMapperTest : ShouldSpec({
                     creatorId = USER_ID,
                     amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
                     fxData = null,
-                    expenseParticipants = createExpenseParticipants(
-                        listOf(USER_ID, "userId2", "userId3"),
-                        listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
-                    ),
+                    expenseParticipants =
+                        createExpenseParticipants(
+                            listOf(USER_ID, "userId2", "userId3"),
+                            listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+                        ),
                     status = ACCEPTED,
                 ),
                 createUserExpense(BigDecimal("50"), CURRENCY_1),
@@ -44,10 +45,11 @@ class CreditorUserExpenseMapperTest : ShouldSpec({
                     creatorId = USER_ID,
                     amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
                     fxData = createFxData(),
-                    expenseParticipants = createExpenseParticipants(
-                        listOf(USER_ID, "userId2", "userId3"),
-                        listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
-                    ),
+                    expenseParticipants =
+                        createExpenseParticipants(
+                            listOf(USER_ID, "userId2", "userId3"),
+                            listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+                        ),
                     status = ACCEPTED,
                 ),
                 createUserExpense(BigDecimal("50"), CURRENCY_2, EXCHANGE_RATE_VALUE),
@@ -58,10 +60,11 @@ class CreditorUserExpenseMapperTest : ShouldSpec({
                     creatorId = USER_ID,
                     amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
                     fxData = createFxData(),
-                    expenseParticipants = createExpenseParticipants(
-                        listOf(USER_ID, "userId2", "userId3"),
-                        listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
-                    ),
+                    expenseParticipants =
+                        createExpenseParticipants(
+                            listOf(USER_ID, "userId2", "userId3"),
+                            listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+                        ),
                     status = PENDING,
                 ),
                 null,
@@ -72,15 +75,15 @@ class CreditorUserExpenseMapperTest : ShouldSpec({
                     creatorId = OTHER_USER_ID,
                     amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
                     fxData = createFxData(),
-                    expenseParticipants = createExpenseParticipants(
-                        listOf(USER_ID, OTHER_USER_ID, "userId3"),
-                        listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
-                    ),
+                    expenseParticipants =
+                        createExpenseParticipants(
+                            listOf(USER_ID, OTHER_USER_ID, "userId3"),
+                            listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+                        ),
                     status = ACCEPTED,
                 ),
                 null,
             ),
-
         ) { (userId, expense, expectedUserExpense) ->
             // when
             val actualUserExpense = creditorUserExpenseMapper.mapToUserExpense(userId, expense)
@@ -89,4 +92,4 @@ class CreditorUserExpenseMapperTest : ShouldSpec({
             actualUserExpense shouldBe expectedUserExpense
         }
     }
-},)
+})

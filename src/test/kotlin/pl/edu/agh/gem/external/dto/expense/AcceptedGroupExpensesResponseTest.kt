@@ -44,46 +44,51 @@ class AcceptedGroupExpensesResponseTest : ShouldSpec({
         // given
         val creatorIds = listOf("creatorId1", "creatorId2", "creatorId3")
         val titles = listOf("title1", "title2", "title3")
-        val amounts = listOf(
-            Amount(value = BigDecimal.ONE, currency = "PLN"),
-            Amount(value = BigDecimal.TWO, currency = "EUR"),
-            Amount(value = BigDecimal.TEN, currency = "USD"),
-        )
-
-        val fxData = listOf(
-            FxData(targetCurrency = "EUR", exchangeRate = "2".toBigDecimal()),
-            null,
-            FxData(targetCurrency = "PLN", exchangeRate = "3".toBigDecimal()),
-        )
-        val participants = listOf(
-            createListOfAcceptedGroupExpenseParticipantDto(
-                listOf("userId1", "userId2", "userId3"),
-                listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
-            ),
-            createListOfAcceptedGroupExpenseParticipantDto(
-                listOf("userId3", "userId1", "userId2"),
-                listOf(BigDecimal("20"), BigDecimal("30"), BigDecimal("10")),
-            ),
-            createListOfAcceptedGroupExpenseParticipantDto(
-                listOf("userId2", "userId3", "userId1"),
-                listOf(BigDecimal("30"), BigDecimal("10"), BigDecimal("20")),
-            ),
-        )
-        val expenseDates = listOf(
-            Instant.ofEpochSecond(1000),
-            Instant.ofEpochSecond(2000),
-            Instant.ofEpochSecond(3000),
-        )
-        val expenses = creatorIds.mapIndexed { index, creatorId ->
-            createExpense(
-                creatorId = creatorId,
-                title = titles[index],
-                amount = amounts[index],
-                fxData = fxData[index],
-                expenseParticipants = participants[index].map { createExpenseParticipant(it.participantId, it.participantCost) },
-                expenseDate = expenseDates[index],
+        val amounts =
+            listOf(
+                Amount(value = BigDecimal.ONE, currency = "PLN"),
+                Amount(value = BigDecimal.TWO, currency = "EUR"),
+                Amount(value = BigDecimal.TEN, currency = "USD"),
             )
-        }
+
+        val fxData =
+            listOf(
+                FxData(targetCurrency = "EUR", exchangeRate = "2".toBigDecimal()),
+                null,
+                FxData(targetCurrency = "PLN", exchangeRate = "3".toBigDecimal()),
+            )
+        val participants =
+            listOf(
+                createListOfAcceptedGroupExpenseParticipantDto(
+                    listOf("userId1", "userId2", "userId3"),
+                    listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+                ),
+                createListOfAcceptedGroupExpenseParticipantDto(
+                    listOf("userId3", "userId1", "userId2"),
+                    listOf(BigDecimal("20"), BigDecimal("30"), BigDecimal("10")),
+                ),
+                createListOfAcceptedGroupExpenseParticipantDto(
+                    listOf("userId2", "userId3", "userId1"),
+                    listOf(BigDecimal("30"), BigDecimal("10"), BigDecimal("20")),
+                ),
+            )
+        val expenseDates =
+            listOf(
+                Instant.ofEpochSecond(1000),
+                Instant.ofEpochSecond(2000),
+                Instant.ofEpochSecond(3000),
+            )
+        val expenses =
+            creatorIds.mapIndexed { index, creatorId ->
+                createExpense(
+                    creatorId = creatorId,
+                    title = titles[index],
+                    amount = amounts[index],
+                    fxData = fxData[index],
+                    expenseParticipants = participants[index].map { createExpenseParticipant(it.participantId, it.participantCost) },
+                    expenseDate = expenseDates[index],
+                )
+            }
 
         // when
         val groupExpensesResponse = expenses.toAcceptedGroupExpensesResponse(GROUP_ID)
@@ -114,4 +119,4 @@ class AcceptedGroupExpensesResponseTest : ShouldSpec({
             it.expenses shouldBe listOf()
         }
     }
-},)
+})

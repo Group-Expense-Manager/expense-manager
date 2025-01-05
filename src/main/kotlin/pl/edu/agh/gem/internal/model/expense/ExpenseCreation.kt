@@ -17,19 +17,20 @@ data class ExpenseCreation(
     val expenseParticipantsCost: List<ExpenseParticipantCost>,
     val attachmentId: String?,
 ) {
-    fun toExpense(fxData: FxData?) = Expense(
-        id = randomUUID().toString(),
-        groupId = groupId,
-        creatorId = creatorId,
-        title = title,
-        amount = amount,
-        fxData = fxData,
-        expenseDate = expenseDate,
-        createdAt = now(),
-        updatedAt = now(),
-        expenseParticipants = expenseParticipantsCost.map { it.toExpenseParticipant() },
-        attachmentId = attachmentId,
-        status = PENDING,
-        history = arrayListOf(ExpenseHistoryEntry(creatorId, CREATED, comment = message)),
-    )
+    fun toExpense(fxData: FxData?) =
+        Expense(
+            id = randomUUID().toString(),
+            groupId = groupId,
+            creatorId = creatorId,
+            title = title,
+            amount = amount,
+            fxData = fxData,
+            expenseDate = expenseDate,
+            createdAt = now(),
+            updatedAt = now(),
+            expenseParticipants = expenseParticipantsCost.map { it.toExpenseParticipant() },
+            attachmentId = attachmentId,
+            status = PENDING,
+            history = arrayListOf(ExpenseHistoryEntry(creatorId, CREATED, comment = message)),
+        )
 }

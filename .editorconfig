@@ -16,11 +16,9 @@ ij_smart_tabs = false
 ij_visual_guides = none
 ij_wrap_on_typing = false
 
-[*.{kt,kts}]
+[*{kt, kts}]
 ktlint_code_style = ktlint_official
 trim_trailing_whitespace = false
-
-[*.kt]
 mandatory_braces_loops = true
 always_use_is_true_or_is_false = true
 do_not_access_visiblefortesting = true
@@ -46,16 +44,6 @@ use_first_or_null_instead_of_find = true
 use_map_not_null_instead_of_filter_not_null = true
 use_of_collection_instead_of_empty_collection = true
 use_set_instead_of_list_to_set = true
-
-[.editorconfig]
-ij_editorconfig_align_group_field_declarations = false
-ij_editorconfig_space_after_colon = false
-ij_editorconfig_space_after_comma = true
-ij_editorconfig_space_before_colon = false
-ij_editorconfig_space_before_comma = false
-ij_editorconfig_spaces_around_assignment_operators = true
-
-[{*.gradle.kts,*.kt,*.kts,*.main.kts,*.space.kts}]
 ij_kotlin_align_in_columns_case_branch = false
 ij_kotlin_align_multiline_binary_operation = false
 ij_kotlin_align_multiline_extends_list = false
@@ -134,6 +122,14 @@ ij_kotlin_while_on_new_line = false
 ij_kotlin_wrap_elvis_expressions = 1
 ij_kotlin_wrap_expression_body_functions = 1
 ij_kotlin_wrap_first_method_in_call_chain = false
+
+[.editorconfig]
+ij_editorconfig_align_group_field_declarations = false
+ij_editorconfig_space_after_colon = false
+ij_editorconfig_space_after_comma = true
+ij_editorconfig_space_before_colon = false
+ij_editorconfig_space_before_comma = false
+ij_editorconfig_spaces_around_assignment_operators = true
 
 [{*.markdown,*.md}]
 ij_markdown_force_one_space_after_blockquote_symbol = true

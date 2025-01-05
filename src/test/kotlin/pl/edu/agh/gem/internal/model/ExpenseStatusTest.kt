@@ -36,7 +36,6 @@ class ExpenseStatusTest : ShouldSpec({
             Triple(PENDING, ACCEPTED, true),
             Triple(PENDING, REJECTED, false),
             Triple(PENDING, PENDING, false),
-
         ) { (previous, current, expectedStatus) ->
             // when
             val result = previous.changedToAccepted(current)
@@ -57,7 +56,6 @@ class ExpenseStatusTest : ShouldSpec({
             Triple(PENDING, ACCEPTED, false),
             Triple(PENDING, REJECTED, false),
             Triple(PENDING, PENDING, false),
-
         ) { (previous, current, expectedStatus) ->
             // when
             val result = current.changedFromAccepted(previous)
@@ -66,4 +64,4 @@ class ExpenseStatusTest : ShouldSpec({
             result shouldBe expectedStatus
         }
     }
-},)
+})

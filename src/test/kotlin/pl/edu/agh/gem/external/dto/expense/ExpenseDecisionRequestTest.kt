@@ -23,4 +23,4 @@ class ExpenseDecisionRequestTest : ShouldSpec({
             it.message shouldBe expenseDecision.message
         }
     }
-},)
+})

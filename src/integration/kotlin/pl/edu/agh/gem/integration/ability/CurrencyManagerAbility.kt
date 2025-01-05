@@ -13,16 +13,21 @@ import pl.edu.agh.gem.integration.environment.ProjectConfig.wiremock
 import pl.edu.agh.gem.paths.Paths.INTERNAL
 import java.time.LocalDate
 
-private fun createGroupDataUrl() =
-    "$INTERNAL/currencies"
+private fun createGroupDataUrl() = "$INTERNAL/currencies"
 
-private fun createExchangeRateUrl(baseCurrency: String, targetCurrency: String, date: LocalDate) =
-    UriComponentsBuilder.fromUriString("$INTERNAL/currencies/from/$baseCurrency/to/$targetCurrency/")
-        .queryParam("date", date)
-        .build()
-        .toUriString()
+private fun createExchangeRateUrl(
+    baseCurrency: String,
+    targetCurrency: String,
+    date: LocalDate,
+) = UriComponentsBuilder.fromUriString("$INTERNAL/currencies/from/$baseCurrency/to/$targetCurrency/")
+    .queryParam("date", date)
+    .build()
+    .toUriString()
 
-fun stubCurrencyManagerAvailableCurrencies(body: Any?, statusCode: HttpStatusCode = OK) {
+fun stubCurrencyManagerAvailableCurrencies(
+    body: Any?,
+    statusCode: HttpStatusCode = OK,
+) {
     wiremock.stubFor(
         get(urlMatching(createGroupDataUrl()))
             .willReturn(
@@ -36,7 +41,13 @@ fun stubCurrencyManagerAvailableCurrencies(body: Any?, statusCode: HttpStatusCod
     )
 }
 
-fun stubCurrencyManagerExchangeRate(body: Any?, baseCurrency: String, targetCurrency: String, date: LocalDate, statusCode: HttpStatusCode = OK) {
+fun stubCurrencyManagerExchangeRate(
+    body: Any?,
+    baseCurrency: String,
+    targetCurrency: String,
+    date: LocalDate,
+    statusCode: HttpStatusCode = OK,
+) {
     wiremock.stubFor(
         get(createExchangeRateUrl(baseCurrency, targetCurrency, date))
             .willReturn(

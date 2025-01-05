@@ -13,7 +13,11 @@ import pl.edu.agh.gem.paths.Paths.INTERNAL
 
 private fun createGenerateUrl(groupId: String) = "$INTERNAL/generate/groups/$groupId"
 
-fun stubFinanceAdapterGenerate(requestBody: GenerateReconciliationRequest, groupId: String, statusCode: HttpStatusCode = OK) {
+fun stubFinanceAdapterGenerate(
+    requestBody: GenerateReconciliationRequest,
+    groupId: String,
+    statusCode: HttpStatusCode = OK,
+) {
     wiremock.stubFor(
         post(urlMatching(createGenerateUrl(groupId)))
             .withRequestBody(
@@ -23,7 +27,6 @@ fun stubFinanceAdapterGenerate(requestBody: GenerateReconciliationRequest, group
             ).willReturn(
                 aResponse()
                     .withStatus(statusCode.value()),
-
             ),
     )
 }

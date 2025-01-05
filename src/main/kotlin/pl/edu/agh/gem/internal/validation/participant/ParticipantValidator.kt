@@ -7,11 +7,12 @@ import pl.edu.agh.gem.validator.BaseValidator
 import pl.edu.agh.gem.validator.Check
 
 class ParticipantValidator : BaseValidator<ParticipantDataWrapper>() {
-    override val checks: List<Check<ParticipantDataWrapper>> = listOf(
-        Check(CREATOR_IN_PARTICIPANTS) { this.validateIfUserIsNotParticipant(it) },
-        Check(DUPLICATED_PARTICIPANT) { this.validateIfParticipantsAreUnique(it) },
-        Check(PARTICIPANT_NOT_GROUP_MEMBER) { this.validateIfParticipantsAreGroupMembers(it) },
-    )
+    override val checks: List<Check<ParticipantDataWrapper>> =
+        listOf(
+            Check(CREATOR_IN_PARTICIPANTS) { this.validateIfUserIsNotParticipant(it) },
+            Check(DUPLICATED_PARTICIPANT) { this.validateIfParticipantsAreUnique(it) },
+            Check(PARTICIPANT_NOT_GROUP_MEMBER) { this.validateIfParticipantsAreGroupMembers(it) },
+        )
 
     private fun validateIfUserIsNotParticipant(participantDataWrapper: ParticipantDataWrapper): Boolean {
         return !participantDataWrapper.participantData.participantsId

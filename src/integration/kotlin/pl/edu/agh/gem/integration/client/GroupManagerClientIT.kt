@@ -25,78 +25,78 @@ import pl.edu.agh.gem.util.createUserGroupsResponse
 class GroupManagerClientIT(
     private val groupManagerClient: GroupManagerClient,
 ) : BaseIntegrationSpec({
-    should("get group") {
-        // given
-        val members = createMembersDTO(USER_ID, OTHER_USER_ID)
-        val listOfCurrencies = createCurrenciesDTO("PLN", "USD", "EUR")
-        val groupResponse = createGroupResponse(members = members, groupCurrencies = listOfCurrencies)
-        stubGroupManagerGroupData(groupResponse, GROUP_ID)
+        should("get group") {
+            // given
+            val members = createMembersDTO(USER_ID, OTHER_USER_ID)
+            val listOfCurrencies = createCurrenciesDTO("PLN", "USD", "EUR")
+            val groupResponse = createGroupResponse(members = members, groupCurrencies = listOfCurrencies)
+            stubGroupManagerGroupData(groupResponse, GROUP_ID)
 
-        // when
-        val result = groupManagerClient.getGroup(GROUP_ID)
+            // when
+            val result = groupManagerClient.getGroup(GROUP_ID)
 
-        // then
-        result.also {
-            it.shouldNotBeNull()
-            it.currencies shouldBe listOfCurrencies.map { currency -> Currency(currency.code) }
-            it.members.members shouldBe members.map { member -> GroupMember(member.id) }
+            // then
+            result.also {
+                it.shouldNotBeNull()
+                it.currencies shouldBe listOfCurrencies.map { currency -> Currency(currency.code) }
+                it.members.members shouldBe members.map { member -> GroupMember(member.id) }
+            }
         }
-    }
 
-    should("throw GroupManagerClientException when we send bad request") {
-        // given
-        val groupResponse = createGroupResponse()
-        stubGroupManagerGroupData(groupResponse, GROUP_ID, NOT_ACCEPTABLE)
+        should("throw GroupManagerClientException when we send bad request") {
+            // given
+            val groupResponse = createGroupResponse()
+            stubGroupManagerGroupData(groupResponse, GROUP_ID, NOT_ACCEPTABLE)
 
-        // when & then
-        shouldThrow<GroupManagerClientException> {
-            groupManagerClient.getGroup(GROUP_ID)
+            // when & then
+            shouldThrow<GroupManagerClientException> {
+                groupManagerClient.getGroup(GROUP_ID)
+            }
         }
-    }
 
-    should("throw RetryableCurrencyManagerClientException when client has internal error") {
-        // given
-        val groupResponse = createGroupResponse()
-        stubGroupManagerGroupData(groupResponse, GROUP_ID, INTERNAL_SERVER_ERROR)
+        should("throw RetryableCurrencyManagerClientException when client has internal error") {
+            // given
+            val groupResponse = createGroupResponse()
+            stubGroupManagerGroupData(groupResponse, GROUP_ID, INTERNAL_SERVER_ERROR)
 
-        // when & then
-        shouldThrow<RetryableGroupManagerClientException> {
-            groupManagerClient.getGroup(GROUP_ID)
+            // when & then
+            shouldThrow<RetryableGroupManagerClientException> {
+                groupManagerClient.getGroup(GROUP_ID)
+            }
         }
-    }
 
-    should("get user groups") {
-        // given
-        val userGroups = arrayOf(GROUP_ID, OTHER_GROUP_ID)
-        val userGroupsResponse = createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID)
-        stubGroupManagerUserGroups(userGroupsResponse, USER_ID)
+        should("get user groups") {
+            // given
+            val userGroups = arrayOf(GROUP_ID, OTHER_GROUP_ID)
+            val userGroupsResponse = createUserGroupsResponse(GROUP_ID, OTHER_GROUP_ID)
+            stubGroupManagerUserGroups(userGroupsResponse, USER_ID)
 
-        // when
-        val result = groupManagerClient.getUserGroups(USER_ID)
+            // when
+            val result = groupManagerClient.getUserGroups(USER_ID)
 
-        // then
-        result.all {
-            it.groupId in userGroups
+            // then
+            result.all {
+                it.groupId in userGroups
+            }
         }
-    }
 
-    should("throw GroupManagerClientException when we send bad request") {
-        // given
-        stubGroupManagerUserGroups(createUserGroupsResponse(), USER_ID, NOT_ACCEPTABLE)
+        should("throw GroupManagerClientException when we send bad request") {
+            // given
+            stubGroupManagerUserGroups(createUserGroupsResponse(), USER_ID, NOT_ACCEPTABLE)
 
-        // when & then
-        shouldThrow<GroupManagerClientException> {
-            groupManagerClient.getUserGroups(USER_ID)
+            // when & then
+            shouldThrow<GroupManagerClientException> {
+                groupManagerClient.getUserGroups(USER_ID)
+            }
         }
-    }
 
-    should("throw RetryableGroupManagerClientException when client has internal error") {
-        // given
-        stubGroupManagerUserGroups(createUserGroupsResponse(), USER_ID, INTERNAL_SERVER_ERROR)
+        should("throw RetryableGroupManagerClientException when client has internal error") {
+            // given
+            stubGroupManagerUserGroups(createUserGroupsResponse(), USER_ID, INTERNAL_SERVER_ERROR)
 
-        // when & then
-        shouldThrow<RetryableGroupManagerClientException> {
-            groupManagerClient.getUserGroups(USER_ID)
+            // when & then
+            shouldThrow<RetryableGroupManagerClientException> {
+                groupManagerClient.getUserGroups(USER_ID)
+            }
         }
-    }
-},)
+    })

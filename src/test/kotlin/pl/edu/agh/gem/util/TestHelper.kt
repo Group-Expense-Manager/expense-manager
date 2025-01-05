@@ -67,9 +67,10 @@ fun createExpenseCreationRequest(
     amount: AmountDto = createAmountDto(),
     targetCurrency: String? = CURRENCY_2,
     expenseDate: Instant = Instant.ofEpochMilli(0L),
-    expenseParticipants: List<ExpenseParticipantRequestData> = listOf(
-        createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.valueOf(9L)),
-    ),
+    expenseParticipants: List<ExpenseParticipantRequestData> =
+        listOf(
+            createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.valueOf(9L)),
+        ),
     message: String? = "Something",
     attachmentId: String? = "1234-1234-ffff",
 ) = ExpenseCreationRequest(
@@ -90,13 +91,9 @@ fun createExpenseParticipantDto(
     participantCost = cost,
 )
 
-fun createCurrencies(
-    vararg currencies: String = arrayOf(CURRENCY_1),
-) = currencies.map { Currency(it) }
+fun createCurrencies(vararg currencies: String = arrayOf(CURRENCY_1)) = currencies.map { Currency(it) }
 
-fun createCurrenciesResponse(
-    vararg currencies: String = arrayOf(CURRENCY_1),
-) = CurrenciesResponse(currencies.map { CurrencyDTO(it) })
+fun createCurrenciesResponse(vararg currencies: String = arrayOf(CURRENCY_1)) = CurrenciesResponse(currencies.map { CurrencyDTO(it) })
 
 fun createExchangeRateResponse(
     currencyFrom: String = CURRENCY_1,
@@ -125,6 +122,7 @@ fun createFxData(
     targetCurrency = targetCurrency,
     exchangeRate = exchangeRate,
 )
+
 fun createExpense(
     id: String = EXPENSE_ID,
     groupId: String = GROUP_ID,
@@ -163,9 +161,10 @@ fun createExpenseCreation(
     targetCurrency: String? = CURRENCY_2,
     expenseDate: Instant = Instant.ofEpochMilli(0L),
     attachmentId: String? = ATTACHMENT_ID,
-    expenseParticipantsCost: List<ExpenseParticipantCost> = listOf(
-        createExpenseParticipantCost(OTHER_USER_ID),
-    ),
+    expenseParticipantsCost: List<ExpenseParticipantCost> =
+        listOf(
+            createExpenseParticipantCost(OTHER_USER_ID),
+        ),
 ) = ExpenseCreation(
     groupId = groupId,
     creatorId = creatorId,
@@ -235,13 +234,9 @@ fun createExpenseDecision(
     message = message,
 )
 
-fun createCurrenciesDTO(
-    vararg currency: String = arrayOf(CURRENCY_1, CURRENCY_2),
-) = currency.map { CurrencyDTO(it) }
+fun createCurrenciesDTO(vararg currency: String = arrayOf(CURRENCY_1, CURRENCY_2)) = currency.map { CurrencyDTO(it) }
 
-fun createMembersDTO(
-    vararg members: String = arrayOf(USER_ID, OTHER_USER_ID),
-) = members.map { MemberDTO(it) }
+fun createMembersDTO(vararg members: String = arrayOf(USER_ID, OTHER_USER_ID)) = members.map { MemberDTO(it) }
 
 fun createUserExpense(
     value: BigDecimal = BigDecimal.ONE,
@@ -263,9 +258,10 @@ fun createExpenseUpdateRequest(
     amount: AmountDto = createAmountDto(),
     targetCurrency: String? = CURRENCY_2,
     expenseDate: Instant = Instant.ofEpochMilli(0L),
-    expenseParticipants: List<ExpenseParticipantRequestData> = listOf(
-        createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.valueOf(9L)),
-    ),
+    expenseParticipants: List<ExpenseParticipantRequestData> =
+        listOf(
+            createExpenseParticipantDto(OTHER_USER_ID, BigDecimal.valueOf(9L)),
+        ),
     message: String? = "Something",
     attachmentId: String? = ATTACHMENT_ID,
 ) = ExpenseUpdateRequest(
@@ -278,17 +274,16 @@ fun createExpenseUpdateRequest(
     attachmentId = attachmentId,
 )
 
-fun createExpenseUpdateRequestFromExpense(
-    expense: Expense = createExpense(),
-) = ExpenseUpdateRequest(
-    title = expense.title,
-    amount = expense.amount.toAmountDto(),
-    targetCurrency = expense.fxData?.targetCurrency,
-    expenseDate = expense.expenseDate,
-    expenseParticipants = expense.expenseParticipants.map { createExpenseParticipantDto(it.participantId, it.participantCost) },
-    message = "Something",
-    attachmentId = expense.attachmentId,
-)
+fun createExpenseUpdateRequestFromExpense(expense: Expense = createExpense()) =
+    ExpenseUpdateRequest(
+        title = expense.title,
+        amount = expense.amount.toAmountDto(),
+        targetCurrency = expense.fxData?.targetCurrency,
+        expenseDate = expense.expenseDate,
+        expenseParticipants = expense.expenseParticipants.map { createExpenseParticipantDto(it.participantId, it.participantCost) },
+        message = "Something",
+        attachmentId = expense.attachmentId,
+    )
 
 fun createExpenseUpdate(
     id: String = EXPENSE_ID,
@@ -298,9 +293,10 @@ fun createExpenseUpdate(
     amount: Amount = createAmount(value = "4".toBigDecimal(), currency = CURRENCY_1),
     targetCurrency: String? = CURRENCY_2,
     expenseDate: Instant = Instant.ofEpochMilli(0L),
-    expenseParticipants: List<ExpenseParticipantCost> = listOf(
-        createExpenseParticipantCost(OTHER_USER_ID),
-    ),
+    expenseParticipants: List<ExpenseParticipantCost> =
+        listOf(
+            createExpenseParticipantCost(OTHER_USER_ID),
+        ),
     message: String? = "Something",
     attachmentId: String? = ATTACHMENT_ID,
 ) = ExpenseUpdate(
@@ -316,20 +312,20 @@ fun createExpenseUpdate(
     attachmentId = attachmentId,
 )
 
-fun createExpenseUpdateFromExpense(
-    expense: Expense = createExpense(),
-) = ExpenseUpdate(
-    id = expense.id,
-    groupId = expense.groupId,
-    userId = expense.creatorId,
-    title = expense.title,
-    amount = expense.amount,
-    targetCurrency = expense.fxData?.targetCurrency,
-    expenseDate = expense.expenseDate,
-    expenseParticipantsCost = expense.expenseParticipants.map { it.toExpenseParticipantCost() },
-    message = null,
-    attachmentId = expense.attachmentId,
-)
+fun createExpenseUpdateFromExpense(expense: Expense = createExpense()) =
+    ExpenseUpdate(
+        id = expense.id,
+        groupId = expense.groupId,
+        userId = expense.creatorId,
+        title = expense.title,
+        amount = expense.amount,
+        targetCurrency = expense.fxData?.targetCurrency,
+        expenseDate = expense.expenseDate,
+        expenseParticipantsCost = expense.expenseParticipants.map { it.toExpenseParticipantCost() },
+        message = null,
+        attachmentId = expense.attachmentId,
+    )
+
 fun createExpenseParticipantCost(
     participantId: String = OTHER_USER_ID,
     participantCost: BigDecimal = BigDecimal.TWO,
@@ -338,9 +334,7 @@ fun createExpenseParticipantCost(
     participantCost = participantCost,
 )
 
-fun createUserGroupsResponse(
-    vararg groups: String = arrayOf(GROUP_ID, OTHER_GROUP_ID),
-) = UserGroupsResponse(groups = groups.map { GroupDto(it) })
+fun createUserGroupsResponse(vararg groups: String = arrayOf(GROUP_ID, OTHER_GROUP_ID)) = UserGroupsResponse(groups = groups.map { GroupDto(it) })
 
 fun createFilterOptions(
     title: String? = null,

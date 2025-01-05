@@ -21,12 +21,14 @@ data class ExpenseParticipantCost(
     val participantId: String,
     val participantCost: BigDecimal,
 ) {
-    fun toExpenseParticipant() = ExpenseParticipant(
-        participantId = participantId,
-        participantCost = participantCost,
-        participantStatus = PENDING,
-    )
+    fun toExpenseParticipant() =
+        ExpenseParticipant(
+            participantId = participantId,
+            participantCost = participantCost,
+            participantStatus = PENDING,
+        )
 }
+
 fun ExpenseParticipant.toExpenseParticipantCost() =
     ExpenseParticipantCost(
         participantId = participantId,

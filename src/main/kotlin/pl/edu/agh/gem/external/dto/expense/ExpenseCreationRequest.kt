@@ -50,18 +50,20 @@ data class ExpenseCreationRequest(
     @field:NullOrNotBlank(message = ATTACHMENT_ID_NULL_OR_NOT_BLANK)
     val attachmentId: String?,
 ) {
-    fun toDomain(userId: String, groupId: String) =
-        ExpenseCreation(
-            groupId = groupId,
-            creatorId = userId,
-            title = title,
-            amount = amount.toDomain(),
-            targetCurrency = targetCurrency,
-            expenseDate = expenseDate,
-            message = message,
-            attachmentId = attachmentId,
-            expenseParticipantsCost = expenseParticipants.map { it.toExpenseParticipantCost() },
-        )
+    fun toDomain(
+        userId: String,
+        groupId: String,
+    ) = ExpenseCreation(
+        groupId = groupId,
+        creatorId = userId,
+        title = title,
+        amount = amount.toDomain(),
+        targetCurrency = targetCurrency,
+        expenseDate = expenseDate,
+        message = message,
+        attachmentId = attachmentId,
+        expenseParticipantsCost = expenseParticipants.map { it.toExpenseParticipantCost() },
+    )
 }
 
 data class ExpenseParticipantRequestData(
@@ -87,8 +89,9 @@ data class AmountDto(
     @field:Pattern(regexp = "[A-Z]{3}", message = BASE_CURRENCY_PATTERN)
     val currency: String,
 ) {
-    fun toDomain() = Amount(
-        value = value,
-        currency = currency,
-    )
+    fun toDomain() =
+        Amount(
+            value = value,
+            currency = currency,
+        )
 }

@@ -26,7 +26,6 @@ import pl.edu.agh.gem.paths.Paths.INTERNAL
 class InternalExpenseController(
     private val expenseService: ExpenseService,
 ) {
-
     @GetMapping("groups/{groupId}/users/{userId}", produces = [APPLICATION_JSON_INTERNAL_VER_1])
     @ResponseStatus(OK)
     fun getUserExpenses(

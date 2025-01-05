@@ -20,77 +20,77 @@ import java.time.LocalDate
 class CurrencyManagerClientIT(
     private val currencyManagerClient: CurrencyManagerClient,
 ) : BaseIntegrationSpec({
-    should("get currencies") {
-        // given
-        val listOfCurrencies = arrayOf("PLN", "USD", "EUR")
-        val currenciesResponse = createCurrenciesResponse(*listOfCurrencies)
-        stubCurrencyManagerAvailableCurrencies(currenciesResponse)
+        should("get currencies") {
+            // given
+            val listOfCurrencies = arrayOf("PLN", "USD", "EUR")
+            val currenciesResponse = createCurrenciesResponse(*listOfCurrencies)
+            stubCurrencyManagerAvailableCurrencies(currenciesResponse)
 
-        // when
-        val result = currencyManagerClient.getAvailableCurrencies()
+            // when
+            val result = currencyManagerClient.getAvailableCurrencies()
 
-        // then
-        result.all {
-            it.code in listOfCurrencies
+            // then
+            result.all {
+                it.code in listOfCurrencies
+            }
         }
-    }
 
-    should("throw CurrencyManagerClientException when we send bad request") {
-        // given
-        val currenciesResponse = createCurrenciesResponse()
-        stubCurrencyManagerAvailableCurrencies(currenciesResponse, NOT_ACCEPTABLE)
+        should("throw CurrencyManagerClientException when we send bad request") {
+            // given
+            val currenciesResponse = createCurrenciesResponse()
+            stubCurrencyManagerAvailableCurrencies(currenciesResponse, NOT_ACCEPTABLE)
 
-        // when & then
-        shouldThrow<CurrencyManagerClientException> {
-            currencyManagerClient.getAvailableCurrencies()
+            // when & then
+            shouldThrow<CurrencyManagerClientException> {
+                currencyManagerClient.getAvailableCurrencies()
+            }
         }
-    }
 
-    should("throw RetryableCurrencyManagerClientException when client has internal error") {
-        // given
-        val currenciesResponse = createCurrenciesResponse()
-        stubCurrencyManagerAvailableCurrencies(currenciesResponse, INTERNAL_SERVER_ERROR)
+        should("throw RetryableCurrencyManagerClientException when client has internal error") {
+            // given
+            val currenciesResponse = createCurrenciesResponse()
+            stubCurrencyManagerAvailableCurrencies(currenciesResponse, INTERNAL_SERVER_ERROR)
 
-        // when & then
-        shouldThrow<RetryableCurrencyManagerClientException> {
-            currencyManagerClient.getAvailableCurrencies()
+            // when & then
+            shouldThrow<RetryableCurrencyManagerClientException> {
+                currencyManagerClient.getAvailableCurrencies()
+            }
         }
-    }
 
-    should("get exchange rate") {
-        // given
-        val date = LocalDate.MIN
-        val exchangeRateResponse = createExchangeRateResponse(value = EXCHANGE_RATE_VALUE)
-        stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, date)
+        should("get exchange rate") {
+            // given
+            val date = LocalDate.MIN
+            val exchangeRateResponse = createExchangeRateResponse(value = EXCHANGE_RATE_VALUE)
+            stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, date)
 
-        // when
-        val result = currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, date)
+            // when
+            val result = currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, date)
 
-        // then
-        result shouldBe EXCHANGE_RATE_VALUE
-    }
-
-    should("throw CurrencyManagerClientException when we send bad request") {
-        // given
-        val date = LocalDate.MIN
-        val exchangeRateResponse = createExchangeRateResponse()
-        stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, date, NOT_ACCEPTABLE)
-
-        // when & then
-        shouldThrow<CurrencyManagerClientException> {
-            currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, date)
+            // then
+            result shouldBe EXCHANGE_RATE_VALUE
         }
-    }
 
-    should("throw RetryableCurrencyManagerClientException when client has internal error") {
-        // given
-        val date = LocalDate.MIN
-        val exchangeRateResponse = createExchangeRateResponse()
-        stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, date, INTERNAL_SERVER_ERROR)
+        should("throw CurrencyManagerClientException when we send bad request") {
+            // given
+            val date = LocalDate.MIN
+            val exchangeRateResponse = createExchangeRateResponse()
+            stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, date, NOT_ACCEPTABLE)
 
-        // when & then
-        shouldThrow<RetryableCurrencyManagerClientException> {
-            currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, date)
+            // when & then
+            shouldThrow<CurrencyManagerClientException> {
+                currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, date)
+            }
         }
-    }
-},)
+
+        should("throw RetryableCurrencyManagerClientException when client has internal error") {
+            // given
+            val date = LocalDate.MIN
+            val exchangeRateResponse = createExchangeRateResponse()
+            stubCurrencyManagerExchangeRate(exchangeRateResponse, CURRENCY_1, CURRENCY_2, date, INTERNAL_SERVER_ERROR)
+
+            // when & then
+            shouldThrow<RetryableCurrencyManagerClientException> {
+                currencyManagerClient.getExchangeRate(CURRENCY_1, CURRENCY_2, date)
+            }
+        }
+    })

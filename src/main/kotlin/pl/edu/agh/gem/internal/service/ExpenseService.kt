@@ -49,7 +49,6 @@ class ExpenseService(
     private val expenseRepository: ExpenseRepository,
     private val archivedExpenseRepository: ArchivedExpenseRepository,
 ) {
-
     val costValidator = CostValidator()
     val participantValidator = ParticipantValidator()
     val currenciesValidator = CurrenciesValidator()
@@ -64,7 +63,10 @@ class ExpenseService(
         return groupManagerClient.getGroup(groupId)
     }
 
-    fun create(groupData: GroupData, expenseCreation: ExpenseCreation): Expense {
+    fun create(
+        groupData: GroupData,
+        expenseCreation: ExpenseCreation,
+    ): Expense {
         val dataWrapper = createExpenseCreationDataWrapper(groupData, expenseCreation)
 
         validate(dataWrapper, costValidator)
@@ -86,53 +88,68 @@ class ExpenseService(
         expenseCreation.targetCurrency?.let {
             FxData(
                 targetCurrency = expenseCreation.targetCurrency,
-                exchangeRate = currencyManagerClient.getExchangeRate(
-                    expenseCreation.amount.currency,
-                    expenseCreation.targetCurrency,
-                    expenseCreation.expenseDate.atZone(ZoneId.systemDefault()).toLocalDate(),
-                ),
+                exchangeRate =
+                    currencyManagerClient.getExchangeRate(
+                        expenseCreation.amount.currency,
+                        expenseCreation.targetCurrency,
+                        expenseCreation.expenseDate.atZone(ZoneId.systemDefault()).toLocalDate(),
+                    ),
             )
         }
+
     private fun createExpenseCreationDataWrapper(
         groupData: GroupData,
         expenseCreation: ExpenseCreation,
     ): ExpenseCreationDataWrapper {
         return ExpenseCreationDataWrapper(
-            currencyData = CurrencyData(
-                groupCurrencies = groupData.currencies,
-                currencyManagerClient.getAvailableCurrencies(),
-                baseCurrency = expenseCreation.amount.currency,
-                targetCurrency = expenseCreation.targetCurrency,
-            ),
-            costData = CostData(
-                fullCost = expenseCreation.amount.value,
-                partialCosts = expenseCreation.expenseParticipantsCost.map { it.participantCost },
-            ),
-            participantData = ParticipantData(
-                creatorId = expenseCreation.creatorId,
-                participantsId = expenseCreation.expenseParticipantsCost.map { it.participantId },
-                groupMembers = groupData.members,
-            ),
+            currencyData =
+                CurrencyData(
+                    groupCurrencies = groupData.currencies,
+                    currencyManagerClient.getAvailableCurrencies(),
+                    baseCurrency = expenseCreation.amount.currency,
+                    targetCurrency = expenseCreation.targetCurrency,
+                ),
+            costData =
+                CostData(
+                    fullCost = expenseCreation.amount.value,
+                    partialCosts = expenseCreation.expenseParticipantsCost.map { it.participantCost },
+                ),
+            participantData =
+                ParticipantData(
+                    creatorId = expenseCreation.creatorId,
+                    participantsId = expenseCreation.expenseParticipantsCost.map { it.participantId },
+                    groupMembers = groupData.members,
+                ),
         )
     }
 
-    fun getExpense(expenseId: String, groupId: String): Expense {
+    fun getExpense(
+        expenseId: String,
+        groupId: String,
+    ): Expense {
         return expenseRepository.findByExpenseIdAndGroupId(expenseId, groupId) ?: throw MissingExpenseException(expenseId, groupId)
     }
 
-    fun getAcceptedGroupExpenses(groupId: String, currency: String): List<Expense> {
+    fun getAcceptedGroupExpenses(
+        groupId: String,
+        currency: String,
+    ): List<Expense> {
         return expenseRepository.findByGroupId(groupId).filter {
             it.status == ACCEPTED && (it.fxData?.targetCurrency ?: it.amount.currency) == currency
         }
     }
 
-    fun getGroupActivities(groupId: String, filterOptions: FilterOptions?): List<Expense> {
+    fun getGroupActivities(
+        groupId: String,
+        filterOptions: FilterOptions?,
+    ): List<Expense> {
         return expenseRepository.findByGroupId(groupId, filterOptions)
     }
 
     fun decide(expenseDecision: ExpenseDecision): Expense {
-        val expense = expenseRepository.findByExpenseIdAndGroupId(expenseDecision.expenseId, expenseDecision.groupId)
-            ?: throw MissingExpenseException(expenseDecision.expenseId, expenseDecision.groupId)
+        val expense =
+            expenseRepository.findByExpenseIdAndGroupId(expenseDecision.expenseId, expenseDecision.groupId)
+                ?: throw MissingExpenseException(expenseDecision.expenseId, expenseDecision.groupId)
 
         val dataWrapper = createExpenseDecisionDataWrapper(expense, expenseDecision)
         validate(dataWrapper, expenseDecisionValidator)
@@ -158,15 +175,17 @@ class ExpenseService(
     }
 
     private fun Expense.addDecision(expenseDecision: ExpenseDecision): Expense {
-        val updatedExpenseParticipants = expenseParticipants.map {
-            it.takeIf { it.participantId == expenseDecision.userId }?.copy(participantStatus = expenseDecision.decision.toExpenseStatus()) ?: it
-        }
+        val updatedExpenseParticipants =
+            expenseParticipants.map {
+                it.takeIf { it.participantId == expenseDecision.userId }?.copy(participantStatus = expenseDecision.decision.toExpenseStatus()) ?: it
+            }
 
-        val expenseHistoryEntry = ExpenseHistoryEntry(
-            participantId = expenseDecision.userId,
-            expenseAction = expenseDecision.decision.toExpenseAction(),
-            comment = expenseDecision.message,
-        )
+        val expenseHistoryEntry =
+            ExpenseHistoryEntry(
+                participantId = expenseDecision.userId,
+                expenseAction = expenseDecision.decision.toExpenseAction(),
+                comment = expenseDecision.message,
+            )
         val updatedHistory = history + expenseHistoryEntry
 
         return copy(
@@ -174,26 +193,34 @@ class ExpenseService(
             expenseParticipants = updatedExpenseParticipants,
             status = ExpenseStatus.reduce(updatedExpenseParticipants.map { it.participantStatus }),
             history = updatedHistory,
-
         )
     }
 
-    private fun createExpenseDecisionDataWrapper(expense: Expense, expenseDecision: ExpenseDecision): ExpenseDecisionDataWrapper {
+    private fun createExpenseDecisionDataWrapper(
+        expense: Expense,
+        expenseDecision: ExpenseDecision,
+    ): ExpenseDecisionDataWrapper {
         return ExpenseDecisionDataWrapper(
             expense = expense,
             expenseDecision = expenseDecision,
         )
     }
 
-    fun deleteExpense(expenseId: String, groupId: String, userId: String) {
+    fun deleteExpense(
+        expenseId: String,
+        groupId: String,
+        userId: String,
+    ) {
         val expenseToDelete = expenseRepository.findByExpenseIdAndGroupId(expenseId, groupId) ?: throw MissingExpenseException(expenseId, groupId)
 
-        val dataWrapper = ExpenseDeletionWrapper(
-            creatorData = CreatorData(
-                creatorId = expenseToDelete.creatorId,
-                userId = userId,
-            ),
-        )
+        val dataWrapper =
+            ExpenseDeletionWrapper(
+                creatorData =
+                    CreatorData(
+                        creatorId = expenseToDelete.creatorId,
+                        userId = userId,
+                    ),
+            )
 
         validate(dataWrapper, creatorValidator)
             .takeIf { it.isNotEmpty() }
@@ -207,20 +234,29 @@ class ExpenseService(
         }
     }
 
-    fun getUserExpenses(groupId: String, userId: String): List<UserExpense> {
+    fun getUserExpenses(
+        groupId: String,
+        userId: String,
+    ): List<UserExpense> {
         val expenses = expenseRepository.findByGroupId(groupId)
 
-        val costsAsExpenseCreator = expenses
-            .mapNotNull { creditorUserExpenseMapper.mapToUserExpense(userId, it) }
-        val costsAsExpenseMember = expenses
-            .mapNotNull { debtorUserExpenseMapper.mapToUserExpense(userId, it) }
+        val costsAsExpenseCreator =
+            expenses
+                .mapNotNull { creditorUserExpenseMapper.mapToUserExpense(userId, it) }
+        val costsAsExpenseMember =
+            expenses
+                .mapNotNull { debtorUserExpenseMapper.mapToUserExpense(userId, it) }
 
         return costsAsExpenseCreator + costsAsExpenseMember
     }
 
-    fun updateExpense(groupData: GroupData, update: ExpenseUpdate): Expense {
-        val originalExpense = expenseRepository.findByExpenseIdAndGroupId(update.id, update.groupId)
-            ?: throw MissingExpenseException(update.id, update.groupId)
+    fun updateExpense(
+        groupData: GroupData,
+        update: ExpenseUpdate,
+    ): Expense {
+        val originalExpense =
+            expenseRepository.findByExpenseIdAndGroupId(update.id, update.groupId)
+                ?: throw MissingExpenseException(update.id, update.groupId)
 
         val dataWrapper = createExpenseUpdateDataWrapper(groupData, update, originalExpense)
 
@@ -231,19 +267,20 @@ class ExpenseService(
             .takeIf { it.isNotEmpty() }
             ?.also { throw ValidatorsException(it) }
 
-        val updatedExpense = expenseRepository.save(
-            originalExpense.copy(
-                fxData = updateFxData(originalExpense = originalExpense, expenseUpdate = update),
-                title = update.title,
-                amount = update.amount,
-                updatedAt = now(),
-                expenseDate = update.expenseDate,
-                expenseParticipants = update.expenseParticipantsCost.map { it.toExpenseParticipant() },
-                status = PENDING,
-                attachmentId = update.attachmentId,
-                history = originalExpense.history + ExpenseHistoryEntry(originalExpense.creatorId, EDITED, now(), update.message),
-            ),
-        )
+        val updatedExpense =
+            expenseRepository.save(
+                originalExpense.copy(
+                    fxData = updateFxData(originalExpense = originalExpense, expenseUpdate = update),
+                    title = update.title,
+                    amount = update.amount,
+                    updatedAt = now(),
+                    expenseDate = update.expenseDate,
+                    expenseParticipants = update.expenseParticipantsCost.map { it.toExpenseParticipant() },
+                    status = PENDING,
+                    attachmentId = update.attachmentId,
+                    history = originalExpense.history + ExpenseHistoryEntry(originalExpense.creatorId, EDITED, now(), update.message),
+                ),
+            )
 
         if (originalExpense.status == ACCEPTED) {
             generateBalancesAndSettlements(originalExpense)
@@ -252,23 +289,30 @@ class ExpenseService(
         return updatedExpense
     }
 
-    private fun updateFxData(originalExpense: Expense, expenseUpdate: ExpenseUpdate): FxData? {
+    private fun updateFxData(
+        originalExpense: Expense,
+        expenseUpdate: ExpenseUpdate,
+    ): FxData? {
         if (shouldUseOriginalFxData(originalExpense, expenseUpdate)) {
             return originalExpense.fxData
         }
         return expenseUpdate.targetCurrency?.let {
             FxData(
                 targetCurrency = expenseUpdate.targetCurrency,
-                exchangeRate = currencyManagerClient.getExchangeRate(
-                    expenseUpdate.amount.currency,
-                    expenseUpdate.targetCurrency,
-                    expenseUpdate.expenseDate.atZone(ZoneId.systemDefault()).toLocalDate(),
-                ),
+                exchangeRate =
+                    currencyManagerClient.getExchangeRate(
+                        expenseUpdate.amount.currency,
+                        expenseUpdate.targetCurrency,
+                        expenseUpdate.expenseDate.atZone(ZoneId.systemDefault()).toLocalDate(),
+                    ),
             )
         }
     }
 
-    private fun shouldUseOriginalFxData(originalExpense: Expense, update: ExpenseUpdate): Boolean {
+    private fun shouldUseOriginalFxData(
+        originalExpense: Expense,
+        update: ExpenseUpdate,
+    ): Boolean {
         return originalExpense.expenseDate == update.expenseDate && originalExpense.amount.currency == update.amount.currency &&
             originalExpense.fxData?.targetCurrency == update.targetCurrency
     }
@@ -277,30 +321,33 @@ class ExpenseService(
         groupData: GroupData,
         expenseUpdate: ExpenseUpdate,
         originalExpense: Expense,
-    ) =
-        ExpenseUpdateDataWrapper(
-            currencyData = CurrencyData(
+    ) = ExpenseUpdateDataWrapper(
+        currencyData =
+            CurrencyData(
                 groupCurrencies = groupData.currencies,
                 currencyManagerClient.getAvailableCurrencies(),
                 baseCurrency = expenseUpdate.amount.currency,
                 targetCurrency = expenseUpdate.targetCurrency,
             ),
-            costData = CostData(
+        costData =
+            CostData(
                 fullCost = expenseUpdate.amount.value,
                 partialCosts = expenseUpdate.expenseParticipantsCost.map { it.participantCost },
             ),
-            participantData = ParticipantData(
+        participantData =
+            ParticipantData(
                 creatorId = expenseUpdate.userId,
                 participantsId = expenseUpdate.expenseParticipantsCost.map { it.participantId },
                 groupMembers = groupData.members,
             ),
-            creatorData = CreatorData(
+        creatorData =
+            CreatorData(
                 creatorId = originalExpense.creatorId,
                 userId = expenseUpdate.userId,
             ),
-            originalExpense = originalExpense,
-            expenseUpdate = expenseUpdate,
-        )
+        originalExpense = originalExpense,
+        expenseUpdate = expenseUpdate,
+    )
 }
 
 class MissingExpenseException(expenseId: String, groupId: String) :

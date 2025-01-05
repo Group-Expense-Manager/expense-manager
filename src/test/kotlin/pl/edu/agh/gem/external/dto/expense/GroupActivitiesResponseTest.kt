@@ -45,40 +45,44 @@ class GroupActivitiesResponseTest : ShouldSpec({
         val expenseIds = listOf("expenseId1", "expenseId2", "expenseId3")
         val creatorIds = listOf("creatorId1", "creatorId2", "creatorId3")
         val titles = listOf("title1", "title2", "title3")
-        val amounts = listOf(
-            Amount(value = BigDecimal.ONE, currency = "PLN"),
-            Amount(value = BigDecimal.TWO, currency = "EUR"),
-            Amount(value = BigDecimal.TEN, currency = "USD"),
-        )
-        val fxData = listOf(
-            FxData(targetCurrency = "EUR", exchangeRate = "2".toBigDecimal()),
-            null,
-            FxData(targetCurrency = "PLN", exchangeRate = "3".toBigDecimal()),
-
-        )
-        val statuses = listOf(PENDING, ACCEPTED, REJECTED)
-        val participantIds = listOf(
-            listOf("participant1", "participant2"),
-            listOf("participant3", "participant4"),
-            listOf("participant5", "participant6"),
-        )
-        val expenseDates = listOf(
-            Instant.ofEpochSecond(1000),
-            Instant.ofEpochSecond(2000),
-            Instant.ofEpochSecond(3000),
-        )
-        val expenses = expenseIds.mapIndexed { index, expenseId ->
-            createExpense(
-                id = expenseId,
-                creatorId = creatorIds[index],
-                title = titles[index],
-                amount = amounts[index],
-                fxData = fxData[index],
-                status = statuses[index],
-                expenseParticipants = participantIds[index].map { createExpenseParticipant(participantId = it) },
-                expenseDate = expenseDates[index],
+        val amounts =
+            listOf(
+                Amount(value = BigDecimal.ONE, currency = "PLN"),
+                Amount(value = BigDecimal.TWO, currency = "EUR"),
+                Amount(value = BigDecimal.TEN, currency = "USD"),
             )
-        }
+        val fxData =
+            listOf(
+                FxData(targetCurrency = "EUR", exchangeRate = "2".toBigDecimal()),
+                null,
+                FxData(targetCurrency = "PLN", exchangeRate = "3".toBigDecimal()),
+            )
+        val statuses = listOf(PENDING, ACCEPTED, REJECTED)
+        val participantIds =
+            listOf(
+                listOf("participant1", "participant2"),
+                listOf("participant3", "participant4"),
+                listOf("participant5", "participant6"),
+            )
+        val expenseDates =
+            listOf(
+                Instant.ofEpochSecond(1000),
+                Instant.ofEpochSecond(2000),
+                Instant.ofEpochSecond(3000),
+            )
+        val expenses =
+            expenseIds.mapIndexed { index, expenseId ->
+                createExpense(
+                    id = expenseId,
+                    creatorId = creatorIds[index],
+                    title = titles[index],
+                    amount = amounts[index],
+                    fxData = fxData[index],
+                    status = statuses[index],
+                    expenseParticipants = participantIds[index].map { createExpenseParticipant(participantId = it) },
+                    expenseDate = expenseDates[index],
+                )
+            }
 
         // when
         val groupActivitiesResponse = expenses.toGroupActivitiesResponse(GROUP_ID)
@@ -111,4 +115,4 @@ class GroupActivitiesResponseTest : ShouldSpec({
             it.expenses shouldBe listOf()
         }
     }
-},)
+})

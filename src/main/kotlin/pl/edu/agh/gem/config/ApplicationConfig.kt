@@ -20,16 +20,16 @@ import java.util.TimeZone
 
 @Configuration
 class ApplicationConfig {
-
     @Bean
-    fun kotlinModule() = KotlinModule.Builder()
-        .withReflectionCacheSize(REFLECTION_CACHE_SIZE)
-        .configure(NullToEmptyCollection, false)
-        .configure(NullToEmptyMap, false)
-        .configure(NullIsSameAsDefault, false)
-        .configure(SingletonSupport, false)
-        .configure(StrictNullChecks, false)
-        .build()
+    fun kotlinModule() =
+        KotlinModule.Builder()
+            .withReflectionCacheSize(REFLECTION_CACHE_SIZE)
+            .configure(NullToEmptyCollection, false)
+            .configure(NullToEmptyMap, false)
+            .configure(NullIsSameAsDefault, false)
+            .configure(SingletonSupport, false)
+            .configure(StrictNullChecks, false)
+            .build()
 
     @Bean
     fun afterburnerModule() = AfterburnerModule()

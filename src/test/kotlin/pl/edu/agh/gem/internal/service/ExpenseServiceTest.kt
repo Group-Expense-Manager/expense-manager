@@ -73,13 +73,14 @@ class ExpenseServiceTest : ShouldSpec({
     val financeAdapterClient = mock<FinanceAdapterClient> {}
     val expenseRepository = mock<ExpenseRepository> {}
     val archivedExpenseRepository = mock<ArchivedExpenseRepository> {}
-    val expenseService = ExpenseService(
-        groupManagerClient = groupManagerClient,
-        currencyManagerClient = currencyManagerClient,
-        financeAdapterClient = financeAdapterClient,
-        expenseRepository = expenseRepository,
-        archivedExpenseRepository = archivedExpenseRepository,
-    )
+    val expenseService =
+        ExpenseService(
+            groupManagerClient = groupManagerClient,
+            currencyManagerClient = currencyManagerClient,
+            financeAdapterClient = financeAdapterClient,
+            expenseRepository = expenseRepository,
+            archivedExpenseRepository = archivedExpenseRepository,
+        )
 
     should("create expense") {
         // given
@@ -145,10 +146,11 @@ class ExpenseServiceTest : ShouldSpec({
             Quadruple(
                 PARTICIPANT_NOT_GROUP_MEMBER,
                 createExpenseCreation(
-                    expenseParticipantsCost = listOf(
-                        createExpenseParticipantCost(),
-                        createExpenseParticipantCost("notGroupMember"),
-                    ),
+                    expenseParticipantsCost =
+                        listOf(
+                            createExpenseParticipantCost(),
+                            createExpenseParticipantCost("notGroupMember"),
+                        ),
                 ),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
@@ -167,7 +169,6 @@ class ExpenseServiceTest : ShouldSpec({
             ),
             Quadruple(TARGET_CURRENCY_NOT_IN_GROUP_CURRENCIES, createExpenseCreation(), arrayOf(CURRENCY_1), arrayOf(CURRENCY_1, CURRENCY_2)),
             Quadruple(BASE_CURRENCY_NOT_AVAILABLE, createExpenseCreation(), arrayOf(CURRENCY_1, CURRENCY_2), arrayOf(CURRENCY_2)),
-
         ) { (expectedMessage, expenseCreation, groupCurrencies, availableCurrencies) ->
             // given
             val group = createGroup(currencies = createCurrencies(*groupCurrencies))
@@ -241,7 +242,6 @@ class ExpenseServiceTest : ShouldSpec({
             Triple(REJECTED, ACCEPT, 1),
             Triple(ACCEPTED, ACCEPT, 0),
             Triple(PENDING, REJECT, 0),
-
         ) { (status, decision, timesInvoked) ->
             // given
             val expense = createExpense(status = status)
@@ -368,30 +368,31 @@ class ExpenseServiceTest : ShouldSpec({
 
     should("get user expenses") {
         // given
-        val expenses = listOf(
-            createExpense(
-                creatorId = USER_ID,
-                amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
-                fxData = null,
-                expenseParticipants = createExpenseParticipants(
-                    listOf(USER_ID, "userId2", "userId3"),
-                    listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+        val expenses =
+            listOf(
+                createExpense(
+                    creatorId = USER_ID,
+                    amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
+                    fxData = null,
+                    expenseParticipants =
+                        createExpenseParticipants(
+                            listOf(USER_ID, "userId2", "userId3"),
+                            listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+                        ),
+                    status = ACCEPTED,
                 ),
-                status = ACCEPTED,
-            ),
-
-            createExpense(
-                creatorId = OTHER_USER_ID,
-                amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
-                fxData = createFxData(),
-                expenseParticipants = createExpenseParticipants(
-                    listOf(USER_ID, OTHER_USER_ID, "userId3"),
-                    listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+                createExpense(
+                    creatorId = OTHER_USER_ID,
+                    amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
+                    fxData = createFxData(),
+                    expenseParticipants =
+                        createExpenseParticipants(
+                            listOf(USER_ID, OTHER_USER_ID, "userId3"),
+                            listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
+                        ),
+                    status = ACCEPTED,
                 ),
-                status = ACCEPTED,
-            ),
-
-        )
+            )
 
         whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(expenses)
 
@@ -418,41 +419,43 @@ class ExpenseServiceTest : ShouldSpec({
 
     should("get accepted expenses") {
         // given
-        val acceptedExpense1 = createExpense(
-            status = ACCEPTED,
-            amount = createAmount(currency = CURRENCY_1),
-            fxData = createFxData(targetCurrency = CURRENCY_2),
-        )
-        val acceptedExpense2 = createExpense(
-            status = ACCEPTED,
-            amount = createAmount(currency = CURRENCY_2),
-            fxData = null,
-        )
-        val expenses = listOf(
-            acceptedExpense1,
-            acceptedExpense2,
-
+        val acceptedExpense1 =
             createExpense(
                 status = ACCEPTED,
-                amount = createAmount(currency = CURRENCY_2),
-                fxData = createFxData(targetCurrency = CURRENCY_1),
-            ),
-            createExpense(
-                status = ACCEPTED,
-                amount = createAmount(currency = CURRENCY_1),
-                fxData = null,
-            ),
-            createExpense(
-                status = PENDING,
                 amount = createAmount(currency = CURRENCY_1),
                 fxData = createFxData(targetCurrency = CURRENCY_2),
-            ),
+            )
+        val acceptedExpense2 =
             createExpense(
-                status = PENDING,
+                status = ACCEPTED,
                 amount = createAmount(currency = CURRENCY_2),
                 fxData = null,
-            ),
-        )
+            )
+        val expenses =
+            listOf(
+                acceptedExpense1,
+                acceptedExpense2,
+                createExpense(
+                    status = ACCEPTED,
+                    amount = createAmount(currency = CURRENCY_2),
+                    fxData = createFxData(targetCurrency = CURRENCY_1),
+                ),
+                createExpense(
+                    status = ACCEPTED,
+                    amount = createAmount(currency = CURRENCY_1),
+                    fxData = null,
+                ),
+                createExpense(
+                    status = PENDING,
+                    amount = createAmount(currency = CURRENCY_1),
+                    fxData = createFxData(targetCurrency = CURRENCY_2),
+                ),
+                createExpense(
+                    status = PENDING,
+                    amount = createAmount(currency = CURRENCY_2),
+                    fxData = null,
+                ),
+            )
         whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(expenses)
 
         // when
@@ -509,9 +512,10 @@ class ExpenseServiceTest : ShouldSpec({
             Quadruple(
                 CREATOR_IN_PARTICIPANTS,
                 createExpenseUpdate(
-                    expenseParticipants = listOf(
-                        createExpenseParticipantCost(USER_ID),
-                    ),
+                    expenseParticipants =
+                        listOf(
+                            createExpenseParticipantCost(USER_ID),
+                        ),
                 ),
                 arrayOf(CURRENCY_1, CURRENCY_2),
                 arrayOf(CURRENCY_1, CURRENCY_2),
@@ -564,14 +568,16 @@ class ExpenseServiceTest : ShouldSpec({
     should("update expense that was ACCEPTED") {
         // given
         val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID, status = ACCEPTED)
-        val expenseUpdate = createExpenseUpdate(
-            amount = createAmount(value = "6".toBigDecimal(), currency = CURRENCY_2),
-            targetCurrency = CURRENCY_1,
-            expenseParticipants = listOf(
-                createExpenseParticipantCost(OTHER_USER_ID, BigDecimal.ONE),
-                createExpenseParticipantCost(ANOTHER_USER_ID, BigDecimal(4)),
-            ),
-        )
+        val expenseUpdate =
+            createExpenseUpdate(
+                amount = createAmount(value = "6".toBigDecimal(), currency = CURRENCY_2),
+                targetCurrency = CURRENCY_1,
+                expenseParticipants =
+                    listOf(
+                        createExpenseParticipantCost(OTHER_USER_ID, BigDecimal.ONE),
+                        createExpenseParticipantCost(ANOTHER_USER_ID, BigDecimal(4)),
+                    ),
+            )
 
         val group = createGroup(createGroupMembers(USER_ID, OTHER_USER_ID, ANOTHER_USER_ID), currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
         whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
@@ -602,8 +608,9 @@ class ExpenseServiceTest : ShouldSpec({
             it.createdAt shouldBe expense.createdAt
             it.updatedAt.shouldNotBeNull()
             it.attachmentId shouldBe expense.attachmentId
-            it.expenseParticipants shouldContainExactly expenseUpdate.expenseParticipantsCost
-                .map { p -> p.toExpenseParticipant() }
+            it.expenseParticipants shouldContainExactly
+                expenseUpdate.expenseParticipantsCost
+                    .map { p -> p.toExpenseParticipant() }
             it.status shouldBe PENDING
             it.history shouldContainAll expense.history
             it.history.last().also { entry ->
@@ -618,9 +625,10 @@ class ExpenseServiceTest : ShouldSpec({
     should("update expense when data did not changed and status was not ACCEPTED") {
         // given
         val expense = createExpense(id = EXPENSE_ID, groupId = GROUP_ID, creatorId = USER_ID)
-        val expenseUpdate = createExpenseUpdateFromExpense(
-            expense,
-        )
+        val expenseUpdate =
+            createExpenseUpdateFromExpense(
+                expense,
+            )
 
         val group = createGroup(createGroupMembers(USER_ID, OTHER_USER_ID, ANOTHER_USER_ID), currencies = createCurrencies(CURRENCY_1, CURRENCY_2))
         whenever(expenseRepository.findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)).thenReturn(expense)
@@ -647,8 +655,9 @@ class ExpenseServiceTest : ShouldSpec({
             it.createdAt shouldBe expense.createdAt
             it.updatedAt.shouldNotBeNull()
             it.attachmentId shouldBe expense.attachmentId
-            it.expenseParticipants shouldContainExactly expenseUpdate.expenseParticipantsCost
-                .map { p -> p.toExpenseParticipant() }
+            it.expenseParticipants shouldContainExactly
+                expenseUpdate.expenseParticipantsCost
+                    .map { p -> p.toExpenseParticipant() }
             it.status shouldBe PENDING
             it.history shouldContainAll expense.history
             it.history.last().also { entry ->
@@ -659,7 +668,7 @@ class ExpenseServiceTest : ShouldSpec({
             }
         }
     }
-},)
+})
 
 data class Quadruple<A, B, C, D>(
     val first: A,
