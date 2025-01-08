@@ -4,8 +4,6 @@ import org.springframework.stereotype.Service
 import pl.edu.agh.gem.internal.client.CurrencyManagerClient
 import pl.edu.agh.gem.internal.client.FinanceAdapterClient
 import pl.edu.agh.gem.internal.client.GroupManagerClient
-import pl.edu.agh.gem.internal.mapper.CreditorUserExpenseMapper
-import pl.edu.agh.gem.internal.mapper.DebtorUserExpenseMapper
 import pl.edu.agh.gem.internal.model.currency.Currency
 import pl.edu.agh.gem.internal.model.expense.Expense
 import pl.edu.agh.gem.internal.model.expense.ExpenseAction.EDITED
@@ -17,7 +15,6 @@ import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
 import pl.edu.agh.gem.internal.model.expense.FxData
-import pl.edu.agh.gem.internal.model.expense.UserExpense
 import pl.edu.agh.gem.internal.model.expense.filter.FilterOptions
 import pl.edu.agh.gem.internal.model.group.GroupData
 import pl.edu.agh.gem.internal.persistence.ArchivedExpenseRepository
@@ -55,9 +52,6 @@ class ExpenseService(
     val creatorValidator = CreatorValidator()
 
     private val expenseDecisionValidator = ExpenseDecisionValidator()
-
-    private val creditorUserExpenseMapper = CreditorUserExpenseMapper()
-    private val debtorUserExpenseMapper = DebtorUserExpenseMapper()
 
     fun getGroup(groupId: String): GroupData {
         return groupManagerClient.getGroup(groupId)
@@ -232,22 +226,6 @@ class ExpenseService(
         if (expenseToDelete.status == ACCEPTED) {
             generateBalancesAndSettlements(expenseToDelete)
         }
-    }
-
-    fun getUserExpenses(
-        groupId: String,
-        userId: String,
-    ): List<UserExpense> {
-        val expenses = expenseRepository.findByGroupId(groupId)
-
-        val costsAsExpenseCreator =
-            expenses
-                .mapNotNull { creditorUserExpenseMapper.mapToUserExpense(userId, it) }
-        val costsAsExpenseMember =
-            expenses
-                .mapNotNull { debtorUserExpenseMapper.mapToUserExpense(userId, it) }
-
-        return costsAsExpenseCreator + costsAsExpenseMember
     }
 
     fun updateExpense(

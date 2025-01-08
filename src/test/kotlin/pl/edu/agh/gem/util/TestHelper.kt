@@ -31,11 +31,9 @@ import pl.edu.agh.gem.internal.model.expense.ExpenseHistoryEntry
 import pl.edu.agh.gem.internal.model.expense.ExpenseParticipant
 import pl.edu.agh.gem.internal.model.expense.ExpenseParticipantCost
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus
-import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.ACCEPTED
 import pl.edu.agh.gem.internal.model.expense.ExpenseStatus.PENDING
 import pl.edu.agh.gem.internal.model.expense.ExpenseUpdate
 import pl.edu.agh.gem.internal.model.expense.FxData
-import pl.edu.agh.gem.internal.model.expense.UserExpense
 import pl.edu.agh.gem.internal.model.expense.filter.FilterOptions
 import pl.edu.agh.gem.internal.model.expense.filter.SortOrder
 import pl.edu.agh.gem.internal.model.expense.filter.SortOrder.ASCENDING
@@ -186,12 +184,6 @@ fun createExpenseParticipant(
     participantStatus = participantStatus,
 )
 
-fun createExpenseParticipants(
-    ids: List<String> = listOf("userId1", "userId2", "userId3"),
-    costs: List<BigDecimal> = listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
-    statuses: List<ExpenseStatus> = listOf(ACCEPTED, ACCEPTED, ACCEPTED),
-) = ids.mapIndexed { index, id -> createExpenseParticipant(id, costs[index], statuses[index]) }
-
 fun createGroup(
     members: GroupMembers = createGroupMembers(USER_ID, OTHER_USER_ID),
     currencies: Currencies = createCurrencies(CURRENCY_1, CURRENCY_2),
@@ -237,16 +229,6 @@ fun createExpenseDecision(
 fun createCurrenciesDTO(vararg currency: String = arrayOf(CURRENCY_1, CURRENCY_2)) = currency.map { CurrencyDTO(it) }
 
 fun createMembersDTO(vararg members: String = arrayOf(USER_ID, OTHER_USER_ID)) = members.map { MemberDTO(it) }
-
-fun createUserExpense(
-    value: BigDecimal = BigDecimal.ONE,
-    currency: String = CURRENCY_1,
-    exchangeRate: BigDecimal? = null,
-) = UserExpense(
-    value = value,
-    currency = currency,
-    exchangeRate = exchangeRate,
-)
 
 fun createListOfAcceptedGroupExpenseParticipantDto(
     participantIds: List<String> = listOf("userId1", "userId2", "userId3"),

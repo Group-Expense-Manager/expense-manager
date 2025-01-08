@@ -2,7 +2,6 @@ package pl.edu.agh.gem.integration.controller
 
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import org.springframework.http.HttpStatus.OK
 import pl.edu.agh.gem.assertion.shouldBody
@@ -12,12 +11,10 @@ import pl.edu.agh.gem.dto.GroupMembersResponse
 import pl.edu.agh.gem.external.dto.expense.AcceptedGroupExpenseParticipantDto
 import pl.edu.agh.gem.external.dto.expense.AcceptedGroupExpensesResponse
 import pl.edu.agh.gem.external.dto.expense.GroupActivitiesResponse
-import pl.edu.agh.gem.external.dto.expense.UserExpensesResponse
 import pl.edu.agh.gem.external.dto.expense.toAmountDto
 import pl.edu.agh.gem.external.dto.expense.toDto
 import pl.edu.agh.gem.helper.group.DummyGroup.GROUP_ID
 import pl.edu.agh.gem.helper.group.DummyGroup.OTHER_GROUP_ID
-import pl.edu.agh.gem.helper.user.DummyUser.OTHER_USER_ID
 import pl.edu.agh.gem.helper.user.DummyUser.USER_ID
 import pl.edu.agh.gem.helper.user.createGemUser
 import pl.edu.agh.gem.integration.BaseIntegrationSpec
@@ -33,72 +30,16 @@ import pl.edu.agh.gem.internal.model.expense.filter.SortedBy.TITLE
 import pl.edu.agh.gem.internal.persistence.ExpenseRepository
 import pl.edu.agh.gem.util.DummyData.CURRENCY_1
 import pl.edu.agh.gem.util.DummyData.CURRENCY_2
-import pl.edu.agh.gem.util.DummyData.EXCHANGE_RATE_VALUE
 import pl.edu.agh.gem.util.createAmount
 import pl.edu.agh.gem.util.createExpense
 import pl.edu.agh.gem.util.createExpenseParticipant
-import pl.edu.agh.gem.util.createExpenseParticipants
 import pl.edu.agh.gem.util.createFxData
-import java.math.BigDecimal
 import java.time.Instant.ofEpochMilli
 
 class InternalExpenseControllerIT(
     private val service: ServiceTestClient,
     private val repository: ExpenseRepository,
 ) : BaseIntegrationSpec({
-
-        should("get user expenses") {
-            // given
-            val expenseList =
-                listOf(
-                    createExpense(
-                        id = "1",
-                        creatorId = USER_ID,
-                        amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
-                        fxData = null,
-                        expenseParticipants =
-                            createExpenseParticipants(
-                                listOf(USER_ID, "userId2", "userId3"),
-                                listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
-                            ),
-                        status = ACCEPTED,
-                    ),
-                    createExpense(
-                        id = "2",
-                        creatorId = OTHER_USER_ID,
-                        amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
-                        fxData = createFxData(),
-                        expenseParticipants =
-                            createExpenseParticipants(
-                                listOf(USER_ID, OTHER_USER_ID, "userId3"),
-                                listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
-                            ),
-                        status = ACCEPTED,
-                    ),
-                )
-            expenseList.forEach { repository.save(it) }
-
-            // when
-            val response = service.getUserExpenses(GROUP_ID, USER_ID)
-
-            // then
-            response shouldHaveHttpStatus OK
-            response.shouldBody<UserExpensesResponse> {
-                userId shouldBe USER_ID
-                expenses.size shouldBe 2
-                expenses.first().also { userExpenses ->
-                    userExpenses.value shouldBe BigDecimal("50")
-                    userExpenses.currency shouldBe CURRENCY_1
-                    userExpenses.exchangeRate.shouldBeNull()
-                }
-
-                expenses.last().also { userExpenses ->
-                    userExpenses.value shouldBe BigDecimal("-10")
-                    userExpenses.currency shouldBe CURRENCY_2
-                    userExpenses.exchangeRate shouldBe EXCHANGE_RATE_VALUE
-                }
-            }
-        }
 
         should("get accepted expenses") {
             // given
