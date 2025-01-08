@@ -7,7 +7,6 @@ import io.kotest.datatest.withData
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.mockito.kotlin.anyVararg
@@ -57,7 +56,6 @@ import pl.edu.agh.gem.util.createExpense
 import pl.edu.agh.gem.util.createExpenseCreation
 import pl.edu.agh.gem.util.createExpenseDecision
 import pl.edu.agh.gem.util.createExpenseParticipantCost
-import pl.edu.agh.gem.util.createExpenseParticipants
 import pl.edu.agh.gem.util.createExpenseUpdate
 import pl.edu.agh.gem.util.createExpenseUpdateFromExpense
 import pl.edu.agh.gem.util.createFilterOptions
@@ -364,57 +362,6 @@ class ExpenseServiceTest : ShouldSpec({
         verify(expenseRepository, times(1)).findByExpenseIdAndGroupId(EXPENSE_ID, GROUP_ID)
         verify(expenseRepository, times(0)).delete(expense)
         verify(archivedExpenseRepository, times(0)).add(expense)
-    }
-
-    should("get user expenses") {
-        // given
-        val expenses =
-            listOf(
-                createExpense(
-                    creatorId = USER_ID,
-                    amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
-                    fxData = null,
-                    expenseParticipants =
-                        createExpenseParticipants(
-                            listOf(USER_ID, "userId2", "userId3"),
-                            listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
-                        ),
-                    status = ACCEPTED,
-                ),
-                createExpense(
-                    creatorId = OTHER_USER_ID,
-                    amount = createAmount(value = "60".toBigDecimal(), currency = CURRENCY_1),
-                    fxData = createFxData(),
-                    expenseParticipants =
-                        createExpenseParticipants(
-                            listOf(USER_ID, OTHER_USER_ID, "userId3"),
-                            listOf(BigDecimal("10"), BigDecimal("20"), BigDecimal("30")),
-                        ),
-                    status = ACCEPTED,
-                ),
-            )
-
-        whenever(expenseRepository.findByGroupId(GROUP_ID)).thenReturn(expenses)
-
-        // when
-        val result = expenseService.getUserExpenses(GROUP_ID, USER_ID)
-
-        // then
-        result.also {
-            it shouldHaveSize 2
-            it.first().also { userExpenses ->
-                userExpenses.value shouldBe BigDecimal("50")
-                userExpenses.currency shouldBe CURRENCY_1
-                userExpenses.exchangeRate.shouldBeNull()
-            }
-
-            it.last().also { userExpenses ->
-                userExpenses.value shouldBe BigDecimal("-10")
-                userExpenses.currency shouldBe CURRENCY_2
-                userExpenses.exchangeRate shouldBe EXCHANGE_RATE_VALUE
-            }
-        }
-        verify(expenseRepository, times(1)).findByGroupId(GROUP_ID)
     }
 
     should("get accepted expenses") {

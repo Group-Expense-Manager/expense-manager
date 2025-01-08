@@ -1,0 +1,771 @@
+openapi: 3.0.1
+info:
+  title: Expense API
+  version: v1
+  description: API for managing expenses.
+
+paths:
+  /external/expenses:
+    post:
+      tags:
+        - External Group
+      summary: "Create expense"
+      description: " Create new expense"
+      operationId: "createExpense"
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        $ref: "#/components/requestBodies/ExpenseCreationRequest"
+      responses:
+        "201":
+          $ref: "#/components/responses/ExpenseResponse"
+        "400":
+          $ref: '#/components/responses/ValidatorsException'
+        "403":
+          $ref: "#/components/responses/UserWithoutGroupAccessException"
+
+
+  /external/expenses/{expenseId}/groups/{groupId}:
+      get:
+        tags:
+          - External Group
+        summary: "Get expense"
+        description: "Get expense"
+        operationId: "getExpense"
+        parameters:
+          - $ref: '#/components/parameters/GroupId2'
+          - $ref: '#/components/parameters/ExpenseId'
+        responses:
+          "200":
+            $ref: "#/components/responses/ExpenseResponse"
+          "403":
+            $ref: "#/components/responses/UserWithoutGroupAccessException"
+          "404":
+            $ref: "#/components/responses/MissingExpenseException"
+      put:
+        tags:
+          - External Group
+        summary: "Update expense"
+        description: "Update expense"
+        operationId: "updateExpense"
+        parameters:
+          - $ref: '#/components/parameters/GroupId2'
+          - $ref: '#/components/parameters/ExpenseId'
+        requestBody:
+          $ref: "#/components/requestBodies/ExpenseUpdateRequest"
+        responses:
+          "200":
+            $ref: "#/components/responses/ExpenseResponse"
+          "400":
+            $ref: '#/components/responses/ValidatorsException'
+          "403":
+            $ref: "#/components/responses/UserWithoutGroupAccessException"
+          "404":
+            $ref: "#/components/responses/MissingExpenseException"
+      delete:
+        tags:
+          - External Group
+        summary: "Delete expense"
+        description: "Delete expense"
+        operationId: "deleteExpense"
+        parameters:
+          - $ref: '#/components/parameters/GroupId2'
+          - $ref: '#/components/parameters/ExpenseId'
+        responses:
+          "200":
+            description: "OK"
+          "400":
+            $ref: '#/components/responses/ValidatorsException'
+          "403":
+            $ref: "#/components/responses/UserWithoutGroupAccessException"
+          "404":
+            $ref: "#/components/responses/MissingExpenseException"
+
+  /external/expenses/decide:
+    post:
+      tags:
+        - External Group
+      summary: "Add decision for expense"
+      description: "Add decision for expense"
+      operationId: "decide"
+      requestBody:
+        $ref: "#/components/requestBodies/ExpenseDecisionRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/ExpenseResponse"
+        "400":
+          $ref: '#/components/responses/ValidatorsException'
+        "403":
+          $ref: "#/components/responses/UserWithoutGroupAccessException"
+        "404":
+          $ref: "#/components/responses/MissingExpenseException"
+
+  /internal/expenses/accepted/groups/{groupId}:
+    get:
+      tags:
+        - Internal Group
+      summary: "Get accepted expenses"
+      description: "Get accepted expenses"
+      operationId: "getAcceptedGroupExpenses"
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - $ref: '#/components/parameters/Currency2'
+      responses:
+        "200":
+          $ref: "#/components/responses/AcceptedGroupExpensesResponse"
+
+  /internal/expenses/activities/groups/{groupId}:
+    get:
+      tags:
+        - Internal Group
+      summary: "Get group activities"
+      description: "Get group expenses as activities with filters applied"
+      operationId: "getGroupActivities"
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - $ref: '#/components/parameters/Title'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/CreatorId'
+        - $ref: '#/components/parameters/Currency'
+        - $ref: '#/components/parameters/SortedBy'
+        - $ref: '#/components/parameters/SortOrder'
+      responses:
+        "200":
+          $ref: "#/components/responses/GroupActivitiesResponse"
+
+
+
+
+
+components:
+  requestBodies:
+    ExpenseCreationRequest:
+      description: Expense creation request
+      content:
+        application/vnd.gem.internal.v1+json:
+          schema:
+            $ref: '#/components/schemas/ExpenseCreationRequest'
+          examples:
+            exampleExpenseCreationRequest:
+              value:
+                title: "My new expense"
+                amount:
+                  value: 20.5
+                  currency: "PLN"
+                targetCurrency: "EUR"
+                expenseDate: "2023-10-26T10:00:00Z"
+                expenseParticipants:
+                  - participantId: "53f34d91-0172-4674-af73-813a666de1a9"
+                    participantCost: 10.5
+                  - participantId: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+                    participantCost: 10
+                message: "hello"
+                attachmentId: "94d93de-9cf2-4f00-8a48-d1c7a8ef0200"
+    ExpenseUpdateRequest:
+      description: Expense update request
+      content:
+        application/vnd.gem.internal.v1+json:
+          schema:
+            $ref: '#/components/schemas/ExpenseUpdateRequest'
+          examples:
+            exampleExpenseUpdateRequest:
+              value:
+                title: "My new expense"
+                amount:
+                  value: 20.5
+                  currency: "PLN"
+                targetCurrency: "EUR"
+                expenseDate: "2023-10-26T10:00:00Z"
+                expenseParticipants:
+                  - participantId: "53f34d91-0172-4674-af73-813a666de1a9"
+                    participantCost: 10.5
+                  - participantId: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+                    participantCost: 10
+                message: "hello"
+                attachmentId: "94d93de-9cf2-4f00-8a48-d1c7a8ef0200"
+    ExpenseDecisionRequest:
+      description: Expense decision request
+      content:
+        application/vnd.gem.internal.v1+json:
+          schema:
+            $ref: '#/components/schemas/ExpenseDecisionRequest'
+          examples:
+            exampleExpenseDecisionRequest:
+              value:
+                expenseId: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+                groupId: "53f34d91-0172-4674-af73-813a666de1a9"
+                decision: "ACCEPT"
+                message: "hi"
+
+  responses:
+    ExpenseResponse:
+      description: Expense data
+      content:
+        application/vnd.gem.internal.v1+json:
+          schema:
+            $ref: '#/components/schemas/ExpenseResponse'
+          examples:
+            exampleExpenseResponse:
+              value:
+                expenseId: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+                creatorId: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+                title: "My new expense"
+                amount:
+                  value: 20.5
+                  currency: "PLN"
+                fxData:
+                  exchangeRate: 20.5
+                  targetCurrency: "EUR"
+                createdAt: "2023-10-26T10:00:00Z"
+                updatedAt: "2023-10-27T10:00:00Z"
+                expenseDate: "2023-10-26T10:00:00Z"
+                attachmentId: "94d93de-9cf2-4f00-8a48-d1c7a8ef0200"
+                expenseParticipants:
+                  - participantId: "53f34d91-0172-4674-af73-813a666de1a9"
+                    participantCost: 10.5
+                    participantStatus: "ACCEPTED"
+                  - participantId: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+                    participantCost: 10
+                    participantStatus: "ACCEPTED"
+                status: "ACCEPTED"
+                history:
+                  - participantId: "53f34d91-0172-4674-af73-813a666de1a9"
+                    expenseAction: "ACCEPTED"
+                    createdAt: "2023-10-26T10:00:00Z"
+                    comment: "hi"
+
+    GroupActivitiesResponse:
+      description: Group activities
+      content:
+        application/vnd.gem.internal.v1+json:
+          schema:
+            $ref: '#/components/schemas/GroupActivitiesResponse'
+          examples:
+            exampleGroupActivitiesResponse:
+              value:
+                groupId: String
+                expenses:
+                  - expenseId: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+                    creatorId: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+                    title: "My new expense"
+                    amount:
+                      value: 20.5
+                      currency: "PLN"
+                    fxData:
+                      exchangeRate: 20.5
+                      targetCurrency: "EUR"
+                    status: "ACCEPTED"
+                    participantIds:
+                      - "53f34d91-0172-4674-af73-813a666de1a9"
+                      - "0ddfc155-ad49-47af-a787-af03b0be9a12"
+                    expenseDate: "2023-10-26T10:00:00Z"
+    AcceptedGroupExpensesResponse:
+      description: Accepted group expenses
+      content:
+        application/vnd.gem.internal.v1+json:
+          schema:
+            $ref: '#/components/schemas/AcceptedGroupExpensesResponse'
+          examples:
+            exampleAcceptedGroupExpensesResponse:
+              value:
+                groupId: String
+                expenses:
+                  - creatorId: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+                    title: "My new expense"
+                    amount:
+                      value: 20.5
+                      currency: "PLN"
+                    fxData:
+                      exchangeRate: 20.5
+                      targetCurrency: "EUR"
+                    participants:
+                      - participantId: "53f34d91-0172-4674-af73-813a666de1a9"
+                        participantCost: 10.5
+                      - participantId: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+                        participantCost: 10
+                    expenseDate: "2023-10-26T10:00:00Z"
+
+    UserWithoutGroupAccessException:
+      description: User is not a member of the group
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SimpleErrorsHolder'
+          examples:
+            exampleUserWithoutGroupAccessException:
+              value:
+                errors:
+                  - code: "UserWithoutGroupAccessException"
+                    details: "UserWithoutGroupAccessException"
+                    message: "User with id:$userId is not a member of the group"
+                    userMessage: "User with id:$userId is not a member of the group"
+
+    ValidatorsException:
+        description: Validation failed.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimpleErrorsHolder'
+            examples:
+              exampleValidatorsException:
+                value:
+                  errors:
+                    - code: "ValidatorsException"
+                      details: "ValidatorsException"
+                      message: "Failed validations: ${failedValidations}"
+                      userMessage: "Failed validations: ${failedValidations}"
+
+    MissingExpenseException:
+      description: Failed to find expense
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SimpleErrorsHolder'
+          examples:
+            exampleMissingExpenseException:
+              value:
+                errors:
+                  - code: "MissingExpenseException"
+                    details: "MissingExpenseException"
+                    message: "Failed to find expense with id: $expenseId and groupId: $groupId"
+                    userMessage: "Failed to find expense with id: $expenseId and groupId: $groupId"
+  schemas:
+     ExpenseCreationRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Title of the expense.
+          example: "My new expense"
+        amount:
+          $ref: '#/components/schemas/AmountDto'
+        targetCurrency:
+          type: string
+          description: Target currency of the expense.
+          example: "PLN"
+        expenseDate:
+          type: string
+          format: date-time
+          description: The date of the expense.
+          example: "2023-10-26T10:00:00Z"
+        expenseParticipants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExpenseParticipantRequestData'
+        message:
+          type: string
+          description: Message.
+          example: "Hello"
+        attachmentId:
+          type: string
+          description: The ID of the attachment.
+          example: "94d93de-9cf2-4f00-8a48-d1c7a8ef0200"
+     ExpenseParticipantRequestData:
+       type: object
+       properties:
+         participantId:
+           type: string
+           description: The ID of the expense participant.
+           example: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+         participantCost:
+           type: number
+           format: double
+           description: Cost of the expense participant.
+           example: 20.5
+     AmountDto:
+       type: object
+       properties:
+         value:
+           type: number
+           format: double
+           description: Value of the expense.
+           example: 50.5
+         currency:
+           type: string
+           description: Currency of the expense.
+           example: "PLN"
+     ExpenseResponse:
+       type: object
+       properties:
+         expenseId:
+           type: string
+           description: The ID of the expense.
+           example: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+         creatorId:
+           type: string
+           description: The ID of the creator.
+           example: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+         title:
+           type: string
+           description: Title of the expense.
+           example: "My new expense"
+         amount:
+           $ref: '#/components/schemas/AmountDto'
+         fxData:
+           $ref: '#/components/schemas/FxDataDto'
+         createdAt:
+           type: string
+           format: date-time
+           description: The date and time when the expense was created.
+           example: "2023-10-26T10:00:00Z"
+         updatedAt:
+           type: string
+           format: date-time
+           description: The date and time when the expense was modified.
+           example: "2023-10-26T10:00:00Z"
+         expenseDate:
+           type: string
+           format: date-time
+           description: The date of the expense.
+           example: "2023-10-26T10:00:00Z"
+         attachmentId:
+           type: string
+           description: The ID of the attachment.
+           example: "94d93de-9cf2-4f00-8a48-d1c7a8ef0200"
+         expenseParticipants:
+           type: array
+           items:
+             $ref: '#/components/schemas/ExpenseParticipantResponseData'
+         status:
+           type: string
+           enum:
+             - "ACCEPTED"
+             - "REJECTED"
+             - "PENDING"
+           description: Status of the expense.
+           example: "ACCEPTED"
+         history:
+           type: array
+           items:
+            $ref: '#/components/schemas/ExpenseHistoryEntryResponseData'
+     ExpenseHistoryEntryResponseData:
+       type: object
+       properties:
+         participantId:
+           type: string
+           description: The ID of the expense participant.
+           example: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+         expenseAction:
+           type: string
+           enum:
+             - "ACCEPTED"
+             - "REJECTED"
+             - "CREATED"
+             - "EDITED"
+             - "DELETED"
+           description: Action of expense participant
+           example: "ACCEPTED"
+         createdAt:
+           type: string
+           format: date-time
+           description: The date and time when the action was performed.
+           example: "2023-10-26T10:00:00Z"
+         comment:
+           type: string
+           description: Comment.
+           example: "Hello"
+     ExpenseParticipantResponseData:
+       type: object
+       properties:
+         participantId:
+           type: string
+           description: The ID of the expense participant.
+           example: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+         participantCost:
+           type: number
+           format: double
+           description: Cost of the expense participant.
+           example: 20.5
+         participantStatus:
+           type: string
+           enum:
+             - "ACCEPTED"
+             - "REJECTED"
+             - "PENDING"
+           description: Status of expense participant.
+           example: "ACCEPTED"
+     FxDataDto:
+       type: object
+       properties:
+         exchangeRate:
+           type: number
+           format: double
+           description: The exchange rate.
+           example: 0.82
+         targetCurrency:
+           type: string
+           description: Target currency of the expense.
+           example: "PLN"
+     ExpenseUpdateRequest:
+       type: object
+       properties:
+         title:
+           type: string
+           description: Title of the expense.
+           example: "My new expense"
+         amount:
+           $ref: '#/components/schemas/AmountDto'
+         targetCurrency:
+           type: string
+           description: Target currency of the expense.
+           example: "PLN"
+         expenseDate:
+           type: string
+           format: date-time
+           description: The date of the expense.
+           example: "2023-10-26T10:00:00Z"
+         expenseParticipants:
+           type: array
+           items:
+             $ref: '#/components/schemas/ExpenseParticipantRequestData'
+         message:
+           type: string
+           description: Message.
+           example: "Hello"
+         attachmentId:
+           type: string
+           description: The ID of the attachment.
+           example: "94d93de-9cf2-4f00-8a48-d1c7a8ef0200"
+     ExpenseDecisionRequest:
+       type: object
+       properties:
+         expenseId:
+           type: string
+           description: The ID of the expense.
+           example: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+         groupId:
+           type: string
+           description: The ID of the group.
+           example: "53f34d91-0172-4674-af73-813a666de1a9"
+         decision:
+           type: string
+           enum:
+             - "ACCEPT"
+             - "REJECT"
+           description: Expense decision.
+           example: "ACCEPT"
+         message:
+           type: string
+           description: Message.
+           example: "Hello"
+     AcceptedGroupExpensesResponse:
+       type: object
+       properties:
+         groupId:
+           type: string
+           description: The ID of the group.
+           example: "53f34d91-0172-4674-af73-813a666de1a9"
+         expenses:
+           type: array
+           items:
+             $ref: '#/components/schemas/AcceptedGroupExpenseDto'
+     AcceptedGroupExpenseDto:
+       type: object
+       properties:
+         creatorId:
+           type: string
+           description: The ID of the creator.
+           example: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+         title:
+           type: string
+           description: Title of the expense.
+           example: "My new expense"
+         amount:
+           $ref: '#/components/schemas/AmountDto'
+         fxData:
+           $ref: '#/components/schemas/FxDataDto'
+         participants:
+           type: array
+           items:
+             $ref: '#/components/schemas/AcceptedGroupExpenseParticipantDto'
+         expenseDate:
+           type: string
+           format: date-time
+           description: The date of the expense.
+           example: "2023-10-26T10:00:00Z"
+     AcceptedGroupExpenseParticipantDto:
+       type: object
+       properties:
+         participantId:
+           type: string
+           description: The ID of the expense participant.
+           example: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+         participantCost:
+           type: number
+           format: double
+           description: Cost of the expense participant.
+           example: 20.5
+     GroupActivitiesResponse:
+       type: object
+       properties:
+         groupId:
+           type: string
+           description: The ID of the group.
+           example: "53f34d91-0172-4674-af73-813a666de1a9"
+         expenses:
+           type: array
+           items:
+             $ref: '#/components/schemas/GroupActivityDto'
+     GroupActivityDto:
+       type: object
+       properties:
+         expenseId:
+           type: string
+           description: The ID of the expense.
+           example: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+         creatorId:
+           type: string
+           description: The ID of the creator.
+           example: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+         title:
+           type: string
+           description: Title of the expense.
+           example: "My new expense"
+         amount:
+           $ref: '#/components/schemas/AmountDto'
+         fxData:
+           $ref: '#/components/schemas/FxDataDto'
+         status:
+           type: string
+           enum:
+             - "ACCEPTED"
+             - "REJECTED"
+             - "PENDING"
+           description: Status of the expense.
+           example: "ACCEPTED"
+         participantIds:
+           type: array
+           items:
+             type: string
+         expenseDate:
+           type: string
+           format: date-time
+           description: The date of the expense.
+           example: "2023-10-26T10:00:00Z"
+
+     SimpleErrorsHolder:
+       type: object
+       properties:
+         errors:
+           type: array
+           items:
+             type: object
+             properties:
+               code:
+                 type: string
+                 nullable: true
+                 description: Error code.
+                 example: "INVALID_VALUE"
+               message:
+                 type: string
+                 nullable: true
+                 description: Error message.
+                 example: "The provided value is invalid."
+               details:
+                 type: string
+                 nullable: true
+                 description: Additional error details.
+                 example: "The field 'email' must contain a valid email address."
+               path:
+                 type: string
+                 nullable: true
+                 description: The API path related to the error.
+                 example: "/external/expenses"
+               userMessage:
+                 type: string
+                 nullable: true
+                 description: A user-friendly error message.
+                 example: "Please provide a valid email address."
+
+
+  parameters:
+    GroupId:
+      name: groupId
+      in: query
+      required: true
+      schema:
+        type: string
+        example: "53f34d91-0172-4674-af73-813a666de1a9"
+      description: The ID of the group.
+    GroupId2:
+      name: groupId
+      in: path
+      required: true
+      schema:
+        type: string
+        example: "53f34d91-0172-4674-af73-813a666de1a9"
+      description: The ID of the group.
+    ExpenseId:
+      name: expenseId
+      in: path
+      required: true
+      schema:
+        type: string
+        example: "53f34d91-0172-4674-af73-813a666de1a9"
+      description: The ID of the expense.
+    Title:
+      name: title
+      in: query
+      required: false
+      schema:
+        type: string
+        example: "Burger"
+      description: Activity title filter.
+    Status:
+      name: status
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - "ACCEPTED"
+          - "REJECTED"
+          - "PENDING"
+        example: "ACCEPTED"
+      description: Activity status filter.
+    CreatorId:
+      name: creatorId
+      in: query
+      required: false
+      schema:
+        type: string
+        example: "0ddfc155-ad49-47af-a787-af03b0be9a12"
+      description: The ID of the expense creator.
+    Currency:
+      name: currency
+      in: query
+      required: false
+      schema:
+        type: string
+        example: "PLN"
+      description: Currency filter.
+    Currency2:
+      name: currency
+      in: query
+      required: false
+      schema:
+        type: string
+        example: "PLN"
+      description: Currency filter.
+    SortedBy:
+      name: sortedBy
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - "TITLE"
+          - "DATE"
+        example: "TITLE"
+      description: By which field activities are sorted.
+    SortOrder:
+      name: sortOrder
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - "ASCENDING"
+          - "DESCENDING"
+        example: "ASCENDING"
+      description: Order of sorting.
