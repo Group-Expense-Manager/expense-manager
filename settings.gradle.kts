@@ -28,7 +28,7 @@ dependencyResolutionManagement {
             version("dependency-management", "1.1.7")
 
             library("guava", "com.google.guava:guava:33.4.0-jre")
-            library("kotlinlogging", "io.github.oshai:kotlin-logging-jvm:7.0.3")
+            library("kotlinlogging", "io.github.oshai:kotlin-logging-jvm:7.0.4")
             library("lib-gem", "pl.edu.agh.gem:lib-gem:0.5.2")
 
             version("resilience4j", "2.2.0")
@@ -57,11 +57,11 @@ dependencyResolutionManagement {
                 "2.0.2",
             )
             library("mockito", "org.mockito.kotlin:mockito-kotlin:5.4.0")
-            library("archunit", "com.tngtech.archunit:archunit-junit5:1.3.0")
+            library("archunit", "com.tngtech.archunit:archunit-junit5:1.4.0")
 
             library("kotest-spring", "io.kotest.extensions:kotest-extensions-spring:1.3.0")
             library("kotest-wiremock", "io.kotest.extensions:kotest-extensions-wiremock:3.1.0")
-            library("junit", "org.junit.jupiter:junit-jupiter-engine:5.11.4")
+            library("junit", "org.junit.jupiter:junit-jupiter-engine:5.12.0")
             library("testcontainers-core", "org.testcontainers", "testcontainers").versionRef("testcontainers")
             library("testcontainers-mongodb", "org.testcontainers", "mongodb").versionRef("testcontainers")
 
